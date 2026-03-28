@@ -1,18 +1,18 @@
 import 'package:flutter/material.dart';
-import 'login.dart';
-import 'blogs.dart';
 import 'homePage.dart';
+import 'signup.dart';
+import 'blogs.dart';
 import 'contactus.dart';
-class CreateAccountPage extends StatefulWidget {
-  const CreateAccountPage({super.key});
+class LoginPage extends StatefulWidget {
+  const LoginPage({super.key});
 
   @override
-  State<CreateAccountPage> createState() => _CreateAccountPageState();
+  State<LoginPage> createState() => _LoginPageState();
 }
 
-class _CreateAccountPageState extends State<CreateAccountPage> {
+class _LoginPageState extends State<LoginPage> {
   bool rememberMe = false;
- static const TextStyle headingStyle = TextStyle(
+static const TextStyle headingStyle = TextStyle(
   fontSize: 18,
   fontWeight: FontWeight.bold,
   color: Color(0xffB4245D),
@@ -20,7 +20,6 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // ✅ SIDEBAR MENU
       drawer: Drawer(
         child: ListView(
           padding: EdgeInsets.zero,
@@ -46,7 +45,7 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
               
               title: const Text("Venues",style: headingStyle),
               onTap: () {
-                 Navigator.push(context, MaterialPageRoute(builder: (context)=>const CreateHomePage() ));
+                Navigator.push(context, MaterialPageRoute(builder: (context) => const CreateHomePage()));
               },
             ),
 
@@ -76,7 +75,7 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
               
               title: const Text("Login",style: headingStyle),
               onTap: () {
-                 Navigator.push(context, MaterialPageRoute(builder: (context)=>const LoginPage() ));
+                Navigator.push(context, MaterialPageRoute(builder:(context)=> const LoginPage()));
               },
             ),
             ListTile(
@@ -92,17 +91,16 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
 
       appBar: AppBar(
         centerTitle: true,
-        automaticallyImplyLeading: false,
-        title: Padding(
-          padding: const EdgeInsets.only(top:26),
-          child: const Text(
+         automaticallyImplyLeading: false, // removes default hamburger icon
+        title: const Padding(
+          padding: EdgeInsets.only(top: 24),
+          child: Text(
             'Pakistan #1 Event Planning Market Place',
-            style: TextStyle(fontSize: 16,
-            color: Colors.white),
+            style: TextStyle(fontSize: 16,color: Colors.white),
           ),
         ),
-        backgroundColor: const Color(0xffB4245D),
-         actions: [
+        backgroundColor:Color(0xffB4245D),
+        actions: [
           Padding(
             padding: const EdgeInsets.only(top: 23),
             child: IconButton(
@@ -111,6 +109,7 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
             ),
           ),
         ],
+        // backgroundColor: Theme.of(context).colorScheme.inversePrimary,
       ),
 
       body: SingleChildScrollView(
@@ -120,10 +119,11 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
             // ================= HEADER =================
             Row(
               children: [
-                
-Builder(
+                // ✅ MENU BUTTON OPENS DRAWER
+                Builder(
                   builder: (context) => IconButton(
                     icon: const Icon(Icons.menu),
+                    
                     onPressed: () {
                       Scaffold.of(context).openDrawer();
                     },
@@ -141,7 +141,7 @@ Builder(
 
             const SizedBox(height: 10),
 
-            // ================= SIGNUP BOX =================
+            // ================= MY ACCOUNT BOX =================
             Container(
               width: 400,
               height: 69,
@@ -151,7 +151,7 @@ Builder(
                 borderRadius: BorderRadius.circular(8),
               ),
               child: const Text(
-                'Create Account',
+                'My Account',
                 style: TextStyle(
                   color: Color(0xffB4245D),
                   fontSize: 16,
@@ -162,7 +162,23 @@ Builder(
 
             const SizedBox(height: 10),
 
-            // ================= FORM =================
+            const Padding(
+              padding: EdgeInsets.only(left: 12),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'Login',
+                  style: TextStyle(
+                    color: Color(0xffB4245D),
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 10),
+
             Container(
               margin: const EdgeInsets.symmetric(horizontal: 12),
               padding: const EdgeInsets.all(16),
@@ -176,16 +192,7 @@ Builder(
 
                   const TextField(
                     decoration: InputDecoration(
-                      labelText: 'Username',
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-
-                  const SizedBox(height: 12),
-
-                  const TextField(
-                    decoration: InputDecoration(
-                      labelText: 'Email',
+                      labelText: 'Username or Email',
                       border: OutlineInputBorder(),
                     ),
                   ),
@@ -227,7 +234,7 @@ Builder(
                       ),
                       onPressed: () {},
                       child: const Text(
-                        "Create Account",
+                        "Login",
                         style: TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
@@ -240,10 +247,15 @@ Builder(
 
                   GestureDetector(
                     onTap: () {
-                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const CreateAccountPage(),
+                        ),
+                      );
                     },
                     child: const Text(
-                      "Already have an account? Login",
+                      "Don’t have an account? Create one",
                       style: TextStyle(
                         color: Color(0xffB4245D),
                         fontWeight: FontWeight.bold,
