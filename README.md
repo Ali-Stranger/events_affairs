@@ -1,6 +1,6 @@
 # events_affairs
 
-A new Flutter project.
+An Event Organization App.
 
 ## Getting Started
 
