@@ -5,6 +5,7 @@ import 'footer.dart';
 import 'blogs.dart';
 import 'login.dart';
 import 'eventplanner.dart';
+import 'venuecontact.dart';
 
 class VenuesPage extends StatefulWidget {
   const VenuesPage({super.key});
@@ -308,7 +309,7 @@ class _VenuesPageState extends State<VenuesPage> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => const ContactUs(),
+                          builder: (_) =>  VenueContactPage(name: name, location: location, price: price, image: image),
                         ),
                       );
                     },
