@@ -5,6 +5,7 @@ import 'eventplanner.dart';
 import 'footer.dart';
 import 'contactus.dart';
 import 'blogs.dart';
+import 'venues.dart';
 
 
 class CreateHomePage extends StatefulWidget {
@@ -52,7 +53,7 @@ class _CreateHomePageState extends State<CreateHomePage> {
 
             ListTile(
               
-              title: const Text("Venues",style: headingStyle),
+              title: const Text("Home",style: headingStyle),
               onTap: () {
                 Navigator.pop(context);
               },
@@ -60,9 +61,9 @@ class _CreateHomePageState extends State<CreateHomePage> {
 
             ListTile(
               
-              title: const Text("Vendors",style: headingStyle),
+              title: const Text("Venues",style: headingStyle),
               onTap: () {
-                Navigator.pop(context);
+                  Navigator.push(context, MaterialPageRoute(builder: (context)=>const VenuesPage()));
               },
             ),
 

@@ -3,6 +3,7 @@ import 'login.dart';
 import 'contactus.dart';
 import 'homePage.dart';
 import 'footer.dart';
+import 'venues.dart';
 class BlogsPage extends StatefulWidget {
   const BlogsPage({super.key});
 
@@ -63,7 +64,7 @@ class _BlogsPageState extends State<BlogsPage> {
 
             ListTile(
               
-              title: const Text("Venues",style: headingStyle),
+              title: const Text("Home",style: headingStyle),
               onTap: () {
                 Navigator.push(context, MaterialPageRoute(builder: (context)=>const CreateHomePage() ));
               },
@@ -71,9 +72,9 @@ class _BlogsPageState extends State<BlogsPage> {
 
             ListTile(
               
-              title: const Text("Vendors",style: headingStyle),
+              title: const Text("Venues",style: headingStyle),
               onTap: () {
-                Navigator.pop(context);
+                Navigator.push(context, MaterialPageRoute(builder: (context)=>const VenuesPage()));
               },
             ),
 

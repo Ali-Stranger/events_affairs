@@ -3,6 +3,7 @@ import 'homePage.dart';
 import 'signup.dart';
 import 'blogs.dart';
 import 'contactus.dart';
+import 'venues.dart';
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
 
@@ -43,7 +44,7 @@ static const TextStyle headingStyle = TextStyle(
 
             ListTile(
               
-              title: const Text("Venues",style: headingStyle),
+              title: const Text("Home",style: headingStyle),
               onTap: () {
                 Navigator.push(context, MaterialPageRoute(builder: (context) => const CreateHomePage()));
               },
@@ -51,9 +52,9 @@ static const TextStyle headingStyle = TextStyle(
 
             ListTile(
               
-              title: const Text("Vendors",style: headingStyle),
+              title: const Text("Venues",style: headingStyle),
               onTap: () {
-                Navigator.pop(context);
+                Navigator.push(context, MaterialPageRoute(builder: (context)=>const VenuesPage()));
               },
             ),
 

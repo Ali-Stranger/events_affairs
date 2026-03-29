@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'login.dart';
 import 'blogs.dart';
 import 'homePage.dart';
-
+import 'venues.dart';
 class ContactUs extends StatefulWidget {
   const ContactUs({super.key});
 
@@ -44,7 +44,7 @@ class _ContactUs extends State<ContactUs> {
 
             ListTile(
               
-              title: const Text("Venues",style: headingStyle),
+              title: const Text("Home",style: headingStyle),
               onTap: () {
                  Navigator.push(context, MaterialPageRoute(builder: (context)=>const CreateHomePage() ));
               },
@@ -52,9 +52,9 @@ class _ContactUs extends State<ContactUs> {
 
             ListTile(
               
-              title: const Text("Vendors",style: headingStyle),
+              title: const Text("Venues",style: headingStyle),
               onTap: () {
-                Navigator.pop(context);
+                Navigator.push(context, MaterialPageRoute(builder: (context)=>const VenuesPage()));
               },
             ),
 

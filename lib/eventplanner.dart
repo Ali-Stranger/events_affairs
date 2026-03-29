@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'homePage.dart';
 import 'login.dart';
+import 'blogs.dart';
+import 'contactus.dart';
+import 'venues.dart';
 class Eventplanner extends StatefulWidget {
   const Eventplanner({super.key});
 
@@ -43,7 +46,7 @@ class _Eventplanner extends State<Eventplanner> {
             ),
 
             ListTile(
-              title: const Text("Venues", style: headingStyle),
+              title: const Text("Home", style: headingStyle),
               onTap: () {
                 Navigator.push(
                   context,
@@ -55,16 +58,16 @@ class _Eventplanner extends State<Eventplanner> {
             ),
 
             ListTile(
-              title: const Text("Vendors", style: headingStyle),
+              title: const Text("Venues", style: headingStyle),
               onTap: () {
-                Navigator.pop(context);
+                Navigator.push(context, MaterialPageRoute(builder: (context)=>const VenuesPage()));
               },
             ),
 
             ListTile(
               title: const Text("Blogs", style: headingStyle),
               onTap: () {
-                Navigator.pop(context);
+                Navigator.push(context, MaterialPageRoute(builder: (context)=>const BlogsPage()));
               },
             ),
 
@@ -88,7 +91,7 @@ class _Eventplanner extends State<Eventplanner> {
             ListTile(
               title: const Text("Contact Us", style: headingStyle),
               onTap: () {
-                Navigator.pop(context);
+                Navigator.push(context, MaterialPageRoute(builder: (context)=>const ContactUs()));
               },
             ),
           ],
@@ -194,7 +197,7 @@ class _Eventplanner extends State<Eventplanner> {
                   // Vendor Name
                   const TextField(
                     decoration: InputDecoration(
-                      labelText: "Vendor Name",
+                      labelText: "Venue Name",
                       border: OutlineInputBorder(),
                     ),
                   ),

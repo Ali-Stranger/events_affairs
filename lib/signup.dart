@@ -3,6 +3,7 @@ import 'login.dart';
 import 'blogs.dart';
 import 'homePage.dart';
 import 'contactus.dart';
+import 'venues.dart';
 class CreateAccountPage extends StatefulWidget {
   const CreateAccountPage({super.key});
 
@@ -44,7 +45,7 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
 
             ListTile(
               
-              title: const Text("Venues",style: headingStyle),
+              title: const Text("Home",style: headingStyle),
               onTap: () {
                  Navigator.push(context, MaterialPageRoute(builder: (context)=>const CreateHomePage() ));
               },
@@ -52,9 +53,9 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
 
             ListTile(
               
-              title: const Text("Vendors",style: headingStyle),
+              title: const Text("Venues",style: headingStyle),
               onTap: () {
-                Navigator.pop(context);
+                Navigator.push(context, MaterialPageRoute(builder: (context)=>const VenuesPage()));
               },
             ),
 
