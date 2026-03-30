@@ -7,6 +7,7 @@ import 'footer.dart';
 import 'blogs.dart';
 import 'login.dart';
 import 'venues.dart';
+import 'vendorregister.dart';
 import 'signup.dart';
 
 // 🔔 Notification Plugin
@@ -127,7 +128,12 @@ class _VenueContactPageState extends State<VenueContactPage> {
             ListTile(
               title: const Text("As a Vendor", style: headingStyle),
               onTap: () {
-                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const CreateAccountPageVendor(),
+                  ),
+                );
                 // TODO: Vendor register page
               },
             ),

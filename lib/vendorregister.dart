@@ -1,50 +1,30 @@
 import 'package:flutter/material.dart';
 import 'login.dart';
-import 'contactus.dart';
+import 'blogs.dart';
 import 'homePage.dart';
-import 'footer.dart';
+import 'contactus.dart';
 import 'venues.dart';
 import 'signup.dart';
-import 'vendorregister.dart';
-class BlogsPage extends StatefulWidget {
-  const BlogsPage({super.key});
+class CreateAccountPageVendor extends StatefulWidget {
+  const CreateAccountPageVendor({super.key});
 
   @override
-  State<BlogsPage> createState() => _BlogsPageState();
+  State<CreateAccountPageVendor> createState() => _CreateAccountPageVendorState();
 }
 
-class _BlogsPageState extends State<BlogsPage> {
+class _CreateAccountPageVendorState extends State<CreateAccountPageVendor> {
+  bool rememberMe = false;
   bool isRegisterMode = false;
-  static const TextStyle headingStyle = TextStyle(
-    fontSize: 18,
-    fontWeight: FontWeight.bold,
-    color: Color(0xffB4245D),
-  );
-
-  final List<Map<String, String>> blogs = [
-    {
-      "title": "Top Wedding Trends 2026",
-      "desc": "Latest wedding decor and planning trends in Pakistan.",
-      "image": "assets/images/download.jpg",
-    },
-    {
-      "title": "Best Event Venues",
-      "desc": "Find perfect venues for your special events easily.",
-      "image": "assets/images/download.jpg",
-    },
-    {
-      "title": "Budget Planning Tips",
-      "desc": "Smart ways to plan your event within budget.",
-      "image": "assets/images/download.jpg",
-    },
-  ];
-
+ static const TextStyle headingStyle = TextStyle(
+  fontSize: 18,
+  fontWeight: FontWeight.bold,
+  color: Color(0xffB4245D),
+);
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-
-      // ================= FULL DRAWER =================
-      drawer: Drawer(
+      // ✅ SIDEBAR MENU
+       drawer: Drawer(
   child: ListView(
     padding: EdgeInsets.zero,
     children: isRegisterMode
@@ -80,12 +60,7 @@ class _BlogsPageState extends State<BlogsPage> {
             ListTile(
               title: const Text("As a Vendor", style: headingStyle),
               onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const CreateAccountPageVendor(),
-                  ),
-                );
+                Navigator.pop(context);
                 // TODO: Vendor register page
               },
             ),
@@ -193,7 +168,7 @@ class _BlogsPageState extends State<BlogsPage> {
           ],
   ),
 ),
-      // ================= APP BAR =================
+
       appBar: AppBar(
         centerTitle: true,
         automaticallyImplyLeading: false,
@@ -216,16 +191,16 @@ class _BlogsPageState extends State<BlogsPage> {
           ),
         ],
       ),
-      // ================= BODY =================
+
       body: SingleChildScrollView(
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
 
             // ================= HEADER =================
             Row(
               children: [
-                Builder(
+                
+Builder(
                   builder: (context) => IconButton(
                     icon: const Icon(Icons.menu),
                     onPressed: () {
@@ -233,128 +208,146 @@ class _BlogsPageState extends State<BlogsPage> {
                     },
                   ),
                 ),
+
                 Image.asset(
                   'assets/images/logo.png',
                   width: 90,
                   height: 90,
+                  fit: BoxFit.contain,
                 ),
               ],
             ),
 
             const SizedBox(height: 10),
 
-            // ================= TITLE =================
+            // ================= SIGNUP BOX =================
             Container(
-              width: double.infinity,
-              margin: const EdgeInsets.symmetric(horizontal: 16),
-              padding: const EdgeInsets.all(15),
+              width: 400,
+              height: 69,
+              alignment: Alignment.center,
               decoration: BoxDecoration(
                 color: const Color(0xffB4245D).withOpacity(0.4),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: const Text(
-                "Latest Blogs",
-                textAlign: TextAlign.center,
+                'Create Account as Vendor',
                 style: TextStyle(
                   color: Color(0xffB4245D),
-                  fontSize: 20,
+                  fontSize: 16,
                   fontWeight: FontWeight.bold,
                 ),
               ),
             ),
 
-            const SizedBox(height: 20),
+            const SizedBox(height: 10),
 
-            // ================= BLOG LIST =================
-            ListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: blogs.length,
-              itemBuilder: (context, index) {
-                final blog = blogs[index];
+            // ================= FORM =================
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 12),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xffB4245D).withOpacity(0.1),
+                border: Border.all(color: Colors.black),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Column(
+                children: [
 
-                return Container(
-                  margin: const EdgeInsets.symmetric(
-                      horizontal: 16, vertical: 10),
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.grey.withOpacity(0.2),
-                        blurRadius: 6,
-                        spreadRadius: 2,
-                      )
-                    ],
+                  const TextField(
+                    decoration: InputDecoration(
+                      labelText: 'Username',
+                      border: OutlineInputBorder(),
+                    ),
                   ),
-                  child: Row(
+
+                  const SizedBox(height: 12),
+
+                  const TextField(
+                    decoration: InputDecoration(
+                      labelText: 'Email',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+
+                  const TextField(
+                    decoration: InputDecoration(
+                      labelText: 'Bussiness Name',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+
+                  const TextField(
+                    decoration: InputDecoration(
+                      labelText: 'Bussiness Address',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  const TextField(
+                    obscureText: true,
+                    decoration: InputDecoration(
+                      labelText: 'Password',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  Row(
                     children: [
-
-                      // IMAGE
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(10),
-                        child: Image.asset(
-                          blog["image"]!,
-                          width: 80,
-                          height: 80,
-                          fit: BoxFit.cover,
-                        ),
+                      Checkbox(
+                        value: rememberMe,
+                        activeColor: const Color(0xffB4245D),
+                        onChanged: (value) {
+                          setState(() {
+                            rememberMe = value!;
+                          });
+                        },
                       ),
-
-                      const SizedBox(width: 10),
-
-                      // TEXT
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-
-                            Text(
-                              blog["title"]!,
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-
-                            const SizedBox(height: 5),
-
-                            Text(
-                              blog["desc"]!,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                fontSize: 13,
-                                color: Colors.black54,
-                              ),
-                            ),
-
-                            const SizedBox(height: 8),
-
-                            Align(
-                              alignment: Alignment.centerRight,
-                              child: TextButton(
-                                onPressed: () {},
-                                child: const Text(
-                                  "Read More",
-                                  style: TextStyle(
-                                    color: Color(0xffB4245D),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                      const Text("Remember me"),
                     ],
                   ),
-                );
-              },
-            ),
 
-            const SizedBox(height: 20),
-            const AppFooter()
+                  const SizedBox(height: 10),
+
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xffB4245D),
+                      ),
+                      onPressed: () {},
+                      child: const Text(
+                        "Create Account",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.pop(context);
+                    },
+                    child: const Text(
+                      "Already have an account? Login",
+                      style: TextStyle(
+                        color: Color(0xffB4245D),
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
       ),

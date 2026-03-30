@@ -4,6 +4,7 @@ import 'blogs.dart';
 import 'homePage.dart';
 import 'contactus.dart';
 import 'venues.dart';
+import 'vendorregister.dart';
 class CreateAccountPage extends StatefulWidget {
   const CreateAccountPage({super.key});
 
@@ -59,7 +60,12 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
             ListTile(
               title: const Text("As a Vendor", style: headingStyle),
               onTap: () {
-                Navigator.pop(context);
+               Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const CreateAccountPageVendor(),
+                  ),
+                );
                 // TODO: Vendor register page
               },
             ),

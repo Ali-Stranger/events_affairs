@@ -4,6 +4,7 @@ import 'blogs.dart';
 import 'homePage.dart';
 import 'venues.dart';
 import 'signup.dart';
+import 'vendorregister.dart';
 class ContactUs extends StatefulWidget {
   const ContactUs({super.key});
 
@@ -59,7 +60,12 @@ class _ContactUs extends State<ContactUs> {
             ListTile(
               title: const Text("As a Vendor", style: headingStyle),
               onTap: () {
-                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const CreateAccountPageVendor(),
+                  ),
+                );
                 // TODO: Vendor register page
               },
             ),

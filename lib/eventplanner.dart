@@ -5,6 +5,7 @@ import 'blogs.dart';
 import 'contactus.dart';
 import 'venues.dart';
 import 'signup.dart';
+import 'vendorregister.dart';
 class Eventplanner extends StatefulWidget {
   const Eventplanner({super.key});
 
@@ -62,7 +63,12 @@ class _Eventplanner extends State<Eventplanner> {
             ListTile(
               title: const Text("As a Vendor", style: headingStyle),
               onTap: () {
-                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const CreateAccountPageVendor(),
+                  ),
+                );
                 // TODO: Vendor register page
               },
             ),

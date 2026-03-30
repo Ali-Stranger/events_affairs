@@ -7,6 +7,7 @@ import 'login.dart';
 import 'eventplanner.dart';
 import 'venuecontact.dart';
 import 'signup.dart';
+import 'vendorregister.dart';
 
 class VenuesPage extends StatefulWidget {
   const VenuesPage({super.key});
@@ -64,7 +65,12 @@ bool isRegisterMode = false;
             ListTile(
               title: const Text("As a Vendor", style: headingStyle),
               onTap: () {
-                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const CreateAccountPageVendor(),
+                  ),
+                );
                 // TODO: Vendor register page
               },
             ),

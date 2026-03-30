@@ -4,6 +4,7 @@ import 'signup.dart';
 import 'blogs.dart';
 import 'contactus.dart';
 import 'venues.dart';
+import 'vendorregister.dart';
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
 
@@ -58,7 +59,12 @@ static const TextStyle headingStyle = TextStyle(
             ListTile(
               title: const Text("As a Vendor", style: headingStyle),
               onTap: () {
-                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const CreateAccountPageVendor(),
+                  ),
+                );
                 // TODO: Vendor register page
               },
             ),
