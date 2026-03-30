@@ -4,6 +4,7 @@ import 'login.dart';
 import 'blogs.dart';
 import 'contactus.dart';
 import 'venues.dart';
+import 'signup.dart';
 class Eventplanner extends StatefulWidget {
   const Eventplanner({super.key});
 
@@ -14,6 +15,7 @@ class Eventplanner extends StatefulWidget {
 class _Eventplanner extends State<Eventplanner> {
   bool rememberMe = false;
   double priceValue = 20000;
+  bool isRegisterMode=false;
   static const TextStyle headingStyle = TextStyle(
     fontSize: 18,
     fontWeight: FontWeight.bold,
@@ -25,12 +27,64 @@ class _Eventplanner extends State<Eventplanner> {
     return Scaffold(
       // ================= DRAWER =================
       drawer: Drawer(
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: [
-            const SizedBox(
+  child: ListView(
+    padding: EdgeInsets.zero,
+    children: isRegisterMode
+        ? [
+
+            // ================= REGISTER HEADER =================
+            DrawerHeader(
+              decoration: const BoxDecoration(
+                color: Color(0xffB4245D),
+              ),
+              child: Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.arrow_back, color: Colors.white),
+                    onPressed: () {
+                      setState(() {
+                        isRegisterMode = false;
+                      });
+                    },
+                  ),
+                  const Text(
+                    "Register As",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            ListTile(
+              title: const Text("As a Vendor", style: headingStyle),
+              onTap: () {
+                Navigator.pop(context);
+                // TODO: Vendor register page
+              },
+            ),
+
+            ListTile(
+              title: const Text("As a Couple", style: headingStyle),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const CreateAccountPage(),
+                  ),
+                );
+              },
+            ),
+          ]
+        : [
+
+            // ================= NORMAL MENU HEADER =================
+            SizedBox(
               height: 88,
-              child: DrawerHeader(
+              child: const DrawerHeader(
                 decoration: BoxDecoration(
                   color: Color(0xffB4245D),
                 ),
@@ -60,21 +114,33 @@ class _Eventplanner extends State<Eventplanner> {
             ListTile(
               title: const Text("Venues", style: headingStyle),
               onTap: () {
-                Navigator.push(context, MaterialPageRoute(builder: (context)=>const VenuesPage()));
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const VenuesPage(),
+                  ),
+                );
               },
             ),
 
             ListTile(
               title: const Text("Blogs", style: headingStyle),
               onTap: () {
-                Navigator.push(context, MaterialPageRoute(builder: (context)=>const BlogsPage()));
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const BlogsPage(),
+                  ),
+                );
               },
             ),
 
             ListTile(
               title: const Text("Register Now", style: headingStyle),
               onTap: () {
-                Navigator.pop(context);
+                setState(() {
+                  isRegisterMode = true; // 🔥 SWITCH MENU
+                });
               },
             ),
 
@@ -83,7 +149,9 @@ class _Eventplanner extends State<Eventplanner> {
               onTap: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const LoginPage()),
+                  MaterialPageRoute(
+                    builder: (context) => const LoginPage(),
+                  ),
                 );
               },
             ),
@@ -91,12 +159,17 @@ class _Eventplanner extends State<Eventplanner> {
             ListTile(
               title: const Text("Contact Us", style: headingStyle),
               onTap: () {
-                Navigator.push(context, MaterialPageRoute(builder: (context)=>const ContactUs()));
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const ContactUs(),
+                  ),
+                );
               },
             ),
           ],
-        ),
-      ),
+  ),
+),
 
       // ================= APP BAR =================
       appBar: AppBar(

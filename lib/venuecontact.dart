@@ -7,6 +7,7 @@ import 'footer.dart';
 import 'blogs.dart';
 import 'login.dart';
 import 'venues.dart';
+import 'signup.dart';
 
 // 🔔 Notification Plugin
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
@@ -34,7 +35,7 @@ class _VenueContactPageState extends State<VenueContactPage> {
   final TextEditingController nameController = TextEditingController();
   final TextEditingController contactController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
-
+  bool isRegisterMode =false;
   static const TextStyle headingStyle = TextStyle(
     fontSize: 18,
     fontWeight: FontWeight.bold,
@@ -91,9 +92,61 @@ class _VenueContactPageState extends State<VenueContactPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       drawer: Drawer(
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: [
+  child: ListView(
+    padding: EdgeInsets.zero,
+    children: isRegisterMode
+        ? [
+
+            // ================= REGISTER HEADER =================
+            DrawerHeader(
+              decoration: const BoxDecoration(
+                color: Color(0xffB4245D),
+              ),
+              child: Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.arrow_back, color: Colors.white),
+                    onPressed: () {
+                      setState(() {
+                        isRegisterMode = false;
+                      });
+                    },
+                  ),
+                  const Text(
+                    "Register As",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            ListTile(
+              title: const Text("As a Vendor", style: headingStyle),
+              onTap: () {
+                Navigator.pop(context);
+                // TODO: Vendor register page
+              },
+            ),
+
+            ListTile(
+              title: const Text("As a Couple", style: headingStyle),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const CreateAccountPage(),
+                  ),
+                );
+              },
+            ),
+          ]
+        : [
+
+            // ================= NORMAL MENU HEADER =================
             SizedBox(
               height: 88,
               child: const DrawerHeader(
@@ -114,46 +167,74 @@ class _VenueContactPageState extends State<VenueContactPage> {
             ListTile(
               title: const Text("Home", style: headingStyle),
               onTap: () {
-                Navigator.push(context,
-                    MaterialPageRoute(builder: (context) => const CreateHomePage()));
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const CreateHomePage(),
+                  ),
+                );
               },
             ),
+
             ListTile(
               title: const Text("Venues", style: headingStyle),
               onTap: () {
-                Navigator.push(context,
-                    MaterialPageRoute(builder: (context) => const VenuesPage()));
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const VenuesPage(),
+                  ),
+                );
               },
             ),
+
             ListTile(
               title: const Text("Blogs", style: headingStyle),
               onTap: () {
-                Navigator.push(context,
-                    MaterialPageRoute(builder: (context) => const BlogsPage()));
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const BlogsPage(),
+                  ),
+                );
               },
             ),
+
             ListTile(
               title: const Text("Register Now", style: headingStyle),
-              onTap: () {},
+              onTap: () {
+                setState(() {
+                  isRegisterMode = true; // 🔥 SWITCH MENU
+                });
+              },
             ),
+
             ListTile(
               title: const Text("Login", style: headingStyle),
               onTap: () {
-                Navigator.push(context,
-                    MaterialPageRoute(builder: (context) => const LoginPage()));
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const LoginPage(),
+                  ),
+                );
               },
             ),
+
             ListTile(
               title: const Text("Contact Us", style: headingStyle),
               onTap: () {
-                Navigator.push(context,
-                    MaterialPageRoute(builder: (context) => const ContactUs()));
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const ContactUs(),
+                  ),
+                );
               },
             ),
           ],
-        ),
-      ),
-
+  ),
+),
       appBar: AppBar(
         centerTitle: true,
         automaticallyImplyLeading: false,

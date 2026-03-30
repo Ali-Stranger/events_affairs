@@ -1,4 +1,3 @@
-import 'package:events_affairs/main.dart';
 import  'package:flutter/material.dart';
 import 'login.dart';
 import 'eventplanner.dart';
@@ -6,7 +5,7 @@ import 'footer.dart';
 import 'contactus.dart';
 import 'blogs.dart';
 import 'venues.dart';
-
+import 'signup.dart';
 
 class CreateHomePage extends StatefulWidget {
   const CreateHomePage({super.key});
@@ -20,6 +19,7 @@ String? selectedLocation;
 List<String> categories = ["Wedding", "Catering", "Photography", "Decoration"];
 List<String> locations = ["Lahore", "Karachi", "Islamabad", "Multan"];
 class _CreateHomePageState extends State<CreateHomePage> {
+  bool isRegisterMode = false;
   bool rememberMe = false;
  static const TextStyle headingStyle = TextStyle(
   fontSize: 18,
@@ -29,11 +29,66 @@ class _CreateHomePageState extends State<CreateHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+
+
+      
       // ✅ SIDEBAR MENU
-      drawer: Drawer(
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: [
+     drawer: Drawer(
+  child: ListView(
+    padding: EdgeInsets.zero,
+    children: isRegisterMode
+        ? [
+
+            // ================= REGISTER HEADER =================
+            DrawerHeader(
+              decoration: const BoxDecoration(
+                color: Color(0xffB4245D),
+              ),
+              child: Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.arrow_back, color: Colors.white),
+                    onPressed: () {
+                      setState(() {
+                        isRegisterMode = false;
+                      });
+                    },
+                  ),
+                  const Text(
+                    "Register As",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            ListTile(
+              title: const Text("As a Vendor", style: headingStyle),
+              onTap: () {
+                Navigator.pop(context);
+                // TODO: Vendor register page
+              },
+            ),
+
+            ListTile(
+              title: const Text("As a Couple", style: headingStyle),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const CreateAccountPage(),
+                  ),
+                );
+              },
+            ),
+          ]
+        : [
+
+            // ================= NORMAL MENU HEADER =================
             SizedBox(
               height: 88,
               child: const DrawerHeader(
@@ -52,52 +107,71 @@ class _CreateHomePageState extends State<CreateHomePage> {
             ),
 
             ListTile(
-              
-              title: const Text("Home",style: headingStyle),
+              title: const Text("Home", style: headingStyle),
               onTap: () {
                 Navigator.pop(context);
               },
             ),
 
             ListTile(
-              
-              title: const Text("Venues",style: headingStyle),
+              title: const Text("Venues", style: headingStyle),
               onTap: () {
-                  Navigator.push(context, MaterialPageRoute(builder: (context)=>const VenuesPage()));
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const VenuesPage(),
+                  ),
+                );
               },
             ),
 
             ListTile(
-              
-              title: const Text("Blogs",style:headingStyle),
+              title: const Text("Blogs", style: headingStyle),
               onTap: () {
-                Navigator.push(context, MaterialPageRoute(builder: (context)=>const BlogsPage() ));
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const BlogsPage(),
+                  ),
+                );
               },
             ),
+
             ListTile(
-              
-              title: const Text("Register Now",style: headingStyle),
+              title: const Text("Register Now", style: headingStyle),
               onTap: () {
-                Navigator.pop(context);
+                setState(() {
+                  isRegisterMode = true; // 🔥 SWITCH MENU
+                });
               },
             ),
+
             ListTile(
-              
-              title: const Text("Login",style: headingStyle),
+              title: const Text("Login", style: headingStyle),
               onTap: () {
-                Navigator.push(context, MaterialPageRoute(builder: (context)=>const LoginPage()));
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const LoginPage(),
+                  ),
+                );
               },
             ),
+
             ListTile(
-              
-              title: const Text("Contact Us",style: headingStyle,),
+              title: const Text("Contact Us", style: headingStyle),
               onTap: () {
-                Navigator.push(context, MaterialPageRoute(builder: (context)=>const ContactUs() ));
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const ContactUs(),
+                  ),
+                );
               },
             ),
           ],
-        ),
-      ),
+  ),
+),
 
       appBar: AppBar(
         centerTitle: true,
