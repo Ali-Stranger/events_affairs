@@ -1,12 +1,16 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 import 'package:events_affairs/homePage.dart';
-import 'package:flutter/material.dart';
 import 'contactus.dart';
 import 'footer.dart';
 import 'blogs.dart';
 import 'login.dart';
 import 'venues.dart';
 
+// 🔔 Notification Plugin
+final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+    FlutterLocalNotificationsPlugin();
 
 class VenueContactPage extends StatefulWidget {
   final String name;
@@ -27,24 +31,65 @@ class VenueContactPage extends StatefulWidget {
 }
 
 class _VenueContactPageState extends State<VenueContactPage> {
-
   final TextEditingController nameController = TextEditingController();
   final TextEditingController contactController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
+
   static const TextStyle headingStyle = TextStyle(
     fontSize: 18,
     fontWeight: FontWeight.bold,
     color: Color(0xffB4245D),
   );
+
   bool isSubmitted = false;
+
+  @override
+  void initState() {
+    super.initState();
+    initNotifications();
+  }
+
+  // ✅ Initialize Notifications
+  Future<void> initNotifications() async {
+    const AndroidInitializationSettings androidSettings =
+        AndroidInitializationSettings('@mipmap/ic_launcher');
+
+    final InitializationSettings settings =
+        InitializationSettings(android: androidSettings);
+
+    await flutterLocalNotificationsPlugin.initialize(settings:settings);
+
+    // ✅ Request permission (Android 13+)
+    await flutterLocalNotificationsPlugin
+        .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>()
+        ?.requestNotificationsPermission();
+  }
+
+  // ✅ Show Notification
+  Future<void> showNotification() async {
+    const AndroidNotificationDetails androidDetails =
+        AndroidNotificationDetails(
+      'channel_id',
+      'channel_name',
+      importance: Importance.max,
+      priority: Priority.high,
+    );
+
+    const NotificationDetails details =
+        NotificationDetails(android: androidDetails);
+
+    await flutterLocalNotificationsPlugin.show(
+      id: 0,
+      title:  'Request Sent',
+      body:  'The vendor will contact you shortly.',
+      notificationDetails:  details,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-
-      // SAME APP BAR
-     
-      // SAME DRAWER
       drawer: Drawer(
         child: ListView(
           padding: EdgeInsets.zero,
@@ -67,79 +112,72 @@ class _VenueContactPageState extends State<VenueContactPage> {
             ),
 
             ListTile(
-              
-              title: const Text("Home",style: headingStyle),
+              title: const Text("Home", style: headingStyle),
               onTap: () {
-                Navigator.push(context, MaterialPageRoute(builder: (context)=>const CreateHomePage()));
-              },
-            ),
-
-            ListTile(
-              
-              title: const Text("Venues",style: headingStyle),
-              onTap: () {
-                  Navigator.push(context, MaterialPageRoute(builder: (context)=>const VenuesPage()));
-              },
-            ),
-
-            ListTile(
-              
-              title: const Text("Blogs",style:headingStyle),
-              onTap: () {
-                Navigator.push(context, MaterialPageRoute(builder: (context)=>const BlogsPage() ));
+                Navigator.push(context,
+                    MaterialPageRoute(builder: (context) => const CreateHomePage()));
               },
             ),
             ListTile(
-              
-              title: const Text("Register Now",style: headingStyle),
+              title: const Text("Venues", style: headingStyle),
               onTap: () {
-                Navigator.pop(context);
+                Navigator.push(context,
+                    MaterialPageRoute(builder: (context) => const VenuesPage()));
               },
             ),
             ListTile(
-              
-              title: const Text("Login",style: headingStyle),
+              title: const Text("Blogs", style: headingStyle),
               onTap: () {
-                Navigator.push(context, MaterialPageRoute(builder: (context)=>const LoginPage()));
+                Navigator.push(context,
+                    MaterialPageRoute(builder: (context) => const BlogsPage()));
               },
             ),
             ListTile(
-              
-              title: const Text("Contact Us",style: headingStyle,),
+              title: const Text("Register Now", style: headingStyle),
+              onTap: () {},
+            ),
+            ListTile(
+              title: const Text("Login", style: headingStyle),
               onTap: () {
-                Navigator.push(context, MaterialPageRoute(builder: (context)=>const ContactUs() ));
+                Navigator.push(context,
+                    MaterialPageRoute(builder: (context) => const LoginPage()));
+              },
+            ),
+            ListTile(
+              title: const Text("Contact Us", style: headingStyle),
+              onTap: () {
+                Navigator.push(context,
+                    MaterialPageRoute(builder: (context) => const ContactUs()));
               },
             ),
           ],
         ),
       ),
+
       appBar: AppBar(
         centerTitle: true,
         automaticallyImplyLeading: false,
-        title: Padding(
-          padding: const EdgeInsets.only(top:26),
-          child: const Text(
+        title: const Padding(
+          padding: EdgeInsets.only(top: 26),
+          child: Text(
             'Pakistan #1 Event Planning Market Place',
-            style: TextStyle(fontSize: 16,
-            color: Colors.white),
+            style: TextStyle(fontSize: 16, color: Colors.white),
           ),
         ),
         backgroundColor: const Color(0xffB4245D),
-         actions: [
+        actions: const [
           Padding(
-            padding: const EdgeInsets.only(top: 23),
-            child: IconButton(
-              onPressed: () {},
-              icon: const Icon(Icons.search,color: Colors.white,),
-            ),
+            padding: EdgeInsets.only(top: 23),
+            child: Icon(Icons.search, color: Colors.white),
           ),
         ],
       ),
+
       body: SingleChildScrollView(
         child: Column(
           children: [
 
-            // HEADER ROW
+            // HEADER
             Row(
               children: [
                 Builder(
@@ -154,7 +192,7 @@ class _VenueContactPageState extends State<VenueContactPage> {
 
             const SizedBox(height: 10),
 
-            // VENUE NAME TITLE
+            // TITLE
             Container(
               margin: const EdgeInsets.all(12),
               padding: const EdgeInsets.all(12),
@@ -180,7 +218,7 @@ class _VenueContactPageState extends State<VenueContactPage> {
               child: Image.asset(widget.image, height: 180),
             ),
 
-            // DETAILS BOX
+            // DETAILS
             Container(
               margin: const EdgeInsets.all(12),
               padding: const EdgeInsets.all(12),
@@ -238,10 +276,12 @@ class _VenueContactPageState extends State<VenueContactPage> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xffB4245D),
                     ),
-                    onPressed: () {
+                    onPressed: () async {
                       setState(() {
                         isSubmitted = true;
                       });
+
+                      await showNotification(); // 🔔 FIXED
                     },
                     child: const Text(
                       "Send Details to Vendor",
