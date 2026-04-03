@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'search.dart';
 import 'login.dart';
 import 'eventplanner.dart';
 import 'footer.dart';
@@ -191,9 +190,7 @@ class _CreateHomePageState extends State<CreateHomePage> {
           Padding(
             padding: const EdgeInsets.only(top: 23),
             child: IconButton(
-              onPressed: () {
-                showSearch(context: context, delegate: CustomSearchDelegate());
-              },
+              onPressed: () {},
               icon: const Icon(Icons.search, color: Colors.white),
             ),
           ),
