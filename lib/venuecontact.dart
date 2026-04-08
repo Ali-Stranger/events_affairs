@@ -1,14 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
-import 'package:events_affairs/homePage.dart';
-import 'contactus.dart';
 import 'footer.dart';
-import 'blogs.dart';
-import 'login.dart';
-import 'venues.dart';
-import 'vendorregister.dart';
-import 'signup.dart';
+
+import 'drawer.dart';
 
 // 🔔 Notification Plugin
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
@@ -37,11 +32,7 @@ class _VenueContactPageState extends State<VenueContactPage> {
   final TextEditingController contactController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
   bool isRegisterMode =false;
-  static const TextStyle headingStyle = TextStyle(
-    fontSize: 18,
-    fontWeight: FontWeight.bold,
-    color: Color(0xffB4245D),
-  );
+ 
 
   bool isSubmitted = false;
 
@@ -92,173 +83,8 @@ class _VenueContactPageState extends State<VenueContactPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      drawer: Drawer(
-  child: ListView(
-    padding: EdgeInsets.zero,
-    children: isRegisterMode
-        ? [
-
-            // ================= REGISTER HEADER =================
-            DrawerHeader(
-              decoration: const BoxDecoration(
-                color: Color(0xffB4245D),
-              ),
-              child: Row(
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.arrow_back, color: Colors.white),
-                    onPressed: () {
-                      setState(() {
-                        isRegisterMode = false;
-                      });
-                    },
-                  ),
-                  const Text(
-                    "Register As",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            ListTile(
-              title: const Text("As a Vendor", style: headingStyle),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const CreateAccountPageVendor(),
-                  ),
-                );
-                // TODO: Vendor register page
-              },
-            ),
-
-            ListTile(
-              title: const Text("As a Couple", style: headingStyle),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const CreateAccountPage(),
-                  ),
-                );
-              },
-            ),
-          ]
-        : [
-
-            // ================= NORMAL MENU HEADER =================
-            SizedBox(
-              height: 88,
-              child: const DrawerHeader(
-                decoration: BoxDecoration(
-                  color: Color(0xffB4245D),
-                ),
-                child: Text(
-                  "Events Affairs Menu",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
-
-            ListTile(
-              title: const Text("Home", style: headingStyle),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const CreateHomePage(),
-                  ),
-                );
-              },
-            ),
-
-            ListTile(
-              title: const Text("Venues", style: headingStyle),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const VenuesPage(),
-                  ),
-                );
-              },
-            ),
-
-            ListTile(
-              title: const Text("Blogs", style: headingStyle),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const BlogsPage(),
-                  ),
-                );
-              },
-            ),
-
-            ListTile(
-              title: const Text("Register Now", style: headingStyle),
-              onTap: () {
-                setState(() {
-                  isRegisterMode = true; // 🔥 SWITCH MENU
-                });
-              },
-            ),
-
-            ListTile(
-              title: const Text("Login", style: headingStyle),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const LoginPage(),
-                  ),
-                );
-              },
-            ),
-
-            ListTile(
-              title: const Text("Contact Us", style: headingStyle),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const ContactUs(),
-                  ),
-                );
-              },
-            ),
-          ],
-  ),
-),
-      appBar: AppBar(
-        centerTitle: true,
-        automaticallyImplyLeading: false,
-        title: const Padding(
-          padding: EdgeInsets.only(top: 26),
-          child: Text(
-            'Pakistan #1 Event Planning Market Place',
-            style: TextStyle(fontSize: 16, color: Colors.white),
-          ),
-        ),
-        backgroundColor: const Color(0xffB4245D),
-        actions: const [
-          Padding(
-            padding: EdgeInsets.only(top: 23),
-            child: Icon(Icons.search, color: Colors.white),
-          ),
-        ],
-      ),
+     drawer: const CommonDrawer(),
+      appBar: const CommonAppBar(),
 
       body: SingleChildScrollView(
         child: Column(

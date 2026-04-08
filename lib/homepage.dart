@@ -1,12 +1,7 @@
 import  'package:flutter/material.dart';
-import 'login.dart';
 import 'eventplanner.dart';
 import 'footer.dart';
-import 'contactus.dart';
-import 'blogs.dart';
-import 'venues.dart';
-import 'signup.dart';
-import 'vendorregister.dart';
+import 'drawer.dart';
 
 class CreateHomePage extends StatefulWidget {
   const CreateHomePage({super.key});
@@ -14,193 +9,30 @@ class CreateHomePage extends StatefulWidget {
   @override
   State<CreateHomePage> createState() => _CreateHomePageState();
 }
-String? selectedCategory;
-String? selectedLocation;
+
 
 List<String> categories = ["Wedding", "Catering", "Photography", "Decoration"];
 List<String> locations = ["Lahore", "Karachi", "Islamabad", "Multan"];
+
 class _CreateHomePageState extends State<CreateHomePage> {
   bool isRegisterMode = false;
   bool rememberMe = false;
- static const TextStyle headingStyle = TextStyle(
-  fontSize: 18,
-  fontWeight: FontWeight.bold,
-  color: Color(0xffB4245D),
-);
+  String? selectedCategory;
+String? selectedLocation;
+
+String? formCategory;       // 👈 NEW
+  String? formLocation;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: false,
 
 
       
       // ✅ SIDEBAR MENU
-     drawer: Drawer(
-  child: ListView(
-    padding: EdgeInsets.zero,
-    children: isRegisterMode
-        ? [
-
-            // ================= REGISTER HEADER =================
-            DrawerHeader(
-              decoration: const BoxDecoration(
-                color: Color(0xffB4245D),
-              ),
-              child: Row(
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.arrow_back, color: Colors.white),
-                    onPressed: () {
-                      setState(() {
-                        isRegisterMode = false;
-                      });
-                    },
-                  ),
-                  const Text(
-                    "Register As",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            ListTile(
-              title: const Text("As a Vendor", style: headingStyle),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const CreateAccountPageVendor(),
-                  ),
-                );
-                // TODO: Vendor register page
-              },
-            ),
-
-            ListTile(
-              title: const Text("As a Couple", style: headingStyle),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const CreateAccountPage(),
-                  ),
-                );
-              },
-            ),
-          ]
-        : [
-
-            // ================= NORMAL MENU HEADER =================
-            SizedBox(
-              height: 88,
-              child: const DrawerHeader(
-                decoration: BoxDecoration(
-                  color: Color(0xffB4245D),
-                ),
-                child: Text(
-                  "Events Affairs Menu",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
-
-            ListTile(
-              title: const Text("Home", style: headingStyle),
-              onTap: () {
-                Navigator.pop(context);
-              },
-            ),
-
-            ListTile(
-              title: const Text("Venues", style: headingStyle),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const VenuesPage(),
-                  ),
-                );
-              },
-            ),
-
-            ListTile(
-              title: const Text("Blogs", style: headingStyle),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const BlogsPage(),
-                  ),
-                );
-              },
-            ),
-
-            ListTile(
-              title: const Text("Register Now", style: headingStyle),
-              onTap: () {
-                setState(() {
-                  isRegisterMode = true; // 🔥 SWITCH MENU
-                });
-              },
-            ),
-
-            ListTile(
-              title: const Text("Login", style: headingStyle),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const LoginPage(),
-                  ),
-                );
-              },
-            ),
-
-            ListTile(
-              title: const Text("Contact Us", style: headingStyle),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const ContactUs(),
-                  ),
-                );
-              },
-            ),
-          ],
-  ),
-),
-
-      appBar: AppBar(
-        centerTitle: true,
-        automaticallyImplyLeading: false,
-        title: Padding(
-          padding: const EdgeInsets.only(top:26),
-          child: const Text(
-            'Pakistan #1 Event Planning Market Place',
-            style: TextStyle(fontSize: 16,
-            color: Colors.white),
-          ),
-        ),
-        backgroundColor: const Color(0xffB4245D),
-         actions: [
-          Padding(
-            padding: const EdgeInsets.only(top: 23),
-            child: IconButton(
-              onPressed: () {},
-              icon: const Icon(Icons.search,color: Colors.white,),
-            ),
-          ),
-        ],
-      ),
+     drawer: const CommonDrawer(),
+      appBar: const CommonAppBar(),
       body: SingleChildScrollView(
   child: Column(
     children: [
@@ -232,7 +64,7 @@ class _CreateHomePageState extends State<CreateHomePage> {
 
           // 🖼 BACKGROUND IMAGE
           Container(
-            height: 350,
+            height: 390,
             width: double.infinity,
             decoration: const BoxDecoration(
               image: DecorationImage(
@@ -254,7 +86,9 @@ class _CreateHomePageState extends State<CreateHomePage> {
             top: 220, // 👈 this creates half overlap effect
             left: 15,
             right: 15,
-            child: Container(
+            child: 
+             
+               Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: const Color.fromARGB(255, 27, 25, 25).withOpacity(0.6),
@@ -306,6 +140,7 @@ class _CreateHomePageState extends State<CreateHomePage> {
                         style: TextStyle(color: Colors.white),
                       ),
                       isExpanded: true,
+                      iconEnabledColor: Colors.white, 
                       dropdownColor: Colors.black,
                       underline: const SizedBox(),
                       items: categories.map((value) {
@@ -329,36 +164,47 @@ class _CreateHomePageState extends State<CreateHomePage> {
 
                   // Location
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10),
-                    decoration: BoxDecoration(
-                      border: Border.all(color: const Color(0xffB4245D), width: 2),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: DropdownButton<String>(
-                      value: selectedLocation,
-                      hint: const Text(
-                        "Select Location",
-                        style: TextStyle(color: Colors.white),
-                      ),
-                      isExpanded: true,
-                      dropdownColor: Colors.black,
-                      underline: const SizedBox(),
-                      items: locations.map((value) {
-                        return DropdownMenuItem(
-                          value: value,
-                          child: Text(
-                            value,
-                            style: const TextStyle(color: Colors.white),
-                          ),
-                        );
-                      }).toList(),
-                      onChanged: (value) {
-                        setState(() {
-                          selectedLocation = value;
-                        });
-                      },
-                    ),
-                  ),
+  padding: const EdgeInsets.symmetric(horizontal: 10),
+  decoration: BoxDecoration(
+    border: Border.all(color: const Color(0xffB4245D), width: 2),
+    borderRadius: BorderRadius.circular(8),
+  ),
+  child: Theme(
+    data: Theme.of(context).copyWith(
+      canvasColor: Colors.black, // dropdown background
+    ),
+    child: DropdownButtonHideUnderline(
+      child: DropdownButton<String>(
+        value: selectedLocation,
+        hint: const Text(
+          "Select Location",
+          style: TextStyle(color: Colors.white,
+          fontSize: 16,           // 👈 dropdown item size
+              fontWeight: FontWeight.w500,),
+        ),
+        isExpanded: true,
+        style: const TextStyle(color: Colors.white),
+        iconEnabledColor: Colors.white,
+        items: locations.map((value) {
+          return DropdownMenuItem<String>(
+            value: value,
+            child: Text(
+              value,
+              style: const TextStyle(color: Colors.white,
+              fontSize: 16,           // 👈 dropdown item size
+              fontWeight: FontWeight.w500,),
+            ),
+          );
+        }).toList(),
+        onChanged: (value) {
+          setState(() {
+            selectedLocation = value;
+          });
+        },
+      ),
+    ),
+  ),
+),
 
                   const SizedBox(height: 15),
 
@@ -380,7 +226,7 @@ class _CreateHomePageState extends State<CreateHomePage> {
               ),
             ),
           ),
-        ],
+      ],
       ),
 
       // 👇 EXTRA SPACE so scroll works properly
@@ -781,7 +627,7 @@ Padding(
               ),
               child: DropdownButton<String>(
                 isExpanded: true,
-                value: selectedCategory,
+                value: formCategory,
                 hint: Text("Category"),
                 underline: SizedBox(),
                 items: categories.map((value) {
@@ -792,7 +638,7 @@ Padding(
                 }).toList(),
                 onChanged: (value) {
                   setState(() {
-                    selectedCategory = value;
+                    formCategory = value;
                   });
                 },
               ),
@@ -812,7 +658,7 @@ Padding(
         ),
         child: DropdownButton<String>(
           isExpanded: true,
-          value: selectedLocation,
+          value: formLocation,
           hint: Text("Select City"),
           underline: SizedBox(),
           items: locations.map((value) {
@@ -823,7 +669,7 @@ Padding(
           }).toList(),
           onChanged: (value) {
             setState(() {
-              selectedLocation = value;
+              formLocation = value;
             });
           },
         ),
