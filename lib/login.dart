@@ -102,20 +102,56 @@ class _LoginPageState extends State<LoginPage> {
               child: Column(
                 children: [
                   TextField(
-                    controller: _usernameController,
-                    decoration: const InputDecoration(
-                      labelText: 'Username or Email',
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
+  controller: _usernameController,
+  cursorColor: const Color(0xffB4245D),
+  decoration: InputDecoration(
+    labelText: 'Username or Email',
+    floatingLabelStyle: const TextStyle(
+      color: Color(0xffB4245D),
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderSide: const BorderSide(
+        color: Color(0xffB4245D),
+        width: 2,
+      ),
+      borderRadius: BorderRadius.circular(8),
+    ),
+    enabledBorder: OutlineInputBorder(
+      borderSide: const BorderSide(color: Colors.black),
+      borderRadius: BorderRadius.circular(8),
+    ),
+  ),
+),
                   const SizedBox(height: 12),
                   TextField(
   controller: _passwordController,
-  obscureText: _obscurePassword, // Use the variable here
+  obscureText: _obscurePassword,
+  cursorColor: const Color(0xffB4245D), // cursor color
   decoration: InputDecoration(
     labelText: 'Password',
-    border: const OutlineInputBorder(),
-    // ADD THIS: The Eye Icon Button
+
+    // 👇 THIS fixes the blue focus color
+    focusedBorder: OutlineInputBorder(
+      borderSide: const BorderSide(
+        color: Color(0xffB4245D),
+        width: 2,
+      ),
+      borderRadius: BorderRadius.circular(8),
+    ),
+
+    enabledBorder: OutlineInputBorder(
+      borderSide: const BorderSide(
+        color: Colors.black,
+      ),
+      borderRadius: BorderRadius.circular(8),
+    ),
+
+    // 👇 label color when focused
+    floatingLabelStyle: const TextStyle(
+      color: Color(0xffB4245D),
+    ),
+
+    // Eye icon (your existing code)
     suffixIcon: IconButton(
       icon: Icon(
         _obscurePassword ? Icons.visibility_off : Icons.visibility,
@@ -123,7 +159,7 @@ class _LoginPageState extends State<LoginPage> {
       ),
       onPressed: () {
         setState(() {
-          _obscurePassword = !_obscurePassword; // Toggle the state
+          _obscurePassword = !_obscurePassword;
         });
       },
     ),
