@@ -13,6 +13,7 @@ class _Eventplanner extends State<Eventplanner> {
   bool rememberMe = false;
   double priceValue = 20000;
   bool isRegisterMode=false;
+  String? selectedLocation;
   
 
   @override
@@ -112,17 +113,23 @@ class _Eventplanner extends State<Eventplanner> {
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: DropdownButton<String>(
-                      isExpanded: true,
-                      hint: const Text("Select Location"),
-                      underline: const SizedBox(),
-                      items: const [
-                        DropdownMenuItem(value: "Lahore", child: Text("Lahore")),
-                        DropdownMenuItem(value: "Karachi", child: Text("Karachi")),
-                        DropdownMenuItem(value: "Islamabad", child: Text("Islamabad")),
-                        DropdownMenuItem(value: "Multan", child: Text("Multan")),
-                      ],
-                      onChanged: (value) {},
-                    ),
+  isExpanded: true,
+  hint: const Text("Select Location"),
+  value: selectedLocation, // 🔴 LINK TO THE VARIABLE
+  underline: const SizedBox(),
+  items: const [
+    DropdownMenuItem(value: "Lahore", child: Text("Lahore")),
+    DropdownMenuItem(value: "Karachi", child: Text("Karachi")),
+    DropdownMenuItem(value: "Islamabad", child: Text("Islamabad")),
+    DropdownMenuItem(value: "Multan", child: Text("Multan")),
+  ],
+  onChanged: (String? newValue) {
+    // 🔴 UPDATE THE STATE
+    setState(() {
+      selectedLocation = newValue;
+    });
+  },
+),
                   ),
 
                   const SizedBox(height: 20),

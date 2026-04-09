@@ -1,10 +1,10 @@
 // common_widgets.dart
 import 'package:flutter/material.dart';
-import 'login.dart';
 import 'blogs.dart';
 import 'venues.dart';
 import 'contactus.dart';
 import 'homePage.dart';
+import 'setting.dart';
 
 // =============================================
 // ✅ REUSABLE APPBAR
@@ -109,7 +109,7 @@ class _CommonDrawerState extends State<CommonDrawer> {
                 ListTile(
                   title: const Text("Settings", style: headingStyle),
                   onTap: () => Navigator.push(context,
-                      MaterialPageRoute(builder: (_) => const LoginPage())),
+                      MaterialPageRoute(builder: (_) => const SettingsPage())),
                 ),
               ],
       ),
