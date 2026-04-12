@@ -798,7 +798,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   valueListenable: themeNotifier,
                   builder: (context, mode, _) => Switch(
                     value: mode == ThemeMode.dark,
-                    activeColor: primaryColor,
+                    activeThumbColor: primaryColor,
                     onChanged: (val) {
                       // 👇 This one line updates EVERY screen in the app
                       themeNotifier.value =
@@ -814,7 +814,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 subtitle: 'Quotes, updates & offers',
                 trailing: Switch(
                   value: notificationsEnabled,
-                  activeColor: primaryColor,
+                  activeThumbColor: primaryColor,
                   onChanged: (val) =>
                       setState(() => notificationsEnabled = val),
                 ),
@@ -907,7 +907,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 subtitle: 'Protect your account',
                 trailing: Switch(
                   value: twoFactorEnabled,
-                  activeColor: primaryColor,
+                  activeThumbColor: primaryColor,
                   onChanged: (val) =>
                       setState(() => twoFactorEnabled = val),
                 ),

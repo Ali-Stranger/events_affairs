@@ -50,7 +50,7 @@ const List<Venue> allVenues = [
     capacity: "500–1000 guests",
     amenities: ["AC", "Parking", "Catering", "Décor", "Stage"],
     description:
-        "Royal Palm Banquet is one of Lahore\'s most prestigious event venues, offering a regal setting for weddings, corporate events, and celebrations. With lush greenery and elegant interiors, it promises an unforgettable experience.",
+        "Royal Palm Banquet is one of Lahore's most prestigious event venues, offering a regal setting for weddings, corporate events, and celebrations. With lush greenery and elegant interiors, it promises an unforgettable experience.",
   ),
   Venue(
     name: "Pearl Continental Hall",
@@ -89,7 +89,7 @@ const List<Venue> allVenues = [
     capacity: "400–900 guests",
     amenities: ["AC", "Parking", "In-House Décor", "Catering", "Generator"],
     description:
-        "Grand Marquee is Multan\'s premier event space, offering flexible layouts and comprehensive packages for weddings and social events. Known for exceptional hospitality and value for money.",
+        "Grand Marquee is Multan's premier event space, offering flexible layouts and comprehensive packages for weddings and social events. Known for exceptional hospitality and value for money.",
   ),
   Venue(
     name: "Faletti's Grand Hall",
@@ -102,7 +102,7 @@ const List<Venue> allVenues = [
     capacity: "150–400 guests",
     amenities: ["AC", "Heritage Setting", "Fine Dining", "Valet", "Bridal Room"],
     description:
-        "Step into history at Faletti\'s Grand Hall, Lahore\'s most storied event venue. The colonial-era architecture and timeless elegance make every event truly special and memorable.",
+        "Step into history at Faletti's Grand Hall, Lahore's most storied event venue. The colonial-era architecture and timeless elegance make every event truly special and memorable.",
   ),
   Venue(
     name: "Avari Towers Ballroom",
@@ -115,7 +115,7 @@ const List<Venue> allVenues = [
     capacity: "250–700 guests",
     amenities: ["AC", "5-Star Service", "AV System", "Valet", "Catering"],
     description:
-        "Avari Towers Ballroom brings world-class sophistication to Karachi\'s event scene. With its modern design and impeccable service, it\'s the top choice for corporate events and luxury weddings.",
+        "Avari Towers Ballroom brings world-class sophistication to Karachi's event scene. With its modern design and impeccable service, it's the top choice for corporate events and luxury weddings.",
   ),
 ];
 
