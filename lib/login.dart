@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'homepage.dart';
 import 'signup.dart';
-import 'drawer.dart';
+import 'vendor_screens/vendor_dashboard.dart';
+import 'admin_screens/admin_home.dart';
 
 // ═══════════════════════════════════════════════════════════════
 //  CONSTANTS
@@ -15,6 +16,15 @@ const Color kPrimary = Color(0xffB4245D);
 
 const String _demoUser = 'user';
 const String _demoPass = 'user';
+// vendor user
+const String _venUser = 'vendor';
+const String _venPass = 'vendor';
+
+
+
+// admin user
+const String _adminUser = 'admin';
+const String _adminPass = 'admin';
 
 // ═══════════════════════════════════════════════════════════════
 //  LOGIN PAGE
@@ -82,7 +92,31 @@ class _LoginPageState extends State<LoginPage>
         MaterialPageRoute(builder: (_) => const CreateHomePage()),
         (route) => false,
       );
-    } else {
+    }
+
+    else if(username == _venUser && password == _venPass) 
+ {
+      // Success — navigate and remove all routes behind
+      if (!mounted) return;
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (_) => const VendorDashboardPage()),
+        (route) => false,
+      );
+
+    }
+
+    else if (username == _adminUser && password == _adminPass) {
+      if (!mounted) return;
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (_) => const AdminHomePage()),
+        (route) => false,
+      );
+    }
+
+
+     else {
       // Failure
       setState(() {
         _isLoading = false;
@@ -128,8 +162,6 @@ class _LoginPageState extends State<LoginPage>
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-
     return Scaffold(
       // appBar: const CommonAppBar(),
       body: SingleChildScrollView(
