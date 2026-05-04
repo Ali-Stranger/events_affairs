@@ -197,7 +197,7 @@
 //     return Theme(
 //       data: isDarkMode ? ThemeData.dark() : ThemeData.light(),
 //       child: Scaffold(
-        
+
 //         appBar: const CommonAppBar(),
 //         body: SingleChildScrollView(
 //           child: Column(
@@ -529,6 +529,8 @@
 import 'package:flutter/material.dart';
 import 'drawer.dart';
 import 'theme_notifier.dart'; // 👈 import the global notifier
+import 'package:firebase_auth/firebase_auth.dart';
+import 'login.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -552,7 +554,8 @@ class _SettingsPageState extends State<SettingsPage> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text('Log out?'),
         content: const Text(
-            'You\'ll need to sign in again to access your account and bookings.'),
+          'You\'ll need to sign in again to access your account and bookings.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -561,11 +564,19 @@ class _SettingsPageState extends State<SettingsPage> {
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xffB4245D),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
             ),
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(context);
-              // TODO: clear session, navigate to LoginPage
+              await FirebaseAuth.instance.signOut();
+              if (!context.mounted) return;
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(builder: (_) => const LoginPage()),
+                (route) => false,
+              );
             },
             child: const Text('Log Out', style: TextStyle(color: Colors.white)),
           ),
@@ -581,7 +592,8 @@ class _SettingsPageState extends State<SettingsPage> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text('Delete account?'),
         content: const Text(
-            'This will permanently erase all your bookings, quotes and saved vendors. This cannot be undone.'),
+          'This will permanently erase all your bookings, quotes and saved vendors. This cannot be undone.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -590,7 +602,9 @@ class _SettingsPageState extends State<SettingsPage> {
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
             ),
             onPressed: () {
               Navigator.pop(context);
@@ -608,25 +622,30 @@ class _SettingsPageState extends State<SettingsPage> {
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (context) => Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           const Padding(
             padding: EdgeInsets.all(16),
-            child: Text('Select Default City',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+            child: Text(
+              'Select Default City',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            ),
           ),
-          ...cities.map((city) => ListTile(
-                title: Text(city),
-                trailing: selectedCity == city
-                    ? Icon(Icons.check, color: primaryColor)
-                    : null,
-                onTap: () {
-                  setState(() => selectedCity = city);
-                  Navigator.pop(context);
-                },
-              )),
+          ...cities.map(
+            (city) => ListTile(
+              title: Text(city),
+              trailing: selectedCity == city
+                  ? Icon(Icons.check, color: primaryColor)
+                  : null,
+              onTap: () {
+                setState(() => selectedCity = city);
+                Navigator.pop(context);
+              },
+            ),
+          ),
           const SizedBox(height: 16),
         ],
       ),
@@ -673,7 +692,10 @@ class _SettingsPageState extends State<SettingsPage> {
       children: [
         ListTile(
           onTap: onTap,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 4,
+          ),
           leading: Container(
             width: 36,
             height: 36,
@@ -683,20 +705,25 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
             child: Icon(icon, size: 18),
           ),
-          title: Text(title,
-              style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w500,
-                  color: titleColor)),
+          title: Text(
+            title,
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w500,
+              color: titleColor,
+            ),
+          ),
           subtitle: subtitle != null
-              ? Text(subtitle,
-                  style: const TextStyle(fontSize: 12, color: Colors.grey))
+              ? Text(
+                  subtitle,
+                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                )
               : null,
-          trailing: trailing ??
+          trailing:
+              trailing ??
               const Icon(Icons.chevron_right, color: Colors.grey, size: 20),
         ),
-        if (showDivider)
-          const Divider(height: 1, indent: 68, endIndent: 16),
+        if (showDivider) const Divider(height: 1, indent: 68, endIndent: 16),
       ],
     );
   }
@@ -709,33 +736,30 @@ class _SettingsPageState extends State<SettingsPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-
-/////// Back Button
-
- Padding(
-  padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
-  child: Row(
-    children: [
-      GestureDetector(
-        onTap: () => Navigator.pop(context),
-        child: Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: Colors.grey.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: const Icon(Icons.arrow_back),
-        ),
-      ),
-      const SizedBox(width: 10),
-      const Text(
-        'Back',
-        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-      )
-    ],
-  ),
-),
-
+            /////// Back Button
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+              child: Row(
+                children: [
+                  GestureDetector(
+                    onTap: () => Navigator.pop(context),
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(Icons.arrow_back),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  const Text(
+                    'Back',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                  ),
+                ],
+              ),
+            ),
 
             // ─── Profile Card ──────────────────────────────────────────
             Container(
@@ -751,23 +775,32 @@ class _SettingsPageState extends State<SettingsPage> {
                   CircleAvatar(
                     radius: 30,
                     backgroundColor: primaryColor,
-                    child: const Text('AK',
-                        style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white)),
+                    child: const Text(
+                      'AK',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
                   ),
                   const SizedBox(width: 14),
                   const Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Ali',
-                            style: TextStyle(
-                                fontSize: 16, fontWeight: FontWeight.w600)),
+                        Text(
+                          'Ali',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                         SizedBox(height: 2),
-                        Text('ali@email.com',
-                            style: TextStyle(fontSize: 13, color: Colors.grey)),
+                        Text(
+                          'ali@email.com',
+                          style: TextStyle(fontSize: 13, color: Colors.grey),
+                        ),
                       ],
                     ),
                   ),
@@ -776,7 +809,8 @@ class _SettingsPageState extends State<SettingsPage> {
                       side: BorderSide(color: primaryColor),
                       foregroundColor: primaryColor,
                       shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8)),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
                     ),
                     onPressed: () {},
                     child: const Text('Edit', style: TextStyle(fontSize: 13)),
@@ -801,8 +835,9 @@ class _SettingsPageState extends State<SettingsPage> {
                     activeThumbColor: primaryColor,
                     onChanged: (val) {
                       // 👇 This one line updates EVERY screen in the app
-                      themeNotifier.value =
-                          val ? ThemeMode.dark : ThemeMode.light;
+                      themeNotifier.value = val
+                          ? ThemeMode.dark
+                          : ThemeMode.light;
                     },
                   ),
                 ),
@@ -877,19 +912,28 @@ class _SettingsPageState extends State<SettingsPage> {
                   children: [
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 2),
+                        horizontal: 8,
+                        vertical: 2,
+                      ),
                       decoration: BoxDecoration(
                         color: primaryColor,
                         borderRadius: BorderRadius.circular(20),
                       ),
-                      child: const Text('3',
-                          style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 11,
-                              fontWeight: FontWeight.bold)),
+                      child: const Text(
+                        '3',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
                     const SizedBox(width: 8),
-                    const Icon(Icons.chevron_right, color: Colors.grey, size: 20),
+                    const Icon(
+                      Icons.chevron_right,
+                      color: Colors.grey,
+                      size: 20,
+                    ),
                   ],
                 ),
                 showDivider: false,
@@ -908,8 +952,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 trailing: Switch(
                   value: twoFactorEnabled,
                   activeThumbColor: primaryColor,
-                  onChanged: (val) =>
-                      setState(() => twoFactorEnabled = val),
+                  onChanged: (val) => setState(() => twoFactorEnabled = val),
                 ),
               ),
               _settingsTile(
@@ -955,19 +998,28 @@ class _SettingsPageState extends State<SettingsPage> {
                   children: [
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 2),
+                        horizontal: 8,
+                        vertical: 2,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.green.withOpacity(0.15),
                         borderRadius: BorderRadius.circular(20),
                       ),
-                      child: const Text('New',
-                          style: TextStyle(
-                              color: Colors.green,
-                              fontSize: 11,
-                              fontWeight: FontWeight.bold)),
+                      child: const Text(
+                        'New',
+                        style: TextStyle(
+                          color: Colors.green,
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
                     const SizedBox(width: 8),
-                    const Icon(Icons.chevron_right, color: Colors.grey, size: 20),
+                    const Icon(
+                      Icons.chevron_right,
+                      color: Colors.grey,
+                      size: 20,
+                    ),
                   ],
                 ),
                 onTap: () {},
@@ -990,7 +1042,11 @@ class _SettingsPageState extends State<SettingsPage> {
                 title: 'Delete Account',
                 subtitle: 'Permanently remove your data',
                 titleColor: Colors.red,
-                trailing: const Icon(Icons.chevron_right, color: Colors.red, size: 20),
+                trailing: const Icon(
+                  Icons.chevron_right,
+                  color: Colors.red,
+                  size: 20,
+                ),
                 showDivider: false,
                 onTap: _showDeleteAccountDialog,
               ),
@@ -1007,12 +1063,15 @@ class _SettingsPageState extends State<SettingsPage> {
                     side: const BorderSide(color: Colors.red, width: 1.5),
                     foregroundColor: Colors.red,
                     shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                   onPressed: _showLogoutDialog,
                   icon: const Icon(Icons.logout),
-                  label: const Text('Log Out',
-                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+                  label: const Text(
+                    'Log Out',
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                  ),
                 ),
               ),
             ),

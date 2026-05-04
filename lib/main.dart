@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 import 'theme_notifier.dart';
-import 'login.dart'; // adjust import to match your login filename
+import 'login.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   runApp(const MyApp());
 }
 
@@ -15,11 +19,11 @@ class MyApp extends StatelessWidget {
       valueListenable: themeNotifier,
       builder: (context, currentMode, _) {
         return MaterialApp(
-          title: 'Events Affairs',
+          title: 'Events Af@airs',
           debugShowCheckedModeBanner: false,
           theme: ThemeData.light(useMaterial3: false),
           darkTheme: ThemeData.dark(useMaterial3: false),
-          themeMode: currentMode, // switches all screens at once
+          themeMode: currentMode,
           home: const LoginPage(),
         );
       },

@@ -46,5 +46,18 @@
             <action android:name="android.intent.action.GET_CONTENT" />
             <data android:mimeType="image/*" />
         </intent>
-    </queries>
+    </queries> 
+    <queries>
+  <intent>
+    <action android:name="android.intent.action.DIAL" />
+  </intent>
+  <intent>
+    <action android:name="android.intent.action.VIEW" />
+    <data android:scheme="https" />
+  </intent>
+  <intent>
+    <action android:name="android.intent.action.VIEW" />
+    <data android:scheme="whatsapp" />
+  </intent>
+</queries>   
 </manifest>

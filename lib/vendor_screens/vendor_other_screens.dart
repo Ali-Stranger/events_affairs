@@ -1,6 +1,9 @@
 // ═══════════════════════════════════════════════════════════════
 // vendor_gallery.dart
 // ═══════════════════════════════════════════════════════════════
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../login.dart';
 import 'package:flutter/material.dart';
 import '../theme_notifier.dart';
 import 'package:image_picker/image_picker.dart';
@@ -196,9 +199,7 @@ const Color kPrimary = Color(0xffB4245D);
 //   }
 // }
 
-
 // Using your specific color
-
 
 class VendorGalleryPage extends StatefulWidget {
   const VendorGalleryPage({super.key});
@@ -213,13 +214,13 @@ class _VendorGalleryPageState extends State<VendorGalleryPage> {
 
   Future<void> _pickImage() async {
     final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
-    
+
     if (image != null) {
       setState(() {
         // First photo uploaded becomes the cover automatically
         _photos.insert(0, {
           'file': File(image.path),
-          'isCover': _photos.isEmpty, 
+          'isCover': _photos.isEmpty,
         });
       });
     }
@@ -237,7 +238,9 @@ class _VendorGalleryPageState extends State<VendorGalleryPage> {
 
   void _setCover(int index) {
     setState(() {
-      for (var p in _photos) { p['isCover'] = false; }
+      for (var p in _photos) {
+        p['isCover'] = false;
+      }
       _photos[index]['isCover'] = true;
     });
   }
@@ -249,7 +252,9 @@ class _VendorGalleryPageState extends State<VendorGalleryPage> {
 
     return Scaffold(
       // Subtle background contrast
-      backgroundColor: isDark ? const Color(0xff121212) : const Color(0xffF8F9FA),
+      backgroundColor: isDark
+          ? const Color(0xff121212)
+          : const Color(0xffF8F9FA),
       appBar: AppBar(
         centerTitle: true,
         elevation: 0,
@@ -268,7 +273,9 @@ class _VendorGalleryPageState extends State<VendorGalleryPage> {
         children: [
           _buildInfoBar(isDark),
           Expanded(
-            child: _photos.isEmpty ? _buildEmptyState(theme) : _buildGrid(theme, isDark),
+            child: _photos.isEmpty
+                ? _buildEmptyState(theme)
+                : _buildGrid(theme, isDark),
           ),
         ],
       ),
@@ -300,19 +307,31 @@ class _VendorGalleryPageState extends State<VendorGalleryPage> {
               color: kPrimary.withOpacity(0.05),
               shape: BoxShape.circle,
             ),
-            child: Icon(Icons.add_a_photo_outlined, size: 50, color: kPrimary.withOpacity(0.5)),
+            child: Icon(
+              Icons.add_a_photo_outlined,
+              size: 50,
+              color: kPrimary.withOpacity(0.5),
+            ),
           ),
           const SizedBox(height: 20),
-          const Text('Your gallery is empty', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+          const Text(
+            'Your gallery is empty',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+          ),
           const SizedBox(height: 8),
-          const Text('Tap "Upload" to showcase your services', style: TextStyle(color: Colors.grey)),
+          const Text(
+            'Tap "Upload" to showcase your services',
+            style: TextStyle(color: Colors.grey),
+          ),
           const SizedBox(height: 24),
           ElevatedButton(
             onPressed: _pickImage,
             style: ElevatedButton.styleFrom(
               backgroundColor: kPrimary,
               foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
               padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
             ),
             child: const Text('Upload First Photo'),
@@ -351,7 +370,7 @@ class _VendorGalleryPageState extends State<VendorGalleryPage> {
                     color: Colors.black.withOpacity(0.1),
                     blurRadius: 4,
                     offset: const Offset(0, 2),
-                  )
+                  ),
                 ],
                 image: DecorationImage(
                   image: FileImage(photo['file']),
@@ -365,12 +384,22 @@ class _VendorGalleryPageState extends State<VendorGalleryPage> {
                       top: 6,
                       left: 6,
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
                           color: kPrimary,
                           borderRadius: BorderRadius.circular(4),
                         ),
-                        child: const Text('COVER', style: TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold)),
+                        child: const Text(
+                          'COVER',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 8,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
                     ),
                   Positioned(
@@ -380,8 +409,15 @@ class _VendorGalleryPageState extends State<VendorGalleryPage> {
                       onTap: () => _removePhoto(index),
                       child: Container(
                         padding: const EdgeInsets.all(4),
-                        decoration: const BoxDecoration(color: Colors.black45, shape: BoxShape.circle),
-                        child: const Icon(Icons.close, color: Colors.white, size: 12),
+                        decoration: const BoxDecoration(
+                          color: Colors.black45,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.close,
+                          color: Colors.white,
+                          size: 12,
+                        ),
                       ),
                     ),
                   ),
@@ -408,7 +444,14 @@ class _VendorGalleryPageState extends State<VendorGalleryPage> {
           children: [
             const Icon(Icons.cloud_upload_outlined, color: kPrimary, size: 28),
             const SizedBox(height: 4),
-            Text('Upload', style: TextStyle(color: kPrimary, fontSize: 12, fontWeight: FontWeight.w600)),
+            Text(
+              'Upload',
+              style: TextStyle(
+                color: kPrimary,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ],
         ),
       ),
@@ -431,7 +474,9 @@ class _VendorGalleryPageState extends State<VendorGalleryPage> {
   void _showPhotoOptions(BuildContext context, int index) {
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (ctx) => SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -440,12 +485,21 @@ class _VendorGalleryPageState extends State<VendorGalleryPage> {
             ListTile(
               leading: const Icon(Icons.star_outline, color: kPrimary),
               title: const Text('Set as Cover Photo'),
-              onTap: () { Navigator.pop(ctx); _setCover(index); },
+              onTap: () {
+                Navigator.pop(ctx);
+                _setCover(index);
+              },
             ),
             ListTile(
               leading: const Icon(Icons.delete_outline, color: Colors.red),
-              title: const Text('Delete Photo', style: TextStyle(color: Colors.red)),
-              onTap: () { Navigator.pop(ctx); _removePhoto(index); },
+              title: const Text(
+                'Delete Photo',
+                style: TextStyle(color: Colors.red),
+              ),
+              onTap: () {
+                Navigator.pop(ctx);
+                _removePhoto(index);
+              },
             ),
           ],
         ),
@@ -459,9 +513,8 @@ class _VendorGalleryPageState extends State<VendorGalleryPage> {
 // ═══════════════════════════════════════════════════════════════
 // import 'package:flutter/material.dart';
 
-// Assuming kPrimary is defined somewhere in your app. 
+// Assuming kPrimary is defined somewhere in your app.
 // Used Deep Purple here for demonstration.
-
 
 class VendorAnalyticsPage extends StatefulWidget {
   const VendorAnalyticsPage({super.key});
@@ -524,7 +577,10 @@ class _VendorAnalyticsPageState extends State<VendorAnalyticsPage> {
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 200),
                       margin: const EdgeInsets.only(right: 8),
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
                       decoration: BoxDecoration(
                         color: isSelected ? kPrimary : Colors.transparent,
                         borderRadius: BorderRadius.circular(20),
@@ -556,10 +612,18 @@ class _VendorAnalyticsPageState extends State<VendorAnalyticsPage> {
               mainAxisSpacing: 12,
               childAspectRatio: 2.2, // Adjusted for better text fitting
               children: const [
-                _AnalyticStat(value: '1,240', label: 'Profile Views', icon: Icons.visibility_outlined),
-                _AnalyticStat(value: '23', label: 'Inquiries', icon: Icons.inbox_outlined),
-               // _AnalyticStat(value: '35%', label: 'Conversion Rate', icon: Icons.trending_up),
-               //  _AnalyticStat(value: 'PKR 2.4L', label: 'Revenue Earned', icon: Icons.account_balance_wallet_outlined),
+                _AnalyticStat(
+                  value: '1,240',
+                  label: 'Profile Views',
+                  icon: Icons.visibility_outlined,
+                ),
+                _AnalyticStat(
+                  value: '23',
+                  label: 'Inquiries',
+                  icon: Icons.inbox_outlined,
+                ),
+                // _AnalyticStat(value: '35%', label: 'Conversion Rate', icon: Icons.trending_up),
+                //  _AnalyticStat(value: 'PKR 2.4L', label: 'Revenue Earned', icon: Icons.account_balance_wallet_outlined),
               ],
             ),
             const SizedBox(height: 24),
@@ -567,7 +631,11 @@ class _VendorAnalyticsPageState extends State<VendorAnalyticsPage> {
             // Bar chart
             Text(
               'Weekly Inquiries',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: onSurfaceColor),
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: onSurfaceColor,
+              ),
             ),
             const SizedBox(height: 12),
             Container(
@@ -581,7 +649,7 @@ class _VendorAnalyticsPageState extends State<VendorAnalyticsPage> {
                     color: Colors.black.withOpacity(0.02),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
-                  )
+                  ),
                 ],
               ),
               child: SizedBox(
@@ -597,7 +665,11 @@ class _VendorAnalyticsPageState extends State<VendorAnalyticsPage> {
                       children: [
                         Text(
                           '${_weekData[i]}',
-                          style: TextStyle(fontSize: 11, color: mutedTextColor, fontWeight: FontWeight.w600),
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: mutedTextColor,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                         const SizedBox(height: 6),
                         AnimatedContainer(
@@ -626,7 +698,11 @@ class _VendorAnalyticsPageState extends State<VendorAnalyticsPage> {
             // Location breakdown
             Text(
               'Inquiries by City',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: onSurfaceColor),
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: onSurfaceColor,
+              ),
             ),
             const SizedBox(height: 12),
             Container(
@@ -640,7 +716,7 @@ class _VendorAnalyticsPageState extends State<VendorAnalyticsPage> {
                     color: Colors.black.withOpacity(0.02),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
-                  )
+                  ),
                 ],
               ),
               child: Column(
@@ -664,12 +740,16 @@ class _VendorAnalyticsPageState extends State<VendorAnalyticsPage> {
 class _AnalyticStat extends StatelessWidget {
   final String value, label;
   final IconData icon;
-  const _AnalyticStat({required this.value, required this.label, required this.icon});
+  const _AnalyticStat({
+    required this.value,
+    required this.label,
+    required this.icon,
+  });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
       decoration: BoxDecoration(
@@ -681,7 +761,7 @@ class _AnalyticStat extends StatelessWidget {
             color: Colors.black.withOpacity(0.02),
             blurRadius: 8,
             offset: const Offset(0, 2),
-          )
+          ),
         ],
       ),
       child: Row(
@@ -691,7 +771,9 @@ class _AnalyticStat extends StatelessWidget {
             height: 40,
             decoration: BoxDecoration(
               color: kPrimary.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(10), // Rounded rectangles look more modern than circles here
+              borderRadius: BorderRadius.circular(
+                10,
+              ), // Rounded rectangles look more modern than circles here
             ),
             child: Icon(icon, color: kPrimary, size: 20),
           ),
@@ -737,7 +819,7 @@ class _CityRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     return Row(
       children: [
         SizedBox(
@@ -780,7 +862,6 @@ class _CityRow extends StatelessWidget {
 // vendor_reviews.dart
 // ═══════════════════════════════════════════════════════════════
 
-
 class VendorReviewsPage extends StatefulWidget {
   const VendorReviewsPage({super.key});
   @override
@@ -794,8 +875,9 @@ class _VendorReviewsPageState extends State<VendorReviewsPage> {
       'rating': 5,
       'date': '2 days ago',
       'service': 'Wedding Décor',
-      'text': 'Absolutely stunning work! Our wedding venue looked magical. Highly recommend!',
-      'reply': ''
+      'text':
+          'Absolutely stunning work! Our wedding venue looked magical. Highly recommend!',
+      'reply': '',
     },
     {
       'name': 'Sara Raza',
@@ -803,7 +885,7 @@ class _VendorReviewsPageState extends State<VendorReviewsPage> {
       'date': '1 week ago',
       'service': 'Stage Setup',
       'text': 'Very professional team. Delivered on time. Highly recommend!',
-      'reply': 'Thank you Sara! It was a pleasure working with you.'
+      'reply': 'Thank you Sara! It was a pleasure working with you.',
     },
     {
       'name': 'M. Bilal',
@@ -811,23 +893,33 @@ class _VendorReviewsPageState extends State<VendorReviewsPage> {
       'date': '2 weeks ago',
       'service': 'Floral Arrangement',
       'text': 'Beautiful floral arrangements, exceeded our expectations!',
-      'reply': ''
+      'reply': '',
     },
   ];
 
   @override
   Widget build(BuildContext context) {
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
-    double avgRating = _reviews.fold(0.0, (sum, r) => sum + (r['rating'] as int)) / _reviews.length;
+    double avgRating =
+        _reviews.fold(0.0, (sum, r) => sum + (r['rating'] as int)) /
+        _reviews.length;
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xff0F0F12) : const Color(0xffF8FAFC),
+      backgroundColor: isDark
+          ? const Color(0xff0F0F12)
+          : const Color(0xffF8FAFC),
       appBar: AppBar(
         backgroundColor: kPrimary,
         elevation: 0,
         centerTitle: true,
-        title: const Text('Reviews & Ratings',
-            style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+        title: const Text(
+          'Reviews & Ratings',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: SingleChildScrollView(
@@ -840,13 +932,15 @@ class _VendorReviewsPageState extends State<VendorReviewsPage> {
               padding: const EdgeInsets.symmetric(vertical: 30, horizontal: 20),
               decoration: BoxDecoration(
                 color: isDark ? const Color(0xff1C1C26) : Colors.white,
-                borderRadius: const BorderRadius.vertical(bottom: Radius.circular(30)),
+                borderRadius: const BorderRadius.vertical(
+                  bottom: Radius.circular(30),
+                ),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withOpacity(0.05),
                     blurRadius: 10,
                     offset: const Offset(0, 5),
-                  )
+                  ),
                 ],
               ),
               child: Row(
@@ -855,46 +949,79 @@ class _VendorReviewsPageState extends State<VendorReviewsPage> {
                     flex: 2,
                     child: Column(
                       children: [
-                        Text(avgRating.toStringAsFixed(1),
-                            style: TextStyle(
-                                fontSize: 48,
-                                fontWeight: FontWeight.w900,
-                                color: isDark ? Colors.white : const Color(0xff2D3436))),
+                        Text(
+                          avgRating.toStringAsFixed(1),
+                          style: TextStyle(
+                            fontSize: 48,
+                            fontWeight: FontWeight.w900,
+                            color: isDark
+                                ? Colors.white
+                                : const Color(0xff2D3436),
+                          ),
+                        ),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
-                          children: List.generate(5, (i) => Icon(
-                            Icons.star_rounded,
-                            color: i < avgRating.round() ? Colors.amber : Colors.grey.shade300,
-                            size: 20,
-                          )),
+                          children: List.generate(
+                            5,
+                            (i) => Icon(
+                              Icons.star_rounded,
+                              color: i < avgRating.round()
+                                  ? Colors.amber
+                                  : Colors.grey.shade300,
+                              size: 20,
+                            ),
+                          ),
                         ),
                         const SizedBox(height: 8),
-                        Text('Based on ${_reviews.length} reviews',
-                            style: TextStyle(fontSize: 12, color: isDark ? Colors.white38 : Colors.grey.shade500)),
+                        Text(
+                          'Based on ${_reviews.length} reviews',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: isDark
+                                ? Colors.white38
+                                : Colors.grey.shade500,
+                          ),
+                        ),
                       ],
                     ),
                   ),
-                  Container(width: 1, height: 80, color: isDark ? Colors.white10 : Colors.grey.shade200),
+                  Container(
+                    width: 1,
+                    height: 80,
+                    color: isDark ? Colors.white10 : Colors.grey.shade200,
+                  ),
                   const SizedBox(width: 20),
                   Expanded(
                     flex: 3,
                     child: Column(
                       children: [5, 4, 3, 2, 1].map((star) {
-                        final count = _reviews.where((r) => r['rating'] == star).length;
+                        final count = _reviews
+                            .where((r) => r['rating'] == star)
+                            .length;
                         final pct = count / _reviews.length;
                         return Padding(
                           padding: const EdgeInsets.symmetric(vertical: 2),
                           child: Row(
                             children: [
-                              Text('$star', style: TextStyle(fontSize: 11, color: isDark ? Colors.white60 : Colors.black)),
+                              Text(
+                                '$star',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: isDark ? Colors.white60 : Colors.black,
+                                ),
+                              ),
                               const SizedBox(width: 8),
                               Expanded(
                                 child: ClipRRect(
                                   borderRadius: BorderRadius.circular(10),
                                   child: LinearProgressIndicator(
                                     value: pct,
-                                    backgroundColor: isDark ? Colors.white10 : Colors.grey.shade100,
-                                    valueColor: AlwaysStoppedAnimation(star >= 4 ? Colors.amber : kPrimary),
+                                    backgroundColor: isDark
+                                        ? Colors.white10
+                                        : Colors.grey.shade100,
+                                    valueColor: AlwaysStoppedAnimation(
+                                      star >= 4 ? Colors.amber : kPrimary,
+                                    ),
                                     minHeight: 6,
                                   ),
                                 ),
@@ -915,17 +1042,23 @@ class _VendorReviewsPageState extends State<VendorReviewsPage> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('Recent Reviews', 
+                  Text(
+                    'Recent Reviews',
                     style: TextStyle(
-                      fontSize: 18, 
-                      fontWeight: FontWeight.w800, 
-                      color: isDark ? Colors.white : const Color(0xff2D3436)
-                    )),
-                  Icon(Icons.sort_rounded, size: 20, color: isDark ? Colors.white60 : Colors.black54),
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      color: isDark ? Colors.white : const Color(0xff2D3436),
+                    ),
+                  ),
+                  Icon(
+                    Icons.sort_rounded,
+                    size: 20,
+                    color: isDark ? Colors.white60 : Colors.black54,
+                  ),
                 ],
               ),
             ),
-            
+
             ListView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
@@ -949,7 +1082,11 @@ class _ReviewCard extends StatefulWidget {
   final Map<String, dynamic> review;
   final bool isDark;
   final void Function(String) onReply;
-  const _ReviewCard({required this.review, required this.onReply, required this.isDark});
+  const _ReviewCard({
+    required this.review,
+    required this.onReply,
+    required this.isDark,
+  });
   @override
   State<_ReviewCard> createState() => _ReviewCardState();
 }
@@ -976,7 +1113,9 @@ class _ReviewCardState extends State<_ReviewCard> {
         color: isDark ? const Color(0xff1C1C26) : Colors.white,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
-          color: isDark ? Colors.white.withOpacity(0.05) : kPrimary.withOpacity(0.05),
+          color: isDark
+              ? Colors.white.withOpacity(0.05)
+              : kPrimary.withOpacity(0.05),
         ),
       ),
       child: Column(
@@ -987,31 +1126,48 @@ class _ReviewCardState extends State<_ReviewCard> {
               CircleAvatar(
                 radius: 20,
                 backgroundColor: kPrimary.withOpacity(0.1),
-                child: Text((r['name'] as String)[0],
-                    style: const TextStyle(color: kPrimary, fontWeight: FontWeight.bold)),
+                child: Text(
+                  (r['name'] as String)[0],
+                  style: const TextStyle(
+                    color: kPrimary,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(r['name'] as String, 
+                    Text(
+                      r['name'] as String,
                       style: TextStyle(
-                        fontWeight: FontWeight.bold, 
-                        fontSize: 14, 
-                        color: isDark ? Colors.white : Colors.black
-                      )),
-                    Text('${r['date']} • ${r['service']}',
-                        style: TextStyle(fontSize: 11, color: isDark ? Colors.white38 : Colors.grey.shade500)),
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                        color: isDark ? Colors.white : Colors.black,
+                      ),
+                    ),
+                    Text(
+                      '${r['date']} • ${r['service']}',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: isDark ? Colors.white38 : Colors.grey.shade500,
+                      ),
+                    ),
                   ],
                 ),
               ),
               Row(
-                children: List.generate(5, (i) => Icon(
-                  Icons.star_rounded, 
-                  color: i < (r['rating'] as int) ? Colors.amber : Colors.grey.withOpacity(0.3), 
-                  size: 16
-                )),
+                children: List.generate(
+                  5,
+                  (i) => Icon(
+                    Icons.star_rounded,
+                    color: i < (r['rating'] as int)
+                        ? Colors.amber
+                        : Colors.grey.withOpacity(0.3),
+                    size: 16,
+                  ),
+                ),
               ),
             ],
           ),
@@ -1019,30 +1175,45 @@ class _ReviewCardState extends State<_ReviewCard> {
           Text(
             r['text'] as String,
             style: TextStyle(
-              fontSize: 13, 
-              color: isDark ? Colors.white70 : Colors.black87, 
+              fontSize: 13,
+              color: isDark ? Colors.white70 : Colors.black87,
               height: 1.6,
-              fontStyle: FontStyle.italic
+              fontStyle: FontStyle.italic,
             ),
           ),
-          
+
           if ((r['reply'] as String).isNotEmpty) ...[
             const SizedBox(height: 15),
             Container(
               padding: const EdgeInsets.all(15),
               decoration: BoxDecoration(
-                color: isDark ? Colors.white.withOpacity(0.03) : Colors.grey.shade50,
+                color: isDark
+                    ? Colors.white.withOpacity(0.03)
+                    : Colors.grey.shade50,
                 borderRadius: BorderRadius.circular(15),
                 border: Border(left: BorderSide(color: kPrimary, width: 3)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Your Response', 
-                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: kPrimary, letterSpacing: 0.5)),
+                  const Text(
+                    'Your Response',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w900,
+                      color: kPrimary,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
                   const SizedBox(height: 6),
-                  Text(r['reply'] as String, 
-                    style: TextStyle(fontSize: 12, height: 1.5, color: isDark ? Colors.white60 : Colors.black87)),
+                  Text(
+                    r['reply'] as String,
+                    style: TextStyle(
+                      fontSize: 12,
+                      height: 1.5,
+                      color: isDark ? Colors.white60 : Colors.black87,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -1052,9 +1223,19 @@ class _ReviewCardState extends State<_ReviewCard> {
             const SizedBox(height: 15),
             TextButton.icon(
               onPressed: () => setState(() => _showReplyBox = !_showReplyBox),
-              icon: Icon(_showReplyBox ? Icons.close : Icons.reply_rounded, size: 16, color: kPrimary),
-              label: Text(_showReplyBox ? 'Cancel' : 'Reply to Customer',
-                  style: const TextStyle(fontSize: 12, color: kPrimary, fontWeight: FontWeight.bold)),
+              icon: Icon(
+                _showReplyBox ? Icons.close : Icons.reply_rounded,
+                size: 16,
+                color: kPrimary,
+              ),
+              label: Text(
+                _showReplyBox ? 'Cancel' : 'Reply to Customer',
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: kPrimary,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
           ],
 
@@ -1063,13 +1244,21 @@ class _ReviewCardState extends State<_ReviewCard> {
             TextField(
               controller: _ctrl,
               maxLines: 3,
-              style: TextStyle(color: isDark ? Colors.white : Colors.black, fontSize: 13),
+              style: TextStyle(
+                color: isDark ? Colors.white : Colors.black,
+                fontSize: 13,
+              ),
               decoration: InputDecoration(
                 hintText: 'Share your thoughts with the customer...',
                 hintStyle: const TextStyle(fontSize: 12, color: Colors.grey),
                 filled: true,
-                fillColor: isDark ? Colors.white.withOpacity(0.05) : Colors.grey.shade50,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none),
+                fillColor: isDark
+                    ? Colors.white.withOpacity(0.05)
+                    : Colors.grey.shade50,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(15),
+                  borderSide: BorderSide.none,
+                ),
                 contentPadding: const EdgeInsets.all(15),
               ),
             ),
@@ -1081,7 +1270,9 @@ class _ReviewCardState extends State<_ReviewCard> {
                   backgroundColor: kPrimary,
                   foregroundColor: Colors.white,
                   elevation: 0,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                   padding: const EdgeInsets.symmetric(vertical: 14),
                 ),
                 onPressed: () {
@@ -1091,7 +1282,10 @@ class _ReviewCardState extends State<_ReviewCard> {
                     _ctrl.clear();
                   }
                 },
-                child: const Text('Post Response', style: TextStyle(fontWeight: FontWeight.bold)),
+                child: const Text(
+                  'Post Response',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
               ),
             ),
           ],
@@ -1112,40 +1306,112 @@ class VendorProfileEditPage extends StatefulWidget {
 }
 
 class _VendorProfileEditPageState extends State<VendorProfileEditPage> {
-  final _businessCtrl = TextEditingController(text: 'Dream Décor Co.');
-  final _taglineCtrl = TextEditingController(text: 'Turning your vision into reality');
-  final _priceCtrl = TextEditingController(text: '30,000');
-  final _phoneCtrl = TextEditingController(text: '0321-9876543');
-  final _whatsappCtrl = TextEditingController(text: '0321-9876543');
-  final _instagramCtrl = TextEditingController(text: 'instagram.com/dreamdecorco');
+  final _businessCtrl = TextEditingController();
+  final _taglineCtrl = TextEditingController();
+  final _priceCtrl = TextEditingController();
+  final _phoneCtrl = TextEditingController();
+  final _whatsappCtrl = TextEditingController();
+  final _instagramCtrl = TextEditingController();
   final _facebookCtrl = TextEditingController();
-  final _yearsCtrl = TextEditingController(text: '7');
-
-  final List<String> _selectedServices = ['Stage Décor', 'Floral Arrangements', 'Lighting', 'Table Centerpieces'];
-  final _allServices = ['Stage Décor', 'Floral Arrangements', 'Lighting', 'Catering Coordination',
-    'Photography', 'Bridal Bouquets', 'Table Centerpieces', 'Venue Booking'];
+  final _yearsCtrl = TextEditingController();
+  bool _isLoading = true;
+  final List<String> _selectedServices = [
+    'Stage Décor',
+    'Floral Arrangements',
+    'Lighting',
+    'Table Centerpieces',
+  ];
+  final _allServices = [
+    'Stage Décor',
+    'Floral Arrangements',
+    'Lighting',
+    'Catering Coordination',
+    'Photography',
+    'Bridal Bouquets',
+    'Table Centerpieces',
+    'Venue Booking',
+  ];
 
   bool _isSaving = false;
 
   @override
+  void initState() {
+    super.initState();
+    _loadProfile();
+  }
+
+  Future<void> _loadProfile() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+    final doc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .get();
+    if (doc.exists) {
+      final d = doc.data()!;
+      _businessCtrl.text = d['businessName'] ?? '';
+      _taglineCtrl.text = d['tagline'] ?? '';
+      _priceCtrl.text = d['startingPrice'] ?? '';
+      _phoneCtrl.text = d['phone'] ?? '';
+      _whatsappCtrl.text = d['whatsapp'] ?? '';
+      _instagramCtrl.text = d['instagram'] ?? '';
+      _facebookCtrl.text = d['facebook'] ?? '';
+      _yearsCtrl.text = d['yearsExperience'] ?? '';
+    }
+    setState(() => _isLoading = false);
+  }
+
+  @override
   void dispose() {
-    _businessCtrl.dispose(); _taglineCtrl.dispose(); _priceCtrl.dispose();
-    _phoneCtrl.dispose(); _whatsappCtrl.dispose(); _instagramCtrl.dispose();
-    _facebookCtrl.dispose(); _yearsCtrl.dispose();
+    _businessCtrl.dispose();
+    _taglineCtrl.dispose();
+    _priceCtrl.dispose();
+    _phoneCtrl.dispose();
+    _whatsappCtrl.dispose();
+    _instagramCtrl.dispose();
+    _facebookCtrl.dispose();
+    _yearsCtrl.dispose();
     super.dispose();
   }
 
   Future<void> _save() async {
     setState(() => _isSaving = true);
-    await Future.delayed(const Duration(milliseconds: 800));
-    setState(() => _isSaving = false);
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-      content: Text('Profile updated successfully!'),
-      backgroundColor: Colors.green,
-      behavior: SnackBarBehavior.floating,
-    ));
-    Navigator.pop(context);
+    try {
+      final uid = FirebaseAuth.instance.currentUser?.uid;
+      if (uid != null) {
+        await FirebaseFirestore.instance.collection('users').doc(uid).update({
+          'businessName': _businessCtrl.text.trim(),
+          'tagline': _taglineCtrl.text.trim(),
+          'startingPrice': _priceCtrl.text.trim(),
+          'phone': _phoneCtrl.text.trim(),
+          'whatsapp': _whatsappCtrl.text.trim(),
+          'instagram': _instagramCtrl.text.trim(),
+          'facebook': _facebookCtrl.text.trim(),
+          'yearsExperience': _yearsCtrl.text.trim(),
+          'services': _selectedServices,
+        });
+      }
+      setState(() => _isSaving = false);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Profile updated successfully!'),
+          backgroundColor: Colors.green,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      Navigator.pop(context);
+    } catch (e) {
+      setState(() => _isSaving = false);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Failed to save. Please try again.'),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
   }
 
   @override
@@ -1153,154 +1419,273 @@ class _VendorProfileEditPageState extends State<VendorProfileEditPage> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: kPrimary,
-        title: const Text('Edit Business Profile', style: TextStyle(color: Colors.white, fontSize: 16)),
+        title: const Text(
+          'Edit Business Profile',
+          style: TextStyle(color: Colors.white, fontSize: 16),
+        ),
         iconTheme: const IconThemeData(color: Colors.white),
         actions: [
           TextButton(
             onPressed: _isSaving ? null : _save,
             child: _isSaving
-                ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                : const Text('Save', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
+                ? const SizedBox(
+                    height: 18,
+                    width: 18,
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 2,
+                    ),
+                  )
+                : const Text(
+                    'Save',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                    ),
+                  ),
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Cover + Logo
-            Container(
-              height: 120,
-              decoration: BoxDecoration(
-                color: kPrimary.withOpacity(0.12),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Center(child: Icon(Icons.image_outlined, color: kPrimary, size: 40)),
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Expanded(child: OutlinedButton.icon(
-                  style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: kPrimary),
-                    foregroundColor: kPrimary,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                  ),
-                  onPressed: () {},
-                  icon: const Icon(Icons.image, size: 16),
-                  label: const Text('Change Cover', style: TextStyle(fontSize: 12)),
-                )),
-                const SizedBox(width: 10),
-                Expanded(child: OutlinedButton.icon(
-                  style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: kPrimary),
-                    foregroundColor: kPrimary,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                  ),
-                  onPressed: () {},
-                  icon: const Icon(Icons.business, size: 16),
-                  label: const Text('Add Logo', style: TextStyle(fontSize: 12)),
-                )),
-              ],
-            ),
-            const SizedBox(height: 20),
-            _profileSectionLabel('Basic Info'),
-            const SizedBox(height: 10),
-            _editField(ctrl: _businessCtrl, label: 'Business Name', icon: Icons.store_outlined),
-            const SizedBox(height: 10),
-            _editField(ctrl: _taglineCtrl, label: 'Tagline', icon: Icons.format_quote_outlined),
-            const SizedBox(height: 10),
-            _editField(ctrl: _priceCtrl, label: 'Starting Price (PKR)', icon: Icons.currency_rupee, type: TextInputType.number),
-            const SizedBox(height: 10),
-            _editField(ctrl: _yearsCtrl, label: 'Years of Experience', icon: Icons.work_outline, type: TextInputType.number),
-            const SizedBox(height: 20),
-            _profileSectionLabel('Contact'),
-            const SizedBox(height: 10),
-            _editField(ctrl: _phoneCtrl, label: 'Phone Number', icon: Icons.phone_outlined, type: TextInputType.phone),
-            const SizedBox(height: 10),
-            _editField(ctrl: _whatsappCtrl, label: 'WhatsApp Number', icon: Icons.chat_outlined, type: TextInputType.phone),
-            const SizedBox(height: 20),
-            _profileSectionLabel('Social Media'),
-            const SizedBox(height: 10),
-            _editField(ctrl: _instagramCtrl, label: 'Instagram URL', icon: Icons.camera_alt_outlined),
-            const SizedBox(height: 10),
-            _editField(ctrl: _facebookCtrl, label: 'Facebook URL', icon: Icons.facebook),
-            const SizedBox(height: 20),
-            _profileSectionLabel('Services Offered'),
-            const SizedBox(height: 10),
-            Wrap(
-              spacing: 8, runSpacing: 8,
-              children: _allServices.map((s) {
-                final isSelected = _selectedServices.contains(s);
-                return GestureDetector(
-                  onTap: () => setState(() {
-                    isSelected ? _selectedServices.remove(s) : _selectedServices.add(s);
-                  }),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 180),
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator(color: kPrimary))
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Cover + Logo
+                  Container(
+                    height: 120,
                     decoration: BoxDecoration(
-                      color: isSelected ? kPrimary : Colors.transparent,
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: kPrimary),
+                      color: kPrimary.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Text(s, style: TextStyle(
-                        fontSize: 12, fontWeight: FontWeight.w500,
-                        color: isSelected ? Colors.white : kPrimary)),
+                    child: const Center(
+                      child: Icon(
+                        Icons.image_outlined,
+                        color: kPrimary,
+                        size: 40,
+                      ),
+                    ),
                   ),
-                );
-              }).toList(),
-            ),
-            const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: kPrimary,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-                onPressed: _isSaving ? null : _save,
-                child: _isSaving
-                    ? const SizedBox(height: 22, width: 22,
-                        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                    : const Text('Save Changes',
-                        style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: kPrimary),
+                            foregroundColor: kPrimary,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          onPressed: () {},
+                          icon: const Icon(Icons.image, size: 16),
+                          label: const Text(
+                            'Change Cover',
+                            style: TextStyle(fontSize: 12),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: kPrimary),
+                            foregroundColor: kPrimary,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          onPressed: () {},
+                          icon: const Icon(Icons.business, size: 16),
+                          label: const Text(
+                            'Add Logo',
+                            style: TextStyle(fontSize: 12),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  _profileSectionLabel('Basic Info'),
+                  const SizedBox(height: 10),
+                  _editField(
+                    ctrl: _businessCtrl,
+                    label: 'Business Name',
+                    icon: Icons.store_outlined,
+                  ),
+                  const SizedBox(height: 10),
+                  _editField(
+                    ctrl: _taglineCtrl,
+                    label: 'Tagline',
+                    icon: Icons.format_quote_outlined,
+                  ),
+                  const SizedBox(height: 10),
+                  _editField(
+                    ctrl: _priceCtrl,
+                    label: 'Starting Price (PKR)',
+                    icon: Icons.currency_rupee,
+                    type: TextInputType.number,
+                  ),
+                  const SizedBox(height: 10),
+                  _editField(
+                    ctrl: _yearsCtrl,
+                    label: 'Years of Experience',
+                    icon: Icons.work_outline,
+                    type: TextInputType.number,
+                  ),
+                  const SizedBox(height: 20),
+                  _profileSectionLabel('Contact'),
+                  const SizedBox(height: 10),
+                  _editField(
+                    ctrl: _phoneCtrl,
+                    label: 'Phone Number',
+                    icon: Icons.phone_outlined,
+                    type: TextInputType.phone,
+                  ),
+                  const SizedBox(height: 10),
+                  _editField(
+                    ctrl: _whatsappCtrl,
+                    label: 'WhatsApp Number',
+                    icon: Icons.chat_outlined,
+                    type: TextInputType.phone,
+                  ),
+                  const SizedBox(height: 20),
+                  _profileSectionLabel('Social Media'),
+                  const SizedBox(height: 10),
+                  _editField(
+                    ctrl: _instagramCtrl,
+                    label: 'Instagram URL',
+                    icon: Icons.camera_alt_outlined,
+                  ),
+                  const SizedBox(height: 10),
+                  _editField(
+                    ctrl: _facebookCtrl,
+                    label: 'Facebook URL',
+                    icon: Icons.facebook,
+                  ),
+                  const SizedBox(height: 20),
+                  _profileSectionLabel('Services Offered'),
+                  const SizedBox(height: 10),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: _allServices.map((s) {
+                      final isSelected = _selectedServices.contains(s);
+                      return GestureDetector(
+                        onTap: () => setState(() {
+                          isSelected
+                              ? _selectedServices.remove(s)
+                              : _selectedServices.add(s);
+                        }),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 180),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 7,
+                          ),
+                          decoration: BoxDecoration(
+                            color: isSelected ? kPrimary : Colors.transparent,
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: kPrimary),
+                          ),
+                          child: Text(
+                            s,
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                              color: isSelected ? Colors.white : kPrimary,
+                            ),
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: kPrimary,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      onPressed: _isSaving ? null : _save,
+                      child: _isSaving
+                          ? const SizedBox(
+                              height: 22,
+                              width: 22,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              ),
+                            )
+                          : const Text(
+                              'Save Changes',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 15,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                ],
               ),
             ),
-            const SizedBox(height: 20),
-          ],
-        ),
-      ),
     );
   }
 
-  Widget _editField({required TextEditingController ctrl, required String label, required IconData icon, TextInputType? type}) =>
-      TextField(
-        controller: ctrl,
-        keyboardType: type,
-        cursorColor: kPrimary,
-        decoration: InputDecoration(
-          labelText: label,
-          prefixIcon: Icon(icon, color: kPrimary, size: 20),
-          floatingLabelStyle: const TextStyle(color: kPrimary),
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-          focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: kPrimary, width: 1.8)),
-          enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.grey.shade300)),
-        ),
-      );
+  Widget _editField({
+    required TextEditingController ctrl,
+    required String label,
+    required IconData icon,
+    TextInputType? type,
+  }) => TextField(
+    controller: ctrl,
+    keyboardType: type,
+    cursorColor: kPrimary,
+    decoration: InputDecoration(
+      labelText: label,
+      prefixIcon: Icon(icon, color: kPrimary, size: 20),
+      floatingLabelStyle: const TextStyle(color: kPrimary),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: kPrimary, width: 1.8),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: Colors.grey.shade300),
+      ),
+    ),
+  );
 
   Widget _profileSectionLabel(String text) => Row(
     children: [
-      Container(width: 3, height: 16,
-          decoration: BoxDecoration(color: kPrimary, borderRadius: BorderRadius.circular(2))),
+      Container(
+        width: 3,
+        height: 16,
+        decoration: BoxDecoration(
+          color: kPrimary,
+          borderRadius: BorderRadius.circular(2),
+        ),
+      ),
       const SizedBox(width: 8),
-      Text(text, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: kPrimary)),
+      Text(
+        text,
+        style: const TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.bold,
+          color: kPrimary,
+        ),
+      ),
     ],
   );
 }
@@ -1313,12 +1698,42 @@ class VendorNotificationsPage extends StatelessWidget {
   const VendorNotificationsPage({super.key});
 
   final _notifs = const [
-    {'title': 'New inquiry from Ali Khan', 'sub': 'Wedding Décor request · Just now', 'read': false, 'icon': '📩'},
-    {'title': 'New 5-star review received!', 'sub': 'Sara Raza rated you ★★★★★ · 1h ago', 'read': false, 'icon': '⭐'},
-    {'title': 'Quote accepted by M. Bilal', 'sub': 'PKR 25,000 booking confirmed · 3h ago', 'read': false, 'icon': '✅'},
-    {'title': 'Weekly analytics report ready', 'sub': 'View your performance · Yesterday', 'read': true, 'icon': '📊'},
-    {'title': 'Profile approved by admin', 'sub': 'You are now visible in search · 2 days ago', 'read': true, 'icon': '🎉'},
-    {'title': 'Tip: Add more photos to boost visibility', 'sub': 'Platform tip · 3 days ago', 'read': true, 'icon': '💡'},
+    {
+      'title': 'New inquiry from Ali Khan',
+      'sub': 'Wedding Décor request · Just now',
+      'read': false,
+      'icon': '📩',
+    },
+    {
+      'title': 'New 5-star review received!',
+      'sub': 'Sara Raza rated you ★★★★★ · 1h ago',
+      'read': false,
+      'icon': '⭐',
+    },
+    {
+      'title': 'Quote accepted by M. Bilal',
+      'sub': 'PKR 25,000 booking confirmed · 3h ago',
+      'read': false,
+      'icon': '✅',
+    },
+    {
+      'title': 'Weekly analytics report ready',
+      'sub': 'View your performance · Yesterday',
+      'read': true,
+      'icon': '📊',
+    },
+    {
+      'title': 'Profile approved by admin',
+      'sub': 'You are now visible in search · 2 days ago',
+      'read': true,
+      'icon': '🎉',
+    },
+    {
+      'title': 'Tip: Add more photos to boost visibility',
+      'sub': 'Platform tip · 3 days ago',
+      'read': true,
+      'icon': '💡',
+    },
   ];
 
   @override
@@ -1326,12 +1741,18 @@ class VendorNotificationsPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: kPrimary,
-        title: const Text('Notifications', style: TextStyle(color: Colors.white, fontSize: 16)),
+        title: const Text(
+          'Notifications',
+          style: TextStyle(color: Colors.white, fontSize: 16),
+        ),
         iconTheme: const IconThemeData(color: Colors.white),
         actions: [
           TextButton(
             onPressed: () {},
-            child: const Text('Mark all read', style: TextStyle(color: Colors.white, fontSize: 12)),
+            child: const Text(
+              'Mark all read',
+              style: TextStyle(color: Colors.white, fontSize: 12),
+            ),
           ),
         ],
       ),
@@ -1348,7 +1769,10 @@ class VendorNotificationsPage extends StatelessWidget {
               color: isUnread ? kPrimary.withOpacity(0.05) : Colors.white,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                  color: isUnread ? kPrimary.withOpacity(0.2) : Colors.grey.shade100),
+                color: isUnread
+                    ? kPrimary.withOpacity(0.2)
+                    : Colors.grey.shade100,
+              ),
             ),
             child: Row(
               children: [
@@ -1358,20 +1782,34 @@ class VendorNotificationsPage extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(n['title'] as String,
-                          style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: isUnread ? FontWeight.bold : FontWeight.normal)),
+                      Text(
+                        n['title'] as String,
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: isUnread
+                              ? FontWeight.bold
+                              : FontWeight.normal,
+                        ),
+                      ),
                       const SizedBox(height: 2),
-                      Text(n['sub'] as String,
-                          style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
+                      Text(
+                        n['sub'] as String,
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Colors.grey.shade500,
+                        ),
+                      ),
                     ],
                   ),
                 ),
                 if (isUnread)
                   Container(
-                    width: 8, height: 8,
-                    decoration: const BoxDecoration(color: kPrimary, shape: BoxShape.circle),
+                    width: 8,
+                    height: 8,
+                    decoration: const BoxDecoration(
+                      color: kPrimary,
+                      shape: BoxShape.circle,
+                    ),
                   ),
               ],
             ),
@@ -1396,16 +1834,39 @@ class VendorSettingsPage extends StatefulWidget {
 class _VendorSettingsPageState extends State<VendorSettingsPage> {
   // Notification States
   bool _newInquiryAlerts = true;
+  String _vendorName = '';
+  String _businessName = 'My Business';
   bool _weeklyReport = true;
   final bool _reviewNotifs = true;
   bool _bookingReminders = false;
   bool _twoFactorEnabled = false;
-  
+
   // Business States
   String _selectedCity = 'Karachi';
   bool _isListingPaused = false;
 
   final Color kPrimary = const Color(0xffB4245D);
+
+  @override
+  void initState() {
+    super.initState();
+    _loadVendorData();
+  }
+
+  Future<void> _loadVendorData() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+    final doc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .get();
+    if (doc.exists) {
+      setState(() {
+        _vendorName = doc.data()?['name'] ?? 'V';
+        _businessName = doc.data()?['businessName'] ?? 'My Business';
+      });
+    }
+  }
 
   // ─── HELPERS ───
 
@@ -1413,22 +1874,31 @@ class _VendorSettingsPageState extends State<VendorSettingsPage> {
     final cities = ['Karachi', 'Lahore', 'Islamabad', 'Multan', 'Peshawar'];
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (context) => Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           const Padding(
             padding: EdgeInsets.all(16),
-            child: Text('Select Business City', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+            child: Text(
+              'Select Business City',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            ),
           ),
-          ...cities.map((city) => ListTile(
-                title: Text(city),
-                trailing: _selectedCity == city ? Icon(Icons.check, color: kPrimary) : null,
-                onTap: () {
-                  setState(() => _selectedCity = city);
-                  Navigator.pop(context);
-                },
-              )),
+          ...cities.map(
+            (city) => ListTile(
+              title: Text(city),
+              trailing: _selectedCity == city
+                  ? Icon(Icons.check, color: kPrimary)
+                  : null,
+              onTap: () {
+                setState(() => _selectedCity = city);
+                Navigator.pop(context);
+              },
+            ),
+          ),
           const SizedBox(height: 16),
         ],
       ),
@@ -1441,13 +1911,26 @@ class _VendorSettingsPageState extends State<VendorSettingsPage> {
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text('Delete Vendor Account?'),
-        content: const Text('This will permanently remove your business listing, reviews, and booking history. This action is irreversible.'),
+        content: const Text(
+          'This will permanently remove your business listing, reviews, and booking history. This action is irreversible.',
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel', style: TextStyle(color: Colors.grey))),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
+          TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Delete Permanently', style: TextStyle(color: Colors.white)),
+            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            onPressed: () => Navigator.pop(context),
+            child: const Text(
+              'Delete Permanently',
+              style: TextStyle(color: Colors.white),
+            ),
           ),
         ],
       ),
@@ -1460,12 +1943,31 @@ class _VendorSettingsPageState extends State<VendorSettingsPage> {
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text('Log out?'),
-        content: const Text('You\'ll need to sign in again to manage your vendor dashboard.'),
+        content: const Text(
+          'You\'ll need to sign in again to manage your vendor dashboard.',
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel', style: TextStyle(color: Colors.grey))),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: kPrimary, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
+          TextButton(
             onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: kPrimary,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            onPressed: () async {
+              Navigator.pop(ctx);
+              await FirebaseAuth.instance.signOut();
+              if (!context.mounted) return;
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(builder: (_) => const LoginPage()),
+                (route) => false,
+              );
+            },
             child: const Text('Log Out', style: TextStyle(color: Colors.white)),
           ),
         ],
@@ -1476,7 +1978,15 @@ class _VendorSettingsPageState extends State<VendorSettingsPage> {
   Widget _sectionLabel(String text) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 20, 16, 6),
-      child: Text(text.toUpperCase(), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 0.8)),
+      child: Text(
+        text.toUpperCase(),
+        style: const TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.bold,
+          color: Colors.grey,
+          letterSpacing: 0.8,
+        ),
+      ),
     );
   }
 
@@ -1496,7 +2006,10 @@ class _VendorSettingsPageState extends State<VendorSettingsPage> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: kPrimary,
-        title: const Text('Vendor Settings', style: TextStyle(color: Colors.white, fontSize: 16)),
+        title: const Text(
+          'Vendor Settings',
+          style: TextStyle(color: Colors.white, fontSize: 16),
+        ),
         iconTheme: const IconThemeData(color: Colors.white),
         elevation: 0,
       ),
@@ -1518,16 +2031,37 @@ class _VendorSettingsPageState extends State<VendorSettingsPage> {
                   CircleAvatar(
                     radius: 30,
                     backgroundColor: kPrimary,
-                    child: const Text('DD', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
+                    child: Text(
+                      _vendorName.isNotEmpty
+                          ? _vendorName[0].toUpperCase()
+                          : 'V',
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
                   ),
                   const SizedBox(width: 14),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('Dream Décor Co.', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                        Text(
+                          _businessName,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                         const SizedBox(height: 2),
-                        Text('Verified Vendor · $_selectedCity', style: const TextStyle(fontSize: 13, color: Colors.grey)),
+                        Text(
+                          'Verified Vendor · $_selectedCity',
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: Colors.grey,
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -1549,7 +2083,9 @@ class _VendorSettingsPageState extends State<VendorSettingsPage> {
                   builder: (context, mode, _) => Switch(
                     value: mode == ThemeMode.dark,
                     activeThumbColor: kPrimary,
-                    onChanged: (val) => themeNotifier.value = val ? ThemeMode.dark : ThemeMode.light,
+                    onChanged: (val) => themeNotifier.value = val
+                        ? ThemeMode.dark
+                        : ThemeMode.light,
                   ),
                 ),
               ),
@@ -1570,19 +2106,31 @@ class _VendorSettingsPageState extends State<VendorSettingsPage> {
                 icon: Icons.notifications_outlined,
                 iconBg: Colors.orange.withOpacity(0.13),
                 title: 'New Inquiry Alerts',
-                trailing: Switch(value: _newInquiryAlerts, activeThumbColor: kPrimary, onChanged: (v) => setState(() => _newInquiryAlerts = v)),
+                trailing: Switch(
+                  value: _newInquiryAlerts,
+                  activeThumbColor: kPrimary,
+                  onChanged: (v) => setState(() => _newInquiryAlerts = v),
+                ),
               ),
               _SettingsTile(
                 icon: Icons.bar_chart_outlined,
                 iconBg: Colors.blue.withOpacity(0.13),
                 title: 'Weekly Reports',
-                trailing: Switch(value: _weeklyReport, activeThumbColor: kPrimary, onChanged: (v) => setState(() => _weeklyReport = v)),
+                trailing: Switch(
+                  value: _weeklyReport,
+                  activeThumbColor: kPrimary,
+                  onChanged: (v) => setState(() => _weeklyReport = v),
+                ),
               ),
               _SettingsTile(
                 icon: Icons.calendar_today_outlined,
                 iconBg: Colors.green.withOpacity(0.13),
                 title: 'Booking Reminders',
-                trailing: Switch(value: _bookingReminders, activeThumbColor: kPrimary, onChanged: (v) => setState(() => _bookingReminders = v)),
+                trailing: Switch(
+                  value: _bookingReminders,
+                  activeThumbColor: kPrimary,
+                  onChanged: (v) => setState(() => _bookingReminders = v),
+                ),
                 showDivider: false,
               ),
             ]),
@@ -1590,9 +2138,25 @@ class _VendorSettingsPageState extends State<VendorSettingsPage> {
             // ─── BUSINESS MANAGEMENT ───
             _sectionLabel('Business'),
             _settingsCard([
-              _SettingsTile(icon: Icons.event_available_outlined, iconBg: Colors.teal.withOpacity(0.13), title: 'Manage Availability', onTap: () {}),
-              _SettingsTile(icon: Icons.description_outlined, iconBg: Colors.purple.withOpacity(0.13), title: 'Business Documents', onTap: () {}),
-              _SettingsTile(icon: Icons.account_balance_outlined, iconBg: Colors.indigo.withOpacity(0.13), title: 'Payout Settings', showDivider: false, onTap: () {}),
+              _SettingsTile(
+                icon: Icons.event_available_outlined,
+                iconBg: Colors.teal.withOpacity(0.13),
+                title: 'Manage Availability',
+                onTap: () {},
+              ),
+              _SettingsTile(
+                icon: Icons.description_outlined,
+                iconBg: Colors.purple.withOpacity(0.13),
+                title: 'Business Documents',
+                onTap: () {},
+              ),
+              _SettingsTile(
+                icon: Icons.account_balance_outlined,
+                iconBg: Colors.indigo.withOpacity(0.13),
+                title: 'Payout Settings',
+                showDivider: false,
+                onTap: () {},
+              ),
             ]),
 
             // ─── SECURITY ───
@@ -1602,20 +2166,34 @@ class _VendorSettingsPageState extends State<VendorSettingsPage> {
                 icon: Icons.security,
                 iconBg: Colors.green.withOpacity(0.13),
                 title: 'Two-Factor Auth',
-                trailing: Switch(value: _twoFactorEnabled, activeThumbColor: kPrimary, onChanged: (v) => setState(() => _twoFactorEnabled = v)),
+                trailing: Switch(
+                  value: _twoFactorEnabled,
+                  activeThumbColor: kPrimary,
+                  onChanged: (v) => setState(() => _twoFactorEnabled = v),
+                ),
               ),
-              _SettingsTile(icon: Icons.lock_outline, iconBg: Colors.orange.withOpacity(0.13), title: 'Change Password', showDivider: false, onTap: () {}),
+              _SettingsTile(
+                icon: Icons.lock_outline,
+                iconBg: Colors.orange.withOpacity(0.13),
+                title: 'Change Password',
+                showDivider: false,
+                onTap: () {},
+              ),
             ]),
 
             // ─── DANGER ZONE ───
             _sectionLabel('Danger Zone'),
             _settingsCard([
               _SettingsTile(
-                icon: _isListingPaused ? Icons.play_arrow : Icons.pause_circle_outline,
-                iconBg: (_isListingPaused ? Colors.green : Colors.orange).withOpacity(0.13),
+                icon: _isListingPaused
+                    ? Icons.play_arrow
+                    : Icons.pause_circle_outline,
+                iconBg: (_isListingPaused ? Colors.green : Colors.orange)
+                    .withOpacity(0.13),
                 title: _isListingPaused ? 'Activate Listing' : 'Pause Listing',
                 titleColor: _isListingPaused ? Colors.green : Colors.orange,
-                onTap: () => setState(() => _isListingPaused = !_isListingPaused),
+                onTap: () =>
+                    setState(() => _isListingPaused = !_isListingPaused),
               ),
               _SettingsTile(
                 icon: Icons.delete_outline,
@@ -1637,11 +2215,16 @@ class _VendorSettingsPageState extends State<VendorSettingsPage> {
                   style: OutlinedButton.styleFrom(
                     side: const BorderSide(color: Colors.red, width: 1.5),
                     foregroundColor: Colors.red,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                   onPressed: _showLogoutDialog,
                   icon: const Icon(Icons.logout),
-                  label: const Text('Log Out', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+                  label: const Text(
+                    'Log Out',
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                  ),
                 ),
               ),
             ),
@@ -1649,7 +2232,10 @@ class _VendorSettingsPageState extends State<VendorSettingsPage> {
             const Center(
               child: Padding(
                 padding: EdgeInsets.only(bottom: 24),
-                child: Text('Events Affairs v1.0.0 · Vendor Portal', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                child: Text(
+                  'Events Affairs v1.0.0 · Vendor Portal',
+                  style: TextStyle(fontSize: 12, color: Colors.grey),
+                ),
               ),
             ),
           ],
@@ -1670,12 +2256,18 @@ class _StatusBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: isPaused ? Colors.orange.withOpacity(0.15) : Colors.green.withOpacity(0.12),
+        color: isPaused
+            ? Colors.orange.withOpacity(0.15)
+            : Colors.green.withOpacity(0.12),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Text(
         isPaused ? 'Paused' : 'Active',
-        style: TextStyle(color: isPaused ? Colors.orange : Colors.green, fontSize: 11, fontWeight: FontWeight.bold),
+        style: TextStyle(
+          color: isPaused ? Colors.orange : Colors.green,
+          fontSize: 11,
+          fontWeight: FontWeight.bold,
+        ),
       ),
     );
   }
@@ -1692,8 +2284,14 @@ class _SettingsTile extends StatelessWidget {
   final Color? titleColor;
 
   const _SettingsTile({
-    required this.title, this.subtitle, required this.icon,
-    required this.iconBg, this.trailing, this.onTap, this.showDivider = true, this.titleColor,
+    required this.title,
+    this.subtitle,
+    required this.icon,
+    required this.iconBg,
+    this.trailing,
+    this.onTap,
+    this.showDivider = true,
+    this.titleColor,
   });
 
   @override
@@ -1702,15 +2300,42 @@ class _SettingsTile extends StatelessWidget {
       children: [
         ListTile(
           onTap: onTap,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 2,
+          ),
           leading: Container(
-            width: 38, height: 38,
-            decoration: BoxDecoration(color: iconBg, borderRadius: BorderRadius.circular(10)),
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              color: iconBg,
+              borderRadius: BorderRadius.circular(10),
+            ),
             child: Icon(icon, size: 20, color: titleColor ?? Colors.black87),
           ),
-          title: Text(title, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: titleColor)),
-          subtitle: subtitle != null ? Text(subtitle!, style: const TextStyle(fontSize: 12, color: Colors.grey)) : null,
-          trailing: trailing ?? (onTap != null ? const Icon(Icons.chevron_right, color: Colors.grey, size: 20) : null),
+          title: Text(
+            title,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: titleColor,
+            ),
+          ),
+          subtitle: subtitle != null
+              ? Text(
+                  subtitle!,
+                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                )
+              : null,
+          trailing:
+              trailing ??
+              (onTap != null
+                  ? const Icon(
+                      Icons.chevron_right,
+                      color: Colors.grey,
+                      size: 20,
+                    )
+                  : null),
         ),
         if (showDivider) const Divider(height: 1, indent: 70, endIndent: 16),
       ],

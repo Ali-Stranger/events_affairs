@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../eventplanner.dart';
 import 'admin_store.dart';
 
 const Color kPrimary = Color(0xffB4245D);
@@ -19,18 +18,23 @@ class AdminVendorsPage extends StatelessWidget {
         backgroundColor: bg,
         appBar: AppBar(
           backgroundColor: kPrimary,
-          title: const Text('Vendors', style: TextStyle(color: Colors.white, fontSize: 16)),
+          title: const Text(
+            'Vendors',
+            style: TextStyle(color: Colors.white, fontSize: 16),
+          ),
           iconTheme: const IconThemeData(color: Colors.white),
         ),
         body: ListView.separated(
           padding: const EdgeInsets.all(16),
-          itemCount: allVendors.length,
+          itemCount: adminStore.firestoreVendors.length,
           separatorBuilder: (context, index) => const SizedBox(height: 10),
           itemBuilder: (context, i) {
-            final v = allVendors[i];
-            final status = adminStore.vendorStatus[v.name] ?? VendorStatus.approved;
-            final primaryService = adminStore.vendorPrimaryService[v.name] ?? (v.services.isNotEmpty ? v.services.first : v.category);
-
+            final v = adminStore.firestoreVendors[i];
+            final status =
+                adminStore.vendorStatus[v.id] ??
+                (v.approved ? VendorStatus.approved : VendorStatus.pending);
+            final primaryService =
+                adminStore.vendorPrimaryService[v.id] ?? v.category;
             final bool isPending = status == VendorStatus.pending;
 
             return Container(
@@ -41,7 +45,9 @@ class AdminVendorsPage extends StatelessWidget {
                 border: Border.all(
                   color: isPending
                       ? Colors.amber.withValues(alpha: 0.35)
-                      : (isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05)),
+                      : (isDark
+                            ? Colors.white10
+                            : Colors.black.withValues(alpha: 0.05)),
                 ),
               ),
               child: Row(
@@ -51,7 +57,10 @@ class AdminVendorsPage extends StatelessWidget {
                     backgroundColor: kPrimary.withValues(alpha: 0.1),
                     child: Text(
                       v.name.substring(0, 1),
-                      style: const TextStyle(color: kPrimary, fontWeight: FontWeight.bold),
+                      style: const TextStyle(
+                        color: kPrimary,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -76,14 +85,20 @@ class AdminVendorsPage extends StatelessWidget {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          '${v.location} · ${v.phone}',
-                          style: TextStyle(fontSize: 11, color: isDark ? Colors.white38 : Colors.black54),
+                          '${v.city} · ${v.phone}',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: isDark ? Colors.white38 : Colors.black54,
+                          ),
                         ),
                         const SizedBox(height: 8),
                         Row(
                           children: [
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 4,
+                              ),
                               decoration: BoxDecoration(
                                 color: kPrimary.withValues(alpha: 0.10),
                                 borderRadius: BorderRadius.circular(20),
@@ -108,19 +123,25 @@ class AdminVendorsPage extends StatelessWidget {
                               label: 'Set service',
                               icon: Icons.tune,
                               onTap: () async {
-                                final picked = await showModalBottomSheet<String>(
-                                  context: context,
-                                  shape: const RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-                                  ),
-                                  builder: (ctx) => _ServicePickerSheet(
-                                    vendorName: v.name,
-                                    services: v.services.isNotEmpty ? v.services : [v.category],
-                                    selected: primaryService,
-                                  ),
-                                );
+                                final picked =
+                                    await showModalBottomSheet<String>(
+                                      context: context,
+                                      shape: const RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.vertical(
+                                          top: Radius.circular(20),
+                                        ),
+                                      ),
+                                      builder: (ctx) => _ServicePickerSheet(
+                                        vendorName: v.businessName,
+                                        services: [v.category],
+                                        selected: primaryService,
+                                      ),
+                                    );
                                 if (picked == null) return;
-                                adminStore.setVendorPrimaryService(v.name, picked);
+                                adminStore.setVendorPrimaryService(
+                                  v.id,
+                                  picked,
+                                );
                               },
                             ),
                             if (status == VendorStatus.pending)
@@ -128,21 +149,30 @@ class AdminVendorsPage extends StatelessWidget {
                                 label: 'Approve',
                                 icon: Icons.verified,
                                 tone: _ButtonTone.success,
-                                onTap: () => adminStore.setVendorStatus(v.name, VendorStatus.approved),
+                                onTap: () => adminStore.setVendorStatus(
+                                  v.id,
+                                  VendorStatus.approved,
+                                ),
                               ),
                             if (status == VendorStatus.approved)
                               _SmallActionButton(
                                 label: 'Suspend',
                                 icon: Icons.block,
                                 tone: _ButtonTone.danger,
-                                onTap: () => adminStore.setVendorStatus(v.name, VendorStatus.suspended),
+                                onTap: () => adminStore.setVendorStatus(
+                                  v.id,
+                                  VendorStatus.suspended,
+                                ),
                               ),
                             if (status == VendorStatus.suspended)
                               _SmallActionButton(
                                 label: 'Re-approve',
                                 icon: Icons.restart_alt,
                                 tone: _ButtonTone.success,
-                                onTap: () => adminStore.setVendorStatus(v.name, VendorStatus.approved),
+                                onTap: () => adminStore.setVendorStatus(
+                                  v.id,
+                                  VendorStatus.approved,
+                                ),
                               ),
                           ],
                         ),
@@ -184,7 +214,11 @@ class _StatusChip extends StatelessWidget {
       ),
       child: Text(
         text,
-        style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 11),
+        style: TextStyle(
+          color: color,
+          fontWeight: FontWeight.bold,
+          fontSize: 11,
+        ),
       ),
     );
   }
@@ -240,7 +274,11 @@ class _SmallActionButton extends StatelessWidget {
             const SizedBox(width: 6),
             Text(
               label,
-              style: TextStyle(color: fg, fontWeight: FontWeight.w700, fontSize: 12),
+              style: TextStyle(
+                color: fg,
+                fontWeight: FontWeight.w700,
+                fontSize: 12,
+              ),
             ),
           ],
         ),
@@ -303,8 +341,13 @@ class _ServicePickerSheet extends StatelessWidget {
                   ),
                   child: const Icon(Icons.work_outline, color: kPrimary),
                 ),
-                title: Text(s, style: const TextStyle(fontWeight: FontWeight.w700)),
-                trailing: isSel ? const Icon(Icons.check_circle, color: Colors.green) : null,
+                title: Text(
+                  s,
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
+                trailing: isSel
+                    ? const Icon(Icons.check_circle, color: Colors.green)
+                    : null,
                 onTap: () => Navigator.pop(context, s),
               );
             }),
@@ -314,4 +357,3 @@ class _ServicePickerSheet extends StatelessWidget {
     );
   }
 }
-

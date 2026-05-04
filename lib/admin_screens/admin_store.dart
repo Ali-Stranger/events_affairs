@@ -1,8 +1,30 @@
 import 'package:flutter/foundation.dart';
-
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../eventplanner.dart';
 
 enum VendorStatus { pending, approved, suspended }
+
+class FirestoreVendor {
+  final String id;
+  final String name;
+  final String email;
+  final String phone;
+  final String businessName;
+  final String category;
+  final String city;
+  final bool approved;
+
+  FirestoreVendor({
+    required this.id,
+    required this.name,
+    required this.email,
+    required this.phone,
+    required this.businessName,
+    required this.category,
+    required this.city,
+    required this.approved,
+  });
+}
 
 class AdminLead {
   final String id;
@@ -49,71 +71,18 @@ class AdminStore extends ChangeNotifier {
   /// blogId -> attached vendor services ("Vendor Name|Service")
   final Map<int, Set<String>> blogVendorServices = {};
 
-  /// vendorName -> status
+  /// vendorId -> status
   final Map<String, VendorStatus> vendorStatus = {};
 
-  /// vendorName -> single selected service (enforces your “one vendor = one service” rule)
+  /// vendorId -> single selected service
   final Map<String, String> vendorPrimaryService = {};
 
-  final List<AdminLead> leads = [
-    AdminLead(
-      id: 'L-1001',
-      name: 'Ali Khan',
-      phone: '0300-1234567',
-      service: 'Decoration',
-      city: 'Lahore',
-      eventDate: 'May 15',
-      createdAt: DateTime(2026, 4, 25, 9, 10),
-      note: 'Lead only — vendor should call user directly.',
-    ),
-    AdminLead(
-      id: 'L-1002',
-      name: 'Sara Raza',
-      phone: '0321-9876543',
-      service: 'Photography',
-      city: 'Karachi',
-      eventDate: 'Jun 02',
-      createdAt: DateTime(2026, 4, 26, 12, 30),
-      note: 'No confirmation/revenue tracked in the app.',
-    ),
-    AdminLead(
-      id: 'L-1003',
-      name: 'M. Bilal',
-      phone: '0333-5556677',
-      service: 'Catering',
-      city: 'Islamabad',
-      eventDate: 'May 28',
-      createdAt: DateTime(2026, 4, 26, 18, 5),
-      note: 'User shared contact number; vendor to follow up.',
-    ),
-  ];
-
-  final List<AdminUser> users = [
-    AdminUser(
-      id: 'U-2001',
-      name: 'Ali Khan',
-      phone: '0300-1234567',
-      city: 'Lahore',
-      createdAt: DateTime(2026, 3, 12),
-    ),
-    AdminUser(
-      id: 'U-2002',
-      name: 'Sara Raza',
-      phone: '0321-9876543',
-      city: 'Karachi',
-      createdAt: DateTime(2026, 3, 18),
-    ),
-    AdminUser(
-      id: 'U-2003',
-      name: 'M. Bilal',
-      phone: '0333-5556677',
-      city: 'Islamabad',
-      createdAt: DateTime(2026, 4, 2),
-    ),
-  ];
+  List<AdminLead> leads = [];
+  List<AdminUser> users = [];
+  List<FirestoreVendor> firestoreVendors = [];
 
   AdminStore() {
-    // Seed vendor statuses + primary service.
+    // Seed vendor statuses for hardcoded vendors
     for (final v in allVendors) {
       vendorStatus.putIfAbsent(v.name, () => VendorStatus.approved);
       vendorPrimaryService.putIfAbsent(
@@ -122,17 +91,81 @@ class AdminStore extends ChangeNotifier {
       );
     }
 
-    // Mark a couple as pending to make admin features visible in UI.
+    // Mark a couple as pending to make admin features visible in UI
     if (allVendors.isNotEmpty) {
       vendorStatus[allVendors.first.name] = VendorStatus.pending;
     }
     if (allVendors.length > 2) {
       vendorStatus[allVendors[2].name] = VendorStatus.pending;
     }
+
+    fetchFromFirebase();
   }
 
+  // ── Firebase fetch ───────────────────────────────────────────
+  Future<void> fetchFromFirebase() async {
+    // Fetch leads from quotes collection
+    final quotesSnap = await FirebaseFirestore.instance
+        .collection('quotes')
+        .orderBy('createdAt', descending: true)
+        .get();
+
+    leads = quotesSnap.docs.map((doc) {
+      final d = doc.data();
+      return AdminLead(
+        id: doc.id,
+        name: d['name'] ?? '',
+        phone: d['phone'] ?? '',
+        service: d['category'] ?? '',
+        city: d['city'] ?? '',
+        eventDate: d['eventDate'] ?? '',
+        createdAt: (d['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+        note: 'Lead only — vendor should call user directly.',
+      );
+    }).toList();
+
+    // Fetch users (couples) from users collection
+    final usersSnap = await FirebaseFirestore.instance
+        .collection('users')
+        .where('role', isEqualTo: 'couple')
+        .get();
+
+    users = usersSnap.docs.map((doc) {
+      final d = doc.data();
+      return AdminUser(
+        id: doc.id,
+        name: d['name'] ?? 'Unknown',
+        phone: d['phone'] ?? 'N/A',
+        city: d['city'] ?? 'N/A',
+        createdAt: (d['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      );
+    }).toList();
+
+    // Fetch vendors from users collection
+    final vendorsSnap = await FirebaseFirestore.instance
+        .collection('users')
+        .where('role', isEqualTo: 'vendor')
+        .get();
+
+    firestoreVendors = vendorsSnap.docs.map((doc) {
+      final d = doc.data();
+      return FirestoreVendor(
+        id: doc.id,
+        name: d['name'] ?? 'Unknown',
+        email: d['email'] ?? '',
+        phone: d['phone'] ?? 'N/A',
+        businessName: d['businessName'] ?? 'N/A',
+        category: d['businessCategory'] ?? 'N/A',
+        city: d['city'] ?? 'N/A',
+        approved: d['approved'] ?? false,
+      );
+    }).toList();
+
+    notifyListeners();
+  }
+
+  // ── Blog events ──────────────────────────────────────────────
   void setBlogEvent(int blogId, String? eventType) {
-    // Backwards-compatible alias: set single -> replace set
     final v = (eventType ?? '').trim();
     if (v.isEmpty) {
       blogEvents.remove(blogId);
@@ -159,7 +192,8 @@ class AdminStore extends ChangeNotifier {
 
   void toggleBlogVendorService(int blogId, String vendorName, String service) {
     final key = '${vendorName.trim()}|${service.trim()}';
-    if (key == '|' || vendorName.trim().isEmpty || service.trim().isEmpty) return;
+    if (key == '|' || vendorName.trim().isEmpty || service.trim().isEmpty)
+      return;
     final set = blogVendorServices.putIfAbsent(blogId, () => <String>{});
     if (set.contains(key)) {
       set.remove(key);
@@ -173,13 +207,14 @@ class AdminStore extends ChangeNotifier {
   Set<String> getBlogVendorServices(int blogId) =>
       blogVendorServices[blogId] ?? <String>{};
 
-  void setVendorStatus(String vendorName, VendorStatus status) {
-    vendorStatus[vendorName] = status;
+  // ── Vendor management ────────────────────────────────────────
+  void setVendorStatus(String vendorId, VendorStatus status) {
+    vendorStatus[vendorId] = status;
     notifyListeners();
   }
 
-  void setVendorPrimaryService(String vendorName, String service) {
-    vendorPrimaryService[vendorName] = service;
+  void setVendorPrimaryService(String vendorId, String service) {
+    vendorPrimaryService[vendorId] = service;
     notifyListeners();
   }
 
@@ -190,4 +225,3 @@ class AdminStore extends ChangeNotifier {
 }
 
 final AdminStore adminStore = AdminStore();
-

@@ -1,4 +1,3 @@
-
 // import 'package:flutter/material.dart';
 // // Optional: for calling/WhatsApp
 
@@ -37,7 +36,7 @@
 //       appBar: AppBar(
 //         backgroundColor: kPrimary,
 //         elevation: 0,
-//         title: const Text('New Inquiries', 
+//         title: const Text('New Inquiries',
 //           style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
 //         iconTheme: const IconThemeData(color: Colors.white),
 //       ),
@@ -181,8 +180,9 @@
 //     );
 //   }
 // }
-
+import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 // Your Brand Primary Color
 const Color kPrimary = Color(0xffB4245D);
@@ -200,25 +200,52 @@ class InquiryModel {
   });
 }
 
-class VendorBookingsPage extends StatelessWidget {
+class VendorBookingsPage extends StatefulWidget {
   const VendorBookingsPage({super.key});
+
+  @override
+  State<VendorBookingsPage> createState() => _VendorBookingsPageState();
+}
+
+class _VendorBookingsPageState extends State<VendorBookingsPage> {
+  List<InquiryModel> inquiries = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadInquiries();
+  }
+
+  Future<void> _loadInquiries() async {
+    final snap = await FirebaseFirestore.instance
+        .collection('quotes')
+        .orderBy('createdAt', descending: true)
+        .get();
+
+    setState(() {
+      inquiries = snap.docs.map((doc) {
+        final d = doc.data();
+        return InquiryModel(
+          name: d['name'] ?? 'Unknown',
+          date: d['eventDate'] ?? 'N/A',
+          city: d['city'] ?? 'N/A',
+          budget: 0,
+          phone: d['phone'] ?? 'N/A',
+        );
+      }).toList();
+      _isLoading = false;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
 
-    // Sample list for demonstration
-    final List<InquiryModel> inquiries = [
-      const InquiryModel(name: 'Ali Khan', date: 'May 15, 2026', city: 'Lahore', budget: 60000, phone: "03001234567"),
-      const InquiryModel(name: 'Sara Raza', date: 'Jun 2, 2026', city: 'Karachi', budget: 45000, phone: "03217654321"),
-      const InquiryModel(name: 'M. Bilal', date: 'May 28, 2026', city: 'Karachi', budget: 25000, phone: "03119876543"),
-      const InquiryModel(name: 'Amna Javed', date: 'Jun 10, 2026', city: 'Islamabad', budget: 35000, phone: "03334445556"),
-    ];
-
     return Scaffold(
-      // Background: Soft grey in light mode, deep charcoal in dark mode
-      backgroundColor: isDark ? const Color(0xff0F0F12) : const Color(0xffF5F7FA),
-      
+      backgroundColor: isDark
+          ? const Color(0xff0F0F12)
+          : const Color(0xffF5F7FA),
       appBar: AppBar(
         backgroundColor: kPrimary,
         elevation: 0,
@@ -234,26 +261,32 @@ class VendorBookingsPage extends StatelessWidget {
           ),
         ),
       ),
-      
-      body: inquiries.isEmpty
-          ? const Center(child: Text("No new inquiries", style: TextStyle(color: Colors.grey)))
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator(color: kPrimary))
+          : inquiries.isEmpty
+          ? const Center(
+              child: Text(
+                'No inquiries yet',
+                style: TextStyle(color: Colors.grey),
+              ),
+            )
           : ListView.builder(
               physics: const BouncingScrollPhysics(),
               padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 20),
               itemCount: inquiries.length,
-              itemBuilder: (ctx, i) => _InquiryCard(
-                inquiry: inquiries[i],
-                isDark: isDark,
-              ),
+              itemBuilder: (ctx, i) =>
+                  _InquiryCard(inquiry: inquiries[i], isDark: isDark),
             ),
     );
   }
 }
 
+// Sample list for demonstration
+
 class _InquiryCard extends StatelessWidget {
   final InquiryModel inquiry;
   final bool isDark;
-  
+
   const _InquiryCard({required this.inquiry, required this.isDark});
 
   @override
@@ -265,13 +298,17 @@ class _InquiryCard extends StatelessWidget {
         color: isDark ? const Color(0xff1C1C26) : Colors.white,
         borderRadius: BorderRadius.circular(20),
         // Subtle border for light mode to prevent "washed out" look
-        border: isDark ? null : Border.all(color: kPrimary.withOpacity(0.08), width: 1),
+        border: isDark
+            ? null
+            : Border.all(color: kPrimary.withOpacity(0.08), width: 1),
         boxShadow: [
           BoxShadow(
-            color: isDark ? Colors.black.withOpacity(0.3) : kPrimary.withOpacity(0.04),
+            color: isDark
+                ? Colors.black.withOpacity(0.3)
+                : kPrimary.withOpacity(0.04),
             blurRadius: 15,
             offset: const Offset(0, 8),
-          )
+          ),
         ],
       ),
       child: Column(
@@ -313,10 +350,14 @@ class _InquiryCard extends StatelessWidget {
                   ],
                 ),
               ),
-              const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: Colors.grey),
+              const Icon(
+                Icons.arrow_forward_ios_rounded,
+                size: 14,
+                color: Colors.grey,
+              ),
             ],
           ),
-          
+
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 18),
             child: Divider(height: 1, thickness: 0.5),
@@ -327,7 +368,11 @@ class _InquiryCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               _buildMetric(Icons.calendar_today_rounded, "DATE", inquiry.date),
-              _buildMetric(Icons.account_balance_wallet_rounded, "BUDGET", "PKR ${inquiry.budget.toInt()}"),
+              _buildMetric(
+                Icons.account_balance_wallet_rounded,
+                "BUDGET",
+                "PKR ${inquiry.budget.toInt()}",
+              ),
             ],
           ),
 
@@ -340,9 +385,24 @@ class _InquiryCard extends StatelessWidget {
                 child: _ActionBtn(
                   label: 'WhatsApp',
                   icon: Icons.message_rounded,
-                  color: const Color(0xff25D366), // WhatsApp Green
+                  color: const Color(0xff25D366),
                   isDark: isDark,
-                  onTap: () {},
+                  onTap: () async {
+                    final phone = inquiry.phone.replaceAll(
+                      RegExp(r'[^0-9]'),
+                      '',
+                    );
+                    final whatsappUrl = Uri.parse(
+                      'whatsapp://send?phone=92${phone.substring(1)}',
+                    );
+                    if (await canLaunchUrl(whatsappUrl)) {
+                      await launchUrl(whatsappUrl);
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('WhatsApp not installed')),
+                      );
+                    }
+                  },
                 ),
               ),
               const SizedBox(width: 10),
@@ -350,9 +410,22 @@ class _InquiryCard extends StatelessWidget {
                 child: _ActionBtn(
                   label: 'Call',
                   icon: Icons.phone_rounded,
-                  color: const Color(0xff0984E3), // Classic Blue
+                  color: const Color(0xff0984E3),
                   isDark: isDark,
-                  onTap: () {},
+                  onTap: () async {
+                    final phone = inquiry.phone.replaceAll(
+                      RegExp(r'[^0-9]'),
+                      '',
+                    );
+                    final callUrl = Uri.parse('tel:$phone');
+                    if (await canLaunchUrl(callUrl)) {
+                      await launchUrl(callUrl);
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Could not make call')),
+                      );
+                    }
+                  },
                 ),
               ),
             ],

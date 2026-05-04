@@ -1,4 +1,6 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'homepage.dart';
 import 'signup.dart';
 import 'vendor_screens/vendor_dashboard.dart';
@@ -9,22 +11,6 @@ import 'admin_screens/admin_home.dart';
 // ═══════════════════════════════════════════════════════════════
 
 const Color kPrimary = Color(0xffB4245D);
-
-// ═══════════════════════════════════════════════════════════════
-//  DEMO CREDENTIALS  (replace with real auth later)
-// ═══════════════════════════════════════════════════════════════
-
-const String _demoUser = 'user';
-const String _demoPass = 'user';
-// vendor user
-const String _venUser = 'vendor';
-const String _venPass = 'vendor';
-
-
-
-// admin user
-const String _adminUser = 'admin';
-const String _adminPass = 'admin';
 
 // ═══════════════════════════════════════════════════════════════
 //  LOGIN PAGE
@@ -40,7 +26,7 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage>
     with SingleTickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
-  final _usernameCtrl = TextEditingController();
+  final _emailCtrl = TextEditingController();
   final _passwordCtrl = TextEditingController();
 
   bool _obscurePassword = true;
@@ -58,97 +44,138 @@ class _LoginPageState extends State<LoginPage>
       vsync: this,
       duration: const Duration(milliseconds: 400),
     );
-    _shakeAnim = Tween<double>(begin: 0, end: 1).animate(
-      CurvedAnimation(parent: _shakeCtrl, curve: Curves.elasticIn),
-    );
+    _shakeAnim = Tween<double>(
+      begin: 0,
+      end: 1,
+    ).animate(CurvedAnimation(parent: _shakeCtrl, curve: Curves.elasticIn));
   }
 
   @override
   void dispose() {
-    _usernameCtrl.dispose();
+    _emailCtrl.dispose();
     _passwordCtrl.dispose();
     _shakeCtrl.dispose();
     super.dispose();
   }
 
-  // ── Login logic ────────────────────────────────────────────────────────────
+  // ── Login logic ─────────────────────────────────────────────
   Future<void> _login() async {
-    // Validate form fields first
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isLoading = true);
 
-    // Simulate network delay
-    await Future.delayed(const Duration(milliseconds: 900));
-
-    final username = _usernameCtrl.text.trim();
-    final password = _passwordCtrl.text;
-
-    if (username == _demoUser && password == _demoPass) {
-      // Success — navigate and remove all routes behind
-      if (!mounted) return;
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (_) => const CreateHomePage()),
-        (route) => false,
-      );
-    }
-
-    else if(username == _venUser && password == _venPass) 
- {
-      // Success — navigate and remove all routes behind
-      if (!mounted) return;
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (_) => const VendorDashboardPage()),
-        (route) => false,
+    try {
+      // Step 1: Sign in with Firebase Auth
+      final credential = await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: _emailCtrl.text.trim(),
+        password: _passwordCtrl.text,
       );
 
-    }
+      // Step 2: Read role from Firestore
+      final doc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(credential.user!.uid)
+          .get();
 
-    else if (username == _adminUser && password == _adminPass) {
+      final role = doc.data()?['role'] ?? 'couple';
+
+      setState(() => _isLoading = false);
+
       if (!mounted) return;
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (_) => const AdminHomePage()),
-        (route) => false,
-      );
-    }
 
+      // Step 3: Navigate based on role
+      switch (role) {
+        case 'admin':
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (_) => const AdminHomePage()),
+            (route) => false,
+          );
+          break;
+        case 'vendor':
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (_) => const VendorDashboardPage()),
+            (route) => false,
+          );
+          break;
+        default:
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (_) => const CreateHomePage()),
+            (route) => false,
+          );
+      }
+    } on FirebaseAuthException catch (e) {
+      // Debug print - remove after fixing
+      print('LOGIN ERROR CODE: ${e.code}');
+      print('LOGIN ERROR MSG: ${e.message}');
 
-     else {
-      // Failure
+      if (!mounted) return;
       setState(() {
         _isLoading = false;
         _failedAttempts++;
       });
       _shakeCtrl.forward(from: 0);
+
+      String message = 'Invalid email or password. Please try again.';
+      if (e.code == 'user-not-found') {
+        message = 'No account found with this email.';
+      } else if (e.code == 'wrong-password') {
+        message = 'Incorrect password. Please try again.';
+      } else if (e.code == 'invalid-email') {
+        message = 'Please enter a valid email address.';
+      } else if (e.code == 'too-many-requests') {
+        message = 'Too many attempts. Please try again later.';
+      } else if (e.code == 'invalid-credential') {
+        message = 'Email or password is incorrect. Please try again.';
+      } else if (e.code == 'network-request-failed') {
+        message = 'No internet connection. Please check your network.';
+      }
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Row(
             children: [
               const Icon(Icons.error_outline, color: Colors.white, size: 18),
               const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  _failedAttempts >= 3
-                      ? 'Too many attempts. Hint: username & password are both "user"'
-                      : 'Invalid username or password. Please try again.',
-                ),
-              ),
+              Expanded(child: Text(message)),
             ],
           ),
           backgroundColor: Colors.red.shade700,
           behavior: SnackBarBehavior.floating,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    } catch (e) {
+      // Catch any other errors
+      print('UNKNOWN ERROR: $e');
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Row(
+            children: [
+              Icon(Icons.error_outline, color: Colors.white, size: 18),
+              SizedBox(width: 8),
+              Expanded(child: Text('Something went wrong. Please try again.')),
+            ],
+          ),
+          backgroundColor: Colors.red.shade700,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
           duration: const Duration(seconds: 3),
         ),
       );
     }
   }
 
-  // ── Forgot password ────────────────────────────────────────────────────────
+  // ── Forgot password ──────────────────────────────────────────
   void _forgotPassword() {
     showModalBottomSheet(
       context: context,
@@ -163,15 +190,12 @@ class _LoginPageState extends State<LoginPage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // appBar: const CommonAppBar(),
       body: SingleChildScrollView(
         child: Column(
           children: [
-
-            // ── Hero banner ─────────────────────────────────────────
+            // ── Hero banner ──────────────────────────────────────
             Stack(
               children: [
-                // Gradient banner
                 Container(
                   height: 200,
                   width: double.infinity,
@@ -183,7 +207,6 @@ class _LoginPageState extends State<LoginPage>
                     ),
                   ),
                 ),
-                // Decorative circles
                 Positioned(
                   top: -30,
                   right: -30,
@@ -208,7 +231,6 @@ class _LoginPageState extends State<LoginPage>
                     ),
                   ),
                 ),
-                // Logo + text
                 Positioned.fill(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -237,10 +259,7 @@ class _LoginPageState extends State<LoginPage>
                       ),
                       const Text(
                         'Pakistan\'s #1 Event Planning Platform',
-                        style: TextStyle(
-                          color: Colors.white70,
-                          fontSize: 12,
-                        ),
+                        style: TextStyle(color: Colors.white70, fontSize: 12),
                       ),
                     ],
                   ),
@@ -248,7 +267,7 @@ class _LoginPageState extends State<LoginPage>
               ],
             ),
 
-            // ── Form card ───────────────────────────────────────────
+            // ── Form card ────────────────────────────────────────
             Transform.translate(
               offset: const Offset(0, -24),
               child: Container(
@@ -270,8 +289,6 @@ class _LoginPageState extends State<LoginPage>
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-
-                      // Heading
                       const Text(
                         'Welcome Back 👋',
                         style: TextStyle(
@@ -290,7 +307,7 @@ class _LoginPageState extends State<LoginPage>
 
                       const SizedBox(height: 24),
 
-                      // ── Username / Email ──────────────────────────
+                      // ── Email ────────────────────────────────────
                       AnimatedBuilder(
                         animation: _shakeAnim,
                         builder: (ctx, child) => Transform.translate(
@@ -303,17 +320,20 @@ class _LoginPageState extends State<LoginPage>
                           child: child,
                         ),
                         child: TextFormField(
-                          controller: _usernameCtrl,
+                          controller: _emailCtrl,
                           cursorColor: kPrimary,
                           keyboardType: TextInputType.emailAddress,
                           textInputAction: TextInputAction.next,
                           decoration: _inputDeco(
-                            label: 'Username or Email',
-                            icon: Icons.person_outline,
+                            label: 'Email Address',
+                            icon: Icons.email_outlined,
                           ),
                           validator: (v) {
                             if (v == null || v.trim().isEmpty) {
-                              return 'Please enter your username or email';
+                              return 'Please enter your email';
+                            }
+                            if (!v.contains('@') || !v.contains('.')) {
+                              return 'Enter a valid email address';
                             }
                             return null;
                           },
@@ -352,15 +372,16 @@ class _LoginPageState extends State<LoginPage>
                                 size: 20,
                               ),
                               onPressed: () => setState(
-                                  () => _obscurePassword = !_obscurePassword),
+                                () => _obscurePassword = !_obscurePassword,
+                              ),
                             ),
                           ),
                           validator: (v) {
                             if (v == null || v.isEmpty) {
                               return 'Please enter your password';
                             }
-                            if (v.length < 4) {
-                              return 'Password must be at least 4 characters';
+                            if (v.length < 6) {
+                              return 'Password must be at least 6 characters';
                             }
                             return null;
                           },
@@ -386,8 +407,10 @@ class _LoginPageState extends State<LoginPage>
                             ),
                           ),
                           const SizedBox(width: 8),
-                          const Text('Remember me',
-                              style: TextStyle(fontSize: 13)),
+                          const Text(
+                            'Remember me',
+                            style: TextStyle(fontSize: 13),
+                          ),
                           const Spacer(),
                           TextButton(
                             onPressed: _forgotPassword,
@@ -410,7 +433,7 @@ class _LoginPageState extends State<LoginPage>
 
                       const SizedBox(height: 24),
 
-                      // ── Login button ─────────────────────────────
+                      // ── Login button ──────────────────────────────
                       SizedBox(
                         width: double.infinity,
                         height: 50,
@@ -449,18 +472,18 @@ class _LoginPageState extends State<LoginPage>
                       // ── Divider ───────────────────────────────────
                       Row(
                         children: [
-                          Expanded(
-                              child: Divider(color: Colors.grey.shade300)),
+                          Expanded(child: Divider(color: Colors.grey.shade300)),
                           Padding(
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 12),
-                            child: Text('or',
-                                style: TextStyle(
-                                    color: Colors.grey.shade500,
-                                    fontSize: 13)),
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            child: Text(
+                              'or',
+                              style: TextStyle(
+                                color: Colors.grey.shade500,
+                                fontSize: 13,
+                              ),
+                            ),
                           ),
-                          Expanded(
-                              child: Divider(color: Colors.grey.shade300)),
+                          Expanded(child: Divider(color: Colors.grey.shade300)),
                         ],
                       ),
 
@@ -472,8 +495,7 @@ class _LoginPageState extends State<LoginPage>
                         height: 50,
                         child: OutlinedButton(
                           style: OutlinedButton.styleFrom(
-                            side: const BorderSide(
-                                color: kPrimary, width: 1.5),
+                            side: const BorderSide(color: kPrimary, width: 1.5),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
@@ -482,7 +504,8 @@ class _LoginPageState extends State<LoginPage>
                           onPressed: () => Navigator.push(
                             context,
                             MaterialPageRoute(
-                                builder: (_) => const CreateAccountPage()),
+                              builder: (_) => const CreateAccountPage(),
+                            ),
                           ),
                           child: const Text(
                             'Create an Account',
@@ -495,9 +518,6 @@ class _LoginPageState extends State<LoginPage>
                       ),
 
                       const SizedBox(height: 20),
-
-                      // ── Demo hint ─────────────────────────────────
-                      
                     ],
                   ),
                 ),
@@ -509,7 +529,7 @@ class _LoginPageState extends State<LoginPage>
     );
   }
 
-  // ── Input decoration helper ────────────────────────────────────────────────
+  // ── Input decoration helper ──────────────────────────────────
   InputDecoration _inputDeco({
     required String label,
     required IconData icon,
@@ -520,10 +540,7 @@ class _LoginPageState extends State<LoginPage>
       prefixIcon: Icon(icon, color: kPrimary, size: 20),
       suffixIcon: suffix,
       floatingLabelStyle: const TextStyle(color: kPrimary),
-      // cursorColor: kPrimary,
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
         borderSide: BorderSide(color: Colors.grey.shade300),
@@ -542,8 +559,7 @@ class _LoginPageState extends State<LoginPage>
       ),
       filled: true,
       fillColor: Theme.of(context).scaffoldBackgroundColor,
-      contentPadding:
-          const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
     );
   }
 }
@@ -574,11 +590,29 @@ class _ForgotPasswordSheetState extends State<_ForgotPasswordSheet> {
   Future<void> _sendReset() async {
     if (!_sheetFormKey.currentState!.validate()) return;
     setState(() => _sending = true);
-    await Future.delayed(const Duration(milliseconds: 900));
-    setState(() {
-      _sending = false;
-      _sent = true;
-    });
+    try {
+      await FirebaseAuth.instance.sendPasswordResetEmail(
+        email: _emailCtrl.text.trim(),
+      );
+      setState(() {
+        _sending = false;
+        _sent = true;
+      });
+    } on FirebaseAuthException catch (e) {
+      setState(() => _sending = false);
+      String message = 'Something went wrong. Please try again.';
+      if (e.code == 'user-not-found') {
+        message = 'No account found with this email.';
+      }
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: Colors.red.shade700,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
   }
 
   @override
@@ -594,8 +628,6 @@ class _ForgotPasswordSheetState extends State<_ForgotPasswordSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-
-          // Handle bar
           Center(
             child: Container(
               width: 40,
@@ -606,9 +638,7 @@ class _ForgotPasswordSheetState extends State<_ForgotPasswordSheet> {
               ),
             ),
           ),
-
           const SizedBox(height: 20),
-
           if (!_sent) ...[
             const Text(
               'Reset Password',
@@ -616,7 +646,7 @@ class _ForgotPasswordSheetState extends State<_ForgotPasswordSheet> {
             ),
             const SizedBox(height: 4),
             Text(
-              'Enter your email address and we\'ll send you a reset link.',
+              'Enter your email and we\'ll send you a reset link.',
               style: TextStyle(fontSize: 13, color: Colors.grey.shade500),
             ),
             const SizedBox(height: 20),
@@ -628,11 +658,15 @@ class _ForgotPasswordSheetState extends State<_ForgotPasswordSheet> {
                 cursorColor: kPrimary,
                 decoration: InputDecoration(
                   labelText: 'Email Address',
-                  prefixIcon: const Icon(Icons.email_outlined,
-                      color: kPrimary, size: 20),
+                  prefixIcon: const Icon(
+                    Icons.email_outlined,
+                    color: kPrimary,
+                    size: 20,
+                  ),
                   floatingLabelStyle: const TextStyle(color: kPrimary),
                   border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12)),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: const BorderSide(color: kPrimary, width: 1.8),
@@ -647,9 +681,8 @@ class _ForgotPasswordSheetState extends State<_ForgotPasswordSheet> {
                   ),
                 ),
                 validator: (v) {
-                  if (v == null || v.trim().isEmpty) {
+                  if (v == null || v.trim().isEmpty)
                     return 'Please enter your email';
-                  }
                   if (!v.contains('@') || !v.contains('.')) {
                     return 'Enter a valid email address';
                   }
@@ -665,7 +698,8 @@ class _ForgotPasswordSheetState extends State<_ForgotPasswordSheet> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: kPrimary,
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
                 onPressed: _sending ? null : _sendReset,
                 child: _sending
@@ -673,17 +707,21 @@ class _ForgotPasswordSheetState extends State<_ForgotPasswordSheet> {
                         height: 20,
                         width: 20,
                         child: CircularProgressIndicator(
-                            color: Colors.white, strokeWidth: 2),
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
                       )
-                    : const Text('Send Reset Link',
+                    : const Text(
+                        'Send Reset Link',
                         style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600)),
+                          color: Colors.white,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
               ),
             ),
           ] else ...[
-            // Success state
             Center(
               child: Column(
                 children: [
@@ -694,23 +732,26 @@ class _ForgotPasswordSheetState extends State<_ForgotPasswordSheet> {
                       color: Colors.green.withOpacity(0.12),
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.mark_email_read_outlined,
-                        color: Colors.green, size: 36),
+                    child: const Icon(
+                      Icons.mark_email_read_outlined,
+                      color: Colors.green,
+                      size: 36,
+                    ),
                   ),
                   const SizedBox(height: 16),
                   const Text(
                     'Check Your Email!',
-                    style: TextStyle(
-                        fontSize: 18, fontWeight: FontWeight.bold),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     'A password reset link has been sent to ${_emailCtrl.text.trim()}',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.grey.shade600,
-                        height: 1.5),
+                      fontSize: 13,
+                      color: Colors.grey.shade600,
+                      height: 1.5,
+                    ),
                   ),
                   const SizedBox(height: 20),
                   OutlinedButton(
@@ -719,7 +760,8 @@ class _ForgotPasswordSheetState extends State<_ForgotPasswordSheet> {
                       side: const BorderSide(color: kPrimary),
                       foregroundColor: kPrimary,
                       shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10)),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                     ),
                     child: const Text('Back to Login'),
                   ),
@@ -727,7 +769,6 @@ class _ForgotPasswordSheetState extends State<_ForgotPasswordSheet> {
               ),
             ),
           ],
-
           const SizedBox(height: 8),
         ],
       ),

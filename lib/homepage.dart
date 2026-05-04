@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/services.dart';
 import 'eventplanner.dart';
 import 'venues.dart';
@@ -123,7 +124,9 @@ class _CreateHomePageState extends State<CreateHomePage> {
   // ── Find vendor ────────────────────────────────────────────────────────────
   void _findVendor() {
     final name = _vendorSearchCtrl.text.trim();
-    if (name.isEmpty && _selectedCategory == null && _selectedLocation == null) {
+    if (name.isEmpty &&
+        _selectedCategory == null &&
+        _selectedLocation == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Please enter a vendor name, category, or location.'),
@@ -148,9 +151,9 @@ class _CreateHomePageState extends State<CreateHomePage> {
       firstDate: now,
       lastDate: DateTime(now.year + 3),
       builder: (ctx, child) => Theme(
-        data: Theme.of(ctx).copyWith(
-          colorScheme: const ColorScheme.light(primary: kPrimary),
-        ),
+        data: Theme.of(
+          ctx,
+        ).copyWith(colorScheme: const ColorScheme.light(primary: kPrimary)),
         child: child!,
       ),
     );
@@ -159,8 +162,19 @@ class _CreateHomePageState extends State<CreateHomePage> {
 
   String _formatDate(DateTime d) {
     const months = [
-      '', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+      '',
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
     ];
     return '${d.day} ${months[d.month]} ${d.year}';
   }
@@ -201,11 +215,33 @@ class _CreateHomePageState extends State<CreateHomePage> {
     }
 
     setState(() => _quoteSubmitting = true);
-    await Future.delayed(const Duration(seconds: 1));
-    setState(() {
-      _quoteSubmitting = false;
-      _quoteSubmitted = true;
-    });
+
+    try {
+      await FirebaseFirestore.instance.collection('quotes').add({
+        'name': _quoteNameCtrl.text.trim(),
+        'phone': _quotePhoneCtrl.text.trim(),
+        'category': _formCategory,
+        'city': _formLocation,
+        'eventDate': _formatDate(_eventDate!),
+        'createdAt': FieldValue.serverTimestamp(),
+        'status': 'pending',
+      });
+
+      setState(() {
+        _quoteSubmitting = false;
+        _quoteSubmitted = true;
+      });
+    } catch (e) {
+      setState(() => _quoteSubmitting = false);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Failed to submit. Please try again.'),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
   }
 
   // ── Reset quote form ───────────────────────────────────────────────────────
@@ -230,7 +266,6 @@ class _CreateHomePageState extends State<CreateHomePage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-
             // ── Header ──────────────────────────────────────────────
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -242,11 +277,7 @@ class _CreateHomePageState extends State<CreateHomePage> {
                       onPressed: () => Scaffold.of(ctx).openDrawer(),
                     ),
                   ),
-                  Image.asset(
-                    'assets/images/logo.png',
-                    width: 80,
-                    height: 80,
-                  ),
+                  Image.asset('assets/images/logo.png', width: 80, height: 80),
                 ],
               ),
             ),
@@ -255,7 +286,6 @@ class _CreateHomePageState extends State<CreateHomePage> {
             Stack(
               clipBehavior: Clip.none,
               children: [
-
                 // Background image
                 Container(
                   height: 280,
@@ -306,10 +336,7 @@ class _CreateHomePageState extends State<CreateHomePage> {
                         SizedBox(height: 6),
                         Text(
                           'Pakistan\'s #1 Event Planning Platform',
-                          style: TextStyle(
-                            color: Colors.white70,
-                            fontSize: 14,
-                          ),
+                          style: TextStyle(color: Colors.white70, fontSize: 14),
                         ),
                       ],
                     ),
@@ -336,7 +363,6 @@ class _CreateHomePageState extends State<CreateHomePage> {
                     ),
                     child: Column(
                       children: [
-
                         // Vendor name field
                         TextField(
                           controller: _vendorSearchCtrl,
@@ -344,20 +370,28 @@ class _CreateHomePageState extends State<CreateHomePage> {
                           decoration: InputDecoration(
                             hintText: 'Type vendor name...',
                             hintStyle: const TextStyle(color: Colors.white54),
-                            prefixIcon: const Icon(Icons.search,
-                                color: kPrimary, size: 20),
+                            prefixIcon: const Icon(
+                              Icons.search,
+                              color: kPrimary,
+                              size: 20,
+                            ),
                             enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(8),
-                              borderSide:
-                                  const BorderSide(color: kPrimary, width: 1.5),
+                              borderSide: const BorderSide(
+                                color: kPrimary,
+                                width: 1.5,
+                              ),
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(8),
-                              borderSide:
-                                  const BorderSide(color: kPrimary, width: 2),
+                              borderSide: const BorderSide(
+                                color: kPrimary,
+                                width: 2,
+                              ),
                             ),
-                            contentPadding:
-                                const EdgeInsets.symmetric(vertical: 12),
+                            contentPadding: const EdgeInsets.symmetric(
+                              vertical: 12,
+                            ),
                           ),
                         ),
 
@@ -406,14 +440,18 @@ class _CreateHomePageState extends State<CreateHomePage> {
                               ),
                             ),
                             onPressed: _findVendor,
-                            icon: const Icon(Icons.search,
-                                color: Colors.white, size: 18),
+                            icon: const Icon(
+                              Icons.search,
+                              color: Colors.white,
+                              size: 18,
+                            ),
                             label: const Text(
                               'Find Vendor',
                               style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w600),
+                                color: Colors.white,
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                           ),
                         ),
@@ -451,10 +489,7 @@ class _CreateHomePageState extends State<CreateHomePage> {
                 children: [
                   Text(
                     'Explore Wedding Categories',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   SizedBox(height: 4),
                   Text(
@@ -472,8 +507,7 @@ class _CreateHomePageState extends State<CreateHomePage> {
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: kCategoryItems.length,
-              itemBuilder: (ctx, i) =>
-                  _CategoryCard(item: kCategoryItems[i]),
+              itemBuilder: (ctx, i) => _CategoryCard(item: kCategoryItems[i]),
             ),
 
             const SizedBox(height: 24),
@@ -492,10 +526,7 @@ class _CreateHomePageState extends State<CreateHomePage> {
                 children: [
                   Text(
                     'Get Best Quote For Your Event',
-                    style: TextStyle(
-                      fontSize: 17,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
                     textAlign: TextAlign.center,
                   ),
                   SizedBox(height: 4),
@@ -519,7 +550,6 @@ class _CreateHomePageState extends State<CreateHomePage> {
                       key: _quoteFormKey,
                       child: Column(
                         children: [
-
                           // Row 1: Name + Category
                           Row(
                             children: [
@@ -527,11 +557,13 @@ class _CreateHomePageState extends State<CreateHomePage> {
                                 child: TextFormField(
                                   controller: _quoteNameCtrl,
                                   decoration: _inputDecoration(
-                                      'Your Name', Icons.person_outline),
+                                    'Your Name',
+                                    Icons.person_outline,
+                                  ),
                                   validator: (v) =>
                                       v == null || v.trim().isEmpty
-                                          ? 'Enter your name'
-                                          : null,
+                                      ? 'Enter your name'
+                                      : null,
                                 ),
                               ),
                               const SizedBox(width: 10),
@@ -556,8 +588,7 @@ class _CreateHomePageState extends State<CreateHomePage> {
                             hint: 'Select City',
                             icon: Icons.location_on_outlined,
                             items: kLocations,
-                            onChanged: (v) =>
-                                setState(() => _formLocation = v),
+                            onChanged: (v) => setState(() => _formLocation = v),
                           ),
 
                           const SizedBox(height: 12),
@@ -571,7 +602,9 @@ class _CreateHomePageState extends State<CreateHomePage> {
                               LengthLimitingTextInputFormatter(11),
                             ],
                             decoration: _inputDecoration(
-                                'Contact Number', Icons.phone_outlined),
+                              'Contact Number',
+                              Icons.phone_outlined,
+                            ),
                             validator: (v) {
                               if (v == null || v.trim().isEmpty) {
                                 return 'Enter your phone number';
@@ -589,15 +622,20 @@ class _CreateHomePageState extends State<CreateHomePage> {
                             child: Container(
                               width: double.infinity,
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 14, vertical: 14),
+                                horizontal: 14,
+                                vertical: 14,
+                              ),
                               decoration: BoxDecoration(
                                 border: Border.all(color: Colors.grey.shade400),
                                 borderRadius: BorderRadius.circular(10),
                               ),
                               child: Row(
                                 children: [
-                                  const Icon(Icons.calendar_today_outlined,
-                                      color: kPrimary, size: 20),
+                                  const Icon(
+                                    Icons.calendar_today_outlined,
+                                    color: kPrimary,
+                                    size: 20,
+                                  ),
                                   const SizedBox(width: 10),
                                   Text(
                                     _eventDate == null
@@ -611,8 +649,10 @@ class _CreateHomePageState extends State<CreateHomePage> {
                                     ),
                                   ),
                                   const Spacer(),
-                                  Icon(Icons.arrow_drop_down,
-                                      color: Colors.grey.shade500),
+                                  Icon(
+                                    Icons.arrow_drop_down,
+                                    color: Colors.grey.shade500,
+                                  ),
                                 ],
                               ),
                             ),
@@ -628,23 +668,26 @@ class _CreateHomePageState extends State<CreateHomePage> {
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: kPrimary,
                                 shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10)),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
                               ),
-                              onPressed:
-                                  _quoteSubmitting ? null : _submitQuote,
+                              onPressed: _quoteSubmitting ? null : _submitQuote,
                               child: _quoteSubmitting
                                   ? const SizedBox(
                                       height: 22,
                                       width: 22,
                                       child: CircularProgressIndicator(
-                                          color: Colors.white, strokeWidth: 2),
+                                        color: Colors.white,
+                                        strokeWidth: 2,
+                                      ),
                                     )
                                   : const Text(
                                       'Get a Quote',
                                       style: TextStyle(
-                                          fontSize: 16,
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.w600),
+                                        fontSize: 16,
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w600,
+                                      ),
                                     ),
                             ),
                           ),
@@ -666,7 +709,8 @@ class _CreateHomePageState extends State<CreateHomePage> {
                     side: const BorderSide(color: kPrimary, width: 1.5),
                     foregroundColor: kPrimary,
                     shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10)),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
                   ),
                   onPressed: () => Navigator.push(
                     context,
@@ -675,8 +719,7 @@ class _CreateHomePageState extends State<CreateHomePage> {
                   icon: const Icon(Icons.location_city_outlined, size: 18),
                   label: const Text(
                     'Browse Top Venues',
-                    style:
-                        TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
                   ),
                 ),
               ),
@@ -711,8 +754,10 @@ class _CreateHomePageState extends State<CreateHomePage> {
             children: [
               Icon(icon, color: Colors.white54, size: 14),
               const SizedBox(width: 4),
-              Text(hint,
-                  style: const TextStyle(color: Colors.white54, fontSize: 13)),
+              Text(
+                hint,
+                style: const TextStyle(color: Colors.white54, fontSize: 13),
+              ),
             ],
           ),
           isExpanded: true,
@@ -720,12 +765,15 @@ class _CreateHomePageState extends State<CreateHomePage> {
           iconEnabledColor: kPrimary,
           style: const TextStyle(color: Colors.white, fontSize: 13),
           items: items
-              .map((v) => DropdownMenuItem<T>(
-                    value: v as T,
-                    child: Text(v,
-                        style: const TextStyle(
-                            color: Colors.white, fontSize: 13)),
-                  ))
+              .map(
+                (v) => DropdownMenuItem<T>(
+                  value: v as T,
+                  child: Text(
+                    v,
+                    style: const TextStyle(color: Colors.white, fontSize: 13),
+                  ),
+                ),
+              )
               .toList(),
           onChanged: onChanged,
         ),
@@ -760,10 +808,7 @@ class _CreateHomePageState extends State<CreateHomePage> {
             ],
           ),
           items: items
-              .map((v) => DropdownMenuItem<T>(
-                    value: v as T,
-                    child: Text(v),
-                  ))
+              .map((v) => DropdownMenuItem<T>(value: v as T, child: Text(v)))
               .toList(),
           onChanged: onChanged,
         ),
@@ -804,14 +849,18 @@ class _CreateHomePageState extends State<CreateHomePage> {
         ),
         child: Column(
           children: [
-            Text(value,
-                style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: kPrimary)),
-            Text(label,
-                style:
-                    const TextStyle(fontSize: 11, color: Colors.grey)),
+            Text(
+              value,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: kPrimary,
+              ),
+            ),
+            Text(
+              label,
+              style: const TextStyle(fontSize: 11, color: Colors.grey),
+            ),
           ],
         ),
       ),
@@ -880,10 +929,7 @@ class _CategoryCard extends StatelessWidget {
                   const SizedBox(height: 3),
                   Text(
                     item.subtitle,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: Colors.black54,
-                    ),
+                    style: const TextStyle(fontSize: 12, color: Colors.black54),
                   ),
                 ],
               ),
@@ -896,8 +942,11 @@ class _CategoryCard extends StatelessWidget {
                 color: Colors.white.withOpacity(0.5),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.arrow_forward_ios,
-                  size: 13, color: kPrimary),
+              child: const Icon(
+                Icons.arrow_forward_ios,
+                size: 13,
+                color: kPrimary,
+              ),
             ),
           ],
         ),
@@ -933,16 +982,20 @@ class _QuoteSuccessCard extends StatelessWidget {
               color: Colors.green.withOpacity(0.12),
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.check_circle_outline,
-                color: Colors.green, size: 40),
+            child: const Icon(
+              Icons.check_circle_outline,
+              color: Colors.green,
+              size: 40,
+            ),
           ),
           const SizedBox(height: 14),
           const Text(
             'Quote Request Sent!',
             style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.green),
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.green,
+            ),
           ),
           const SizedBox(height: 8),
           const Text(
@@ -957,7 +1010,8 @@ class _QuoteSuccessCard extends StatelessWidget {
               side: const BorderSide(color: kPrimary),
               foregroundColor: kPrimary,
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10)),
+                borderRadius: BorderRadius.circular(10),
+              ),
             ),
             icon: const Icon(Icons.refresh, size: 16),
             label: const Text('Submit Another Request'),

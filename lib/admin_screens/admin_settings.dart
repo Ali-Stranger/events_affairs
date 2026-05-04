@@ -1,3 +1,5 @@
+import 'package:firebase_auth/firebase_auth.dart';
+import '../login.dart';
 import 'package:flutter/material.dart';
 
 import '../theme_notifier.dart';
@@ -48,30 +50,44 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
   }
 
   void _showCityPicker() {
-    final cities = ['Lahore', 'Karachi', 'Islamabad', 'Multan', 'Peshawar', 'Faisalabad', 'Quetta', 'Sialkot'];
+    final cities = [
+      'Lahore',
+      'Karachi',
+      'Islamabad',
+      'Multan',
+      'Peshawar',
+      'Faisalabad',
+      'Quetta',
+      'Sialkot',
+    ];
     showModalBottomSheet(
       context: context,
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (context) => Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           const Padding(
             padding: EdgeInsets.all(16),
-            child: Text('Select Default City',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+            child: Text(
+              'Select Default City',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            ),
           ),
-          ...cities.map((city) => ListTile(
-                title: Text(city),
-                trailing: _defaultCity == city
-                    ? Icon(Icons.check, color: kPrimary)
-                    : null,
-                onTap: () {
-                  setState(() => _defaultCity = city);
-                  Navigator.pop(context);
-                },
-              )),
+          ...cities.map(
+            (city) => ListTile(
+              title: Text(city),
+              trailing: _defaultCity == city
+                  ? Icon(Icons.check, color: kPrimary)
+                  : null,
+              onTap: () {
+                setState(() => _defaultCity = city);
+                Navigator.pop(context);
+              },
+            ),
+          ),
           const SizedBox(height: 16),
         ],
       ),
@@ -84,25 +100,30 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
       context: context,
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (context) => Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           const Padding(
             padding: EdgeInsets.all(16),
-            child: Text('Leads Per Page',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+            child: Text(
+              'Leads Per Page',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            ),
           ),
-          ...options.map((count) => ListTile(
-                title: Text('$count leads'),
-                trailing: _leadsPerPage == count
-                    ? Icon(Icons.check, color: kPrimary)
-                    : null,
-                onTap: () {
-                  setState(() => _leadsPerPage = count);
-                  Navigator.pop(context);
-                },
-              )),
+          ...options.map(
+            (count) => ListTile(
+              title: Text('$count leads'),
+              trailing: _leadsPerPage == count
+                  ? Icon(Icons.check, color: kPrimary)
+                  : null,
+              onTap: () {
+                setState(() => _leadsPerPage = count);
+                Navigator.pop(context);
+              },
+            ),
+          ),
           const SizedBox(height: 16),
         ],
       ),
@@ -185,15 +206,20 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red,
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8)),
+                borderRadius: BorderRadius.circular(8),
+              ),
             ),
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(context);
-              // TODO: Clear admin session and navigate to login
-              _toast(context, 'Logged out successfully');
+              await FirebaseAuth.instance.signOut();
+              if (!context.mounted) return;
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(builder: (_) => const LoginPage()),
+                (route) => false,
+              );
             },
-            child: const Text('Log Out',
-                style: TextStyle(color: Colors.white)),
+            child: const Text('Log Out', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -273,8 +299,9 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
                   builder: (context, mode, _) => Switch(
                     value: mode == ThemeMode.dark,
                     activeThumbColor: kPrimary,
-                    onChanged: (val) => themeNotifier.value =
-                        val ? ThemeMode.dark : ThemeMode.light,
+                    onChanged: (val) => themeNotifier.value = val
+                        ? ThemeMode.dark
+                        : ThemeMode.light,
                   ),
                 ),
               ),
@@ -479,11 +506,17 @@ class _SettingsTile extends StatelessWidget {
       children: [
         ListTile(
           onTap: onTap,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 2,
+          ),
           leading: Container(
             width: 38,
             height: 38,
-            decoration: BoxDecoration(color: iconBg, borderRadius: BorderRadius.circular(10)),
+            decoration: BoxDecoration(
+              color: iconBg,
+              borderRadius: BorderRadius.circular(10),
+            ),
             child: Icon(icon, size: 20),
           ),
           title: Text(
@@ -491,14 +524,23 @@ class _SettingsTile extends StatelessWidget {
             style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
           ),
           subtitle: subtitle != null
-              ? Text(subtitle!, style: const TextStyle(fontSize: 12, color: Colors.grey))
+              ? Text(
+                  subtitle!,
+                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                )
               : null,
-          trailing: trailing ??
-              (onTap != null ? const Icon(Icons.chevron_right, color: Colors.grey, size: 20) : null),
+          trailing:
+              trailing ??
+              (onTap != null
+                  ? const Icon(
+                      Icons.chevron_right,
+                      color: Colors.grey,
+                      size: 20,
+                    )
+                  : null),
         ),
         if (showDivider) const Divider(height: 1, indent: 70, endIndent: 16),
       ],
     );
   }
 }
-

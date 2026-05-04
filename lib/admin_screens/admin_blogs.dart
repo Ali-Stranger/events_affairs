@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../blogs.dart';
 import 'admin_edit_blog.dart';
 import 'admin_store.dart';
@@ -25,7 +25,10 @@ class _AdminBlogsPageState extends State<AdminBlogsPage> {
         backgroundColor: bg,
         appBar: AppBar(
           backgroundColor: kPrimary,
-          title: const Text('Blog Posts', style: TextStyle(color: Colors.white, fontSize: 16)),
+          title: const Text(
+            'Blog Posts',
+            style: TextStyle(color: Colors.white, fontSize: 16),
+          ),
           iconTheme: const IconThemeData(color: Colors.white),
           actions: [
             IconButton(
@@ -42,8 +45,9 @@ class _AdminBlogsPageState extends State<AdminBlogsPage> {
           itemBuilder: (context, i) {
             final blog = allBlogs[i];
             final events = adminStore.getBlogEvents(blog.id);
-            final attachedVendorServices =
-                adminStore.getBlogVendorServices(blog.id);
+            final attachedVendorServices = adminStore.getBlogVendorServices(
+              blog.id,
+            );
             final needsAssign = events.isEmpty;
 
             return Container(
@@ -54,7 +58,9 @@ class _AdminBlogsPageState extends State<AdminBlogsPage> {
                 border: Border.all(
                   color: needsAssign
                       ? Colors.amber.withValues(alpha: 0.35)
-                      : (isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05)),
+                      : (isDark
+                            ? Colors.white10
+                            : Colors.black.withValues(alpha: 0.05)),
                 ),
               ),
               child: Row(
@@ -64,10 +70,15 @@ class _AdminBlogsPageState extends State<AdminBlogsPage> {
                     width: 52,
                     height: 52,
                     decoration: BoxDecoration(
-                      color: categoryColor(blog.category).withValues(alpha: 0.12),
+                      color: categoryColor(
+                        blog.category,
+                      ).withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(14),
                     ),
-                    child: Icon(Icons.article_outlined, color: categoryColor(blog.category)),
+                    child: Icon(
+                      Icons.article_outlined,
+                      color: categoryColor(blog.category),
+                    ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -88,7 +99,10 @@ class _AdminBlogsPageState extends State<AdminBlogsPage> {
                             ),
                             if (needsAssign)
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 4,
+                                ),
                                 decoration: BoxDecoration(
                                   color: Colors.amber.withValues(alpha: 0.18),
                                   borderRadius: BorderRadius.circular(30),
@@ -114,7 +128,9 @@ class _AdminBlogsPageState extends State<AdminBlogsPage> {
                                 .map(
                                   (e) => Container(
                                     padding: const EdgeInsets.symmetric(
-                                        horizontal: 10, vertical: 4),
+                                      horizontal: 10,
+                                      vertical: 4,
+                                    ),
                                     decoration: BoxDecoration(
                                       color: kPrimary.withValues(alpha: 0.10),
                                       borderRadius: BorderRadius.circular(20),
@@ -134,7 +150,9 @@ class _AdminBlogsPageState extends State<AdminBlogsPage> {
                         else
                           Container(
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 10, vertical: 4),
+                              horizontal: 10,
+                              vertical: 4,
+                            ),
                             decoration: BoxDecoration(
                               color: kPrimary.withValues(alpha: 0.10),
                               borderRadius: BorderRadius.circular(20),
@@ -237,12 +255,18 @@ class _AdminBlogsPageState extends State<AdminBlogsPage> {
                         color: kPrimary.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: const Icon(Icons.add_circle_outline, color: kPrimary),
+                      child: const Icon(
+                        Icons.add_circle_outline,
+                        color: kPrimary,
+                      ),
                     ),
                     const SizedBox(width: 12),
                     const Text(
                       'Add New Blog',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ],
                 ),
@@ -253,7 +277,9 @@ class _AdminBlogsPageState extends State<AdminBlogsPage> {
                     labelText: 'Blog Title',
                     hintText: 'Enter blog title',
                     prefixIcon: const Icon(Icons.title, color: kPrimary),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide: const BorderSide(color: kPrimary, width: 1.6),
@@ -266,8 +292,13 @@ class _AdminBlogsPageState extends State<AdminBlogsPage> {
                   decoration: InputDecoration(
                     labelText: 'Author Name',
                     hintText: 'Enter author name',
-                    prefixIcon: const Icon(Icons.person_outline, color: kPrimary),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    prefixIcon: const Icon(
+                      Icons.person_outline,
+                      color: kPrimary,
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide: const BorderSide(color: kPrimary, width: 1.6),
@@ -277,14 +308,30 @@ class _AdminBlogsPageState extends State<AdminBlogsPage> {
                 const SizedBox(height: 14),
                 DropdownButtonFormField<String>(
                   initialValue: selectedCategory,
-                  items: ['Wedding', 'Venue', 'Photography', 'Catering', 'Decoration', 'Birthday', 'Corporate']
-                      .map((e) => DropdownMenuItem(value: e, child: Text(e)))
-                      .toList(),
+                  items:
+                      [
+                            'Wedding',
+                            'Venue',
+                            'Photography',
+                            'Catering',
+                            'Decoration',
+                            'Birthday',
+                            'Corporate',
+                          ]
+                          .map(
+                            (e) => DropdownMenuItem(value: e, child: Text(e)),
+                          )
+                          .toList(),
                   onChanged: (v) => setModalState(() => selectedCategory = v!),
                   decoration: InputDecoration(
                     labelText: 'Category',
-                    prefixIcon: const Icon(Icons.category_outlined, color: kPrimary),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    prefixIcon: const Icon(
+                      Icons.category_outlined,
+                      color: kPrimary,
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide: const BorderSide(color: kPrimary, width: 1.6),
@@ -294,14 +341,30 @@ class _AdminBlogsPageState extends State<AdminBlogsPage> {
                 const SizedBox(height: 14),
                 DropdownButtonFormField<String>(
                   initialValue: selectedEvent,
-                  items: ['Wedding', 'Venue', 'Photography', 'Catering', 'Decoration', 'Birthday', 'Corporate']
-                      .map((e) => DropdownMenuItem(value: e, child: Text(e)))
-                      .toList(),
+                  items:
+                      [
+                            'Wedding',
+                            'Venue',
+                            'Photography',
+                            'Catering',
+                            'Decoration',
+                            'Birthday',
+                            'Corporate',
+                          ]
+                          .map(
+                            (e) => DropdownMenuItem(value: e, child: Text(e)),
+                          )
+                          .toList(),
                   onChanged: (v) => setModalState(() => selectedEvent = v!),
                   decoration: InputDecoration(
                     labelText: 'Assign to Event',
-                    prefixIcon: const Icon(Icons.event_outlined, color: kPrimary),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    prefixIcon: const Icon(
+                      Icons.event_outlined,
+                      color: kPrimary,
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide: const BorderSide(color: kPrimary, width: 1.6),
@@ -311,7 +374,10 @@ class _AdminBlogsPageState extends State<AdminBlogsPage> {
                 const SizedBox(height: 8),
                 Text(
                   'Note: Vendors will see this blog for the selected event type.',
-                  style: TextStyle(fontSize: 11, color: isDark ? Colors.white38 : Colors.black54),
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: isDark ? Colors.white38 : Colors.black54,
+                  ),
                 ),
                 const SizedBox(height: 20),
                 SizedBox(
@@ -320,10 +386,13 @@ class _AdminBlogsPageState extends State<AdminBlogsPage> {
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: kPrimary,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
-                    onPressed: () {
-                      if (titleController.text.isEmpty || authorController.text.isEmpty) {
+                    onPressed: () async {
+                      if (titleController.text.isEmpty ||
+                          authorController.text.isEmpty) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
                             content: Text('Please fill in all fields'),
@@ -332,18 +401,46 @@ class _AdminBlogsPageState extends State<AdminBlogsPage> {
                         );
                         return;
                       }
-                      // TODO: Add blog to backend
-                      Navigator.pop(context);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Blog "${titleController.text}" added successfully'),
-                          behavior: SnackBarBehavior.floating,
-                        ),
-                      );
+
+                      try {
+                        await FirebaseFirestore.instance
+                            .collection('blogs')
+                            .add({
+                              'title': titleController.text.trim(),
+                              'author': authorController.text.trim(),
+                              'category': selectedCategory,
+                              'event': selectedEvent,
+                              'createdAt': FieldValue.serverTimestamp(),
+                              'status': 'published',
+                            });
+
+                        Navigator.pop(context);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              'Blog "${titleController.text}" added successfully',
+                            ),
+                            backgroundColor: Colors.green,
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                      } catch (e) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Failed to add blog. Try again.'),
+                            backgroundColor: Colors.red,
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                      }
                     },
                     child: const Text(
                       'Add Blog',
-                      style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ),
@@ -356,4 +453,3 @@ class _AdminBlogsPageState extends State<AdminBlogsPage> {
     );
   }
 }
-

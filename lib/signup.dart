@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'login.dart';
-//  import 'drawer.dart';
 
 // ═══════════════════════════════════════════════════════════════
 //  CONSTANTS
@@ -48,16 +49,16 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
   final _formKey = GlobalKey<FormState>();
 
   final _usernameCtrl = TextEditingController();
-  final _emailCtrl    = TextEditingController();
-  final _phoneCtrl    = TextEditingController();
-  final _passCtrl     = TextEditingController();
-  final _confirmCtrl  = TextEditingController();
+  final _emailCtrl = TextEditingController();
+  final _phoneCtrl = TextEditingController();
+  final _passCtrl = TextEditingController();
+  final _confirmCtrl = TextEditingController();
 
-  bool _obscurePass    = true;
+  bool _obscurePass = true;
   bool _obscureConfirm = true;
-  bool _agreeTerms     = false;
-  bool _isLoading      = false;
-  bool _isSuccess      = false;
+  bool _agreeTerms = false;
+  bool _isLoading = false;
+  bool _isSuccess = false;
 
   @override
   void dispose() {
@@ -76,7 +77,7 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
     if (p.contains(RegExp(r'[A-Z]'))) score++;
     if (p.contains(RegExp(r'[0-9]'))) score++;
     if (p.contains(RegExp(r'[!@#\$%^&*]'))) score++;
-    return score; // 0–4
+    return score;
   }
 
   Color _strengthColor(int s) {
@@ -98,35 +99,81 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     if (!_agreeTerms) {
-      ScaffoldMessenger.of(context).showSnackBar(_snack(
-        'Please accept the Terms & Conditions to continue.',
-        Colors.orange,
-      ));
+      ScaffoldMessenger.of(context).showSnackBar(
+        _snack(
+          'Please accept the Terms & Conditions to continue.',
+          Colors.orange,
+        ),
+      );
       return;
     }
+
     setState(() => _isLoading = true);
-    await Future.delayed(const Duration(milliseconds: 1000));
-    setState(() {
-      _isLoading = false;
-      _isSuccess = true;
-    });
+
+    try {
+      // Step 1: Create user in Firebase Auth
+      final credential = await FirebaseAuth.instance
+          .createUserWithEmailAndPassword(
+            email: _emailCtrl.text.trim(),
+            password: _passCtrl.text,
+          );
+
+      // Step 2: Save user details + role in Firestore
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(credential.user!.uid)
+          .set({
+            'name': _usernameCtrl.text.trim(),
+            'email': _emailCtrl.text.trim(),
+            'phone': _phoneCtrl.text.trim(),
+            'role': 'couple',
+            'createdAt': FieldValue.serverTimestamp(),
+          });
+
+      setState(() {
+        _isLoading = false;
+        _isSuccess = true;
+      });
+    } on FirebaseAuthException catch (e) {
+      setState(() => _isLoading = false);
+
+      String message = 'Something went wrong. Please try again.';
+      if (e.code == 'email-already-in-use') {
+        message = 'An account with this email already exists.';
+      } else if (e.code == 'invalid-email') {
+        message = 'Please enter a valid email address.';
+      } else if (e.code == 'weak-password') {
+        message = 'Password is too weak. Use at least 6 characters.';
+      } else if (e.code == 'network-request-failed') {
+        message = 'No internet connection. Please check your network.';
+      }
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(_snack(message, Colors.red.shade700));
+    } catch (e) {
+      setState(() => _isLoading = false);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        _snack('Something went wrong. Please try again.', Colors.red.shade700),
+      );
+    }
   }
 
   SnackBar _snack(String msg, Color color) => SnackBar(
-        content: Text(msg),
-        backgroundColor: color,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      );
+    content: Text(msg),
+    backgroundColor: color,
+    behavior: SnackBarBehavior.floating,
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+  );
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // appBar: const CommonAppBar(),
       body: SingleChildScrollView(
         child: Column(
           children: [
-
             // ── Hero banner ─────────────────────────────────────────
             _HeroBanner(
               title: 'Create Account',
@@ -142,7 +189,8 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
                 onVendorTap: () => Navigator.pushReplacement(
                   context,
                   MaterialPageRoute(
-                      builder: (_) => const CreateAccountPageVendor()),
+                    builder: (_) => const CreateAccountPageVendor(),
+                  ),
                 ),
               ),
             ),
@@ -152,7 +200,8 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: _isSuccess
                   ? _SuccessCard(
-                      message: 'Your couple account has been created!',
+                      message:
+                          'Your couple account has been created! You can now login.',
                       onLogin: () => Navigator.pushAndRemoveUntil(
                         context,
                         MaterialPageRoute(builder: (_) => const LoginPage()),
@@ -165,7 +214,6 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-
                             _sectionLabel('Personal Details'),
                             const SizedBox(height: 12),
 
@@ -190,8 +238,9 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
                                 if (v == null || v.trim().isEmpty) {
                                   return 'Enter your email';
                                 }
-                                if (!RegExp(r'^[^@]+@[^@]+\.[^@]+')
-                                    .hasMatch(v.trim())) {
+                                if (!RegExp(
+                                  r'^[^@]+@[^@]+\.[^@]+',
+                                ).hasMatch(v.trim())) {
                                   return 'Enter a valid email';
                                 }
                                 return null;
@@ -249,9 +298,11 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
                               _StrengthBar(
                                 strength: _passStrength(_passCtrl.text),
                                 color: _strengthColor(
-                                    _passStrength(_passCtrl.text)),
+                                  _passStrength(_passCtrl.text),
+                                ),
                                 label: _strengthLabel(
-                                    _passStrength(_passCtrl.text)),
+                                  _passStrength(_passCtrl.text),
+                                ),
                               ),
                             ],
 
@@ -263,7 +314,8 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
                               label: 'Confirm Password',
                               obscure: _obscureConfirm,
                               onToggle: () => setState(
-                                  () => _obscureConfirm = !_obscureConfirm),
+                                () => _obscureConfirm = !_obscureConfirm,
+                              ),
                               validator: (v) {
                                 if (v == null || v.isEmpty) {
                                   return 'Please confirm your password';
@@ -324,21 +376,21 @@ class CreateAccountPageVendor extends StatefulWidget {
 class _CreateAccountPageVendorState extends State<CreateAccountPageVendor> {
   final _formKey = GlobalKey<FormState>();
 
-  final _usernameCtrl    = TextEditingController();
-  final _emailCtrl       = TextEditingController();
-  final _phoneCtrl       = TextEditingController();
-  final _businessCtrl    = TextEditingController();
-  final _descCtrl        = TextEditingController();
-  final _passCtrl        = TextEditingController();
-  final _confirmCtrl     = TextEditingController();
+  final _usernameCtrl = TextEditingController();
+  final _emailCtrl = TextEditingController();
+  final _phoneCtrl = TextEditingController();
+  final _businessCtrl = TextEditingController();
+  final _descCtrl = TextEditingController();
+  final _passCtrl = TextEditingController();
+  final _confirmCtrl = TextEditingController();
 
   String? _selectedCategory;
   String? _selectedCity;
-  bool _obscurePass      = true;
-  bool _obscureConfirm   = true;
-  bool _agreeTerms       = false;
-  bool _isLoading        = false;
-  bool _isSuccess        = false;
+  bool _obscurePass = true;
+  bool _obscureConfirm = true;
+  bool _agreeTerms = false;
+  bool _isLoading = false;
+  bool _isSuccess = false;
 
   @override
   void dispose() {
@@ -379,49 +431,95 @@ class _CreateAccountPageVendorState extends State<CreateAccountPageVendor> {
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     if (_selectedCategory == null) {
-      ScaffoldMessenger.of(context).showSnackBar(_snack(
-        'Please select your business category.',
-        Colors.orange,
-      ));
+      ScaffoldMessenger.of(context).showSnackBar(
+        _snack('Please select your business category.', Colors.orange),
+      );
       return;
     }
     if (_selectedCity == null) {
-      ScaffoldMessenger.of(context).showSnackBar(_snack(
-        'Please select your city.',
-        Colors.orange,
-      ));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(_snack('Please select your city.', Colors.orange));
       return;
     }
     if (!_agreeTerms) {
-      ScaffoldMessenger.of(context).showSnackBar(_snack(
-        'Please accept the Terms & Conditions.',
-        Colors.orange,
-      ));
+      ScaffoldMessenger.of(context).showSnackBar(
+        _snack('Please accept the Terms & Conditions.', Colors.orange),
+      );
       return;
     }
+
     setState(() => _isLoading = true);
-    await Future.delayed(const Duration(milliseconds: 1000));
-    setState(() {
-      _isLoading = false;
-      _isSuccess = true;
-    });
+
+    try {
+      // Step 1: Create user in Firebase Auth
+      final credential = await FirebaseAuth.instance
+          .createUserWithEmailAndPassword(
+            email: _emailCtrl.text.trim(),
+            password: _passCtrl.text,
+          );
+
+      // Step 2: Save vendor details + role in Firestore
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(credential.user!.uid)
+          .set({
+            'name': _usernameCtrl.text.trim(),
+            'email': _emailCtrl.text.trim(),
+            'phone': _phoneCtrl.text.trim(),
+            'businessName': _businessCtrl.text.trim(),
+            'businessCategory': _selectedCategory,
+            'city': _selectedCity,
+            'description': _descCtrl.text.trim(),
+            'role': 'vendor',
+            'approved': false, // Admin can approve vendors later
+            'createdAt': FieldValue.serverTimestamp(),
+          });
+
+      setState(() {
+        _isLoading = false;
+        _isSuccess = true;
+      });
+    } on FirebaseAuthException catch (e) {
+      setState(() => _isLoading = false);
+
+      String message = 'Something went wrong. Please try again.';
+      if (e.code == 'email-already-in-use') {
+        message = 'An account with this email already exists.';
+      } else if (e.code == 'invalid-email') {
+        message = 'Please enter a valid email address.';
+      } else if (e.code == 'weak-password') {
+        message = 'Password is too weak. Use at least 6 characters.';
+      } else if (e.code == 'network-request-failed') {
+        message = 'No internet connection. Please check your network.';
+      }
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(_snack(message, Colors.red.shade700));
+    } catch (e) {
+      setState(() => _isLoading = false);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        _snack('Something went wrong. Please try again.', Colors.red.shade700),
+      );
+    }
   }
 
   SnackBar _snack(String msg, Color color) => SnackBar(
-        content: Text(msg),
-        backgroundColor: color,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      );
+    content: Text(msg),
+    backgroundColor: color,
+    behavior: SnackBarBehavior.floating,
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+  );
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      
       body: SingleChildScrollView(
         child: Column(
           children: [
-
             // ── Hero banner ─────────────────────────────────────────
             _HeroBanner(
               title: 'Vendor Registration',
@@ -435,8 +533,7 @@ class _CreateAccountPageVendorState extends State<CreateAccountPageVendor> {
                 selectedIndex: 1,
                 onCoupleTap: () => Navigator.pushReplacement(
                   context,
-                  MaterialPageRoute(
-                      builder: (_) => const CreateAccountPage()),
+                  MaterialPageRoute(builder: (_) => const CreateAccountPage()),
                 ),
                 onVendorTap: () {},
               ),
@@ -461,7 +558,6 @@ class _CreateAccountPageVendorState extends State<CreateAccountPageVendor> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-
                             _sectionLabel('Owner Details'),
                             const SizedBox(height: 12),
 
@@ -469,10 +565,9 @@ class _CreateAccountPageVendorState extends State<CreateAccountPageVendor> {
                               ctrl: _usernameCtrl,
                               label: 'Owner Full Name',
                               icon: Icons.person_outline,
-                              validator: (v) =>
-                                  v == null || v.trim().length < 3
-                                      ? 'Enter at least 3 characters'
-                                      : null,
+                              validator: (v) => v == null || v.trim().length < 3
+                                  ? 'Enter at least 3 characters'
+                                  : null,
                             ),
                             const SizedBox(height: 12),
 
@@ -485,8 +580,9 @@ class _CreateAccountPageVendorState extends State<CreateAccountPageVendor> {
                                 if (v == null || v.trim().isEmpty) {
                                   return 'Enter your email';
                                 }
-                                if (!RegExp(r'^[^@]+@[^@]+\.[^@]+')
-                                    .hasMatch(v.trim())) {
+                                if (!RegExp(
+                                  r'^[^@]+@[^@]+\.[^@]+',
+                                ).hasMatch(v.trim())) {
                                   return 'Enter a valid email';
                                 }
                                 return null;
@@ -522,10 +618,9 @@ class _CreateAccountPageVendorState extends State<CreateAccountPageVendor> {
                               ctrl: _businessCtrl,
                               label: 'Business Name',
                               icon: Icons.store_outlined,
-                              validator: (v) =>
-                                  v == null || v.trim().isEmpty
-                                      ? 'Enter your business name'
-                                      : null,
+                              validator: (v) => v == null || v.trim().isEmpty
+                                  ? 'Enter your business name'
+                                  : null,
                             ),
                             const SizedBox(height: 12),
 
@@ -561,30 +656,37 @@ class _CreateAccountPageVendorState extends State<CreateAccountPageVendor> {
                                 alignLabelWithHint: true,
                                 prefixIcon: const Padding(
                                   padding: EdgeInsets.only(bottom: 40),
-                                  child: Icon(Icons.description_outlined,
-                                      color: kPrimary, size: 20),
+                                  child: Icon(
+                                    Icons.description_outlined,
+                                    color: kPrimary,
+                                    size: 20,
+                                  ),
                                 ),
-                                floatingLabelStyle:
-                                    const TextStyle(color: kPrimary),
+                                floatingLabelStyle: const TextStyle(
+                                  color: kPrimary,
+                                ),
                                 border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(12)),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
                                 focusedBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),
                                   borderSide: const BorderSide(
-                                      color: kPrimary, width: 1.8),
+                                    color: kPrimary,
+                                    width: 1.8,
+                                  ),
                                 ),
                                 enabledBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),
                                   borderSide: BorderSide(
-                                      color: Colors.grey.shade300),
+                                    color: Colors.grey.shade300,
+                                  ),
                                 ),
-                                hintText:
-                                    'Describe your services briefly...',
+                                hintText: 'Describe your services briefly...',
                               ),
                               validator: (v) =>
                                   v == null || v.trim().length < 10
-                                      ? 'Write at least 10 characters'
-                                      : null,
+                                  ? 'Write at least 10 characters'
+                                  : null,
                             ),
 
                             const SizedBox(height: 20),
@@ -614,9 +716,11 @@ class _CreateAccountPageVendorState extends State<CreateAccountPageVendor> {
                               _StrengthBar(
                                 strength: _passStrength(_passCtrl.text),
                                 color: _strengthColor(
-                                    _passStrength(_passCtrl.text)),
+                                  _passStrength(_passCtrl.text),
+                                ),
                                 label: _strengthLabel(
-                                    _passStrength(_passCtrl.text)),
+                                  _passStrength(_passCtrl.text),
+                                ),
                               ),
                             ],
 
@@ -627,7 +731,8 @@ class _CreateAccountPageVendorState extends State<CreateAccountPageVendor> {
                               label: 'Confirm Password',
                               obscure: _obscureConfirm,
                               onToggle: () => setState(
-                                  () => _obscureConfirm = !_obscureConfirm),
+                                () => _obscureConfirm = !_obscureConfirm,
+                              ),
                               validator: (v) {
                                 if (v == null || v.isEmpty) {
                                   return 'Please confirm your password';
@@ -676,29 +781,29 @@ class _CreateAccountPageVendorState extends State<CreateAccountPageVendor> {
 // ═══════════════════════════════════════════════════════════════
 
 Widget _sectionLabel(String text) => Padding(
-      padding: const EdgeInsets.only(bottom: 2),
-      child: Row(
-        children: [
-          Container(
-            width: 3,
-            height: 16,
-            decoration: BoxDecoration(
-              color: kPrimary,
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            text,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-              color: kPrimary,
-            ),
-          ),
-        ],
+  padding: const EdgeInsets.only(bottom: 2),
+  child: Row(
+    children: [
+      Container(
+        width: 3,
+        height: 16,
+        decoration: BoxDecoration(
+          color: kPrimary,
+          borderRadius: BorderRadius.circular(2),
+        ),
       ),
-    );
+      const SizedBox(width: 8),
+      Text(
+        text,
+        style: const TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.bold,
+          color: kPrimary,
+        ),
+      ),
+    ],
+  ),
+);
 
 Widget _field({
   required TextEditingController ctrl,
@@ -813,11 +918,12 @@ class _HeroBanner extends StatelessWidget {
             ),
           ),
         ),
-        // Decorative circles
         Positioned(
-          top: -30, right: -30,
+          top: -30,
+          right: -30,
           child: Container(
-            width: 130, height: 130,
+            width: 130,
+            height: 130,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: Colors.white.withOpacity(0.07),
@@ -825,9 +931,11 @@ class _HeroBanner extends StatelessWidget {
           ),
         ),
         Positioned(
-          bottom: -20, left: -20,
+          bottom: -20,
+          left: -20,
           child: Container(
-            width: 90, height: 90,
+            width: 90,
+            height: 90,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: Colors.white.withOpacity(0.07),
@@ -840,18 +948,23 @@ class _HeroBanner extends StatelessWidget {
             children: [
               Image.asset(
                 'assets/images/logo.png',
-                width: 60, height: 60,
+                width: 60,
+                height: 60,
                 color: Colors.white,
                 colorBlendMode: BlendMode.srcIn,
                 errorBuilder: (_, __, ___) => const Icon(
-                  Icons.celebration, size: 50, color: Colors.white,
+                  Icons.celebration,
+                  size: 50,
+                  color: Colors.white,
                 ),
               ),
               const SizedBox(height: 8),
               Text(
                 title,
                 style: const TextStyle(
-                  color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
               const SizedBox(height: 2),
@@ -867,7 +980,6 @@ class _HeroBanner extends StatelessWidget {
   }
 }
 
-// ──────────────────────────────────────────────────────────────
 class _AccountTypeTabs extends StatelessWidget {
   final int selectedIndex;
   final VoidCallback onCoupleTap;
@@ -914,16 +1026,17 @@ class _AccountTypeTabs extends StatelessWidget {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text('👫',
-                          style: TextStyle(
-                              fontSize: selectedIndex == 0 ? 16 : 14)),
+                      Text(
+                        '👫',
+                        style: TextStyle(
+                          fontSize: selectedIndex == 0 ? 16 : 14,
+                        ),
+                      ),
                       const SizedBox(width: 6),
                       Text(
                         'As a Couple',
                         style: TextStyle(
-                          color: selectedIndex == 0
-                              ? Colors.white
-                              : kPrimary,
+                          color: selectedIndex == 0 ? Colors.white : kPrimary,
                           fontWeight: FontWeight.bold,
                           fontSize: 13,
                         ),
@@ -949,16 +1062,17 @@ class _AccountTypeTabs extends StatelessWidget {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text('🏢',
-                          style: TextStyle(
-                              fontSize: selectedIndex == 1 ? 16 : 14)),
+                      Text(
+                        '🏢',
+                        style: TextStyle(
+                          fontSize: selectedIndex == 1 ? 16 : 14,
+                        ),
+                      ),
                       const SizedBox(width: 6),
                       Text(
                         'As a Vendor',
                         style: TextStyle(
-                          color: selectedIndex == 1
-                              ? Colors.white
-                              : kPrimary,
+                          color: selectedIndex == 1 ? Colors.white : kPrimary,
                           fontWeight: FontWeight.bold,
                           fontSize: 13,
                         ),
@@ -975,7 +1089,6 @@ class _AccountTypeTabs extends StatelessWidget {
   }
 }
 
-// ──────────────────────────────────────────────────────────────
 class _FormCard extends StatelessWidget {
   final Widget child;
   const _FormCard({required this.child});
@@ -1002,16 +1115,16 @@ class _FormCard extends StatelessWidget {
   }
 }
 
-// ──────────────────────────────────────────────────────────────
 class _StrengthBar extends StatelessWidget {
   final int strength;
   final Color color;
   final String label;
 
-  const _StrengthBar(
-      {required this.strength,
-      required this.color,
-      required this.label});
+  const _StrengthBar({
+    required this.strength,
+    required this.color,
+    required this.label,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1023,8 +1136,7 @@ class _StrengthBar extends StatelessWidget {
             return Expanded(
               child: Container(
                 height: 4,
-                margin:
-                    EdgeInsets.only(right: i < 3 ? 4 : 0),
+                margin: EdgeInsets.only(right: i < 3 ? 4 : 0),
                 decoration: BoxDecoration(
                   color: i < strength ? color : Colors.grey.shade200,
                   borderRadius: BorderRadius.circular(2),
@@ -1038,14 +1150,16 @@ class _StrengthBar extends StatelessWidget {
           Text(
             'Password strength: $label',
             style: TextStyle(
-                fontSize: 11, color: color, fontWeight: FontWeight.w500),
+              fontSize: 11,
+              color: color,
+              fontWeight: FontWeight.w500,
+            ),
           ),
       ],
     );
   }
 }
 
-// ──────────────────────────────────────────────────────────────
 class _Dropdown extends StatelessWidget {
   final String? value;
   final String hint;
@@ -1077,25 +1191,25 @@ class _Dropdown extends StatelessWidget {
             children: [
               Icon(icon, color: kPrimary, size: 20),
               const SizedBox(width: 10),
-              Text(hint,
-                  style: TextStyle(color: Colors.grey.shade500, fontSize: 14)),
+              Text(
+                hint,
+                style: TextStyle(color: Colors.grey.shade500, fontSize: 14),
+              ),
             ],
           ),
           selectedItemBuilder: (ctx) => items
-              .map((item) => Row(
-                    children: [
-                      Icon(icon, color: kPrimary, size: 20),
-                      const SizedBox(width: 10),
-                      Text(item,
-                          style: const TextStyle(fontSize: 14)),
-                    ],
-                  ))
+              .map(
+                (item) => Row(
+                  children: [
+                    Icon(icon, color: kPrimary, size: 20),
+                    const SizedBox(width: 10),
+                    Text(item, style: const TextStyle(fontSize: 14)),
+                  ],
+                ),
+              )
               .toList(),
           items: items
-              .map((item) => DropdownMenuItem(
-                    value: item,
-                    child: Text(item),
-                  ))
+              .map((item) => DropdownMenuItem(value: item, child: Text(item)))
               .toList(),
           onChanged: onChanged,
         ),
@@ -1104,7 +1218,6 @@ class _Dropdown extends StatelessWidget {
   }
 }
 
-// ──────────────────────────────────────────────────────────────
 class _TermsRow extends StatelessWidget {
   final bool value;
   final ValueChanged<bool?> onChanged;
@@ -1123,7 +1236,8 @@ class _TermsRow extends StatelessWidget {
             value: value,
             activeColor: kPrimary,
             shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(4)),
+              borderRadius: BorderRadius.circular(4),
+            ),
             onChanged: onChanged,
           ),
         ),
@@ -1131,19 +1245,27 @@ class _TermsRow extends StatelessWidget {
         Expanded(
           child: RichText(
             text: const TextSpan(
-              style: TextStyle(fontSize: 12, color: Colors.black87, height: 1.5),
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.black87,
+                height: 1.5,
+              ),
               children: [
                 TextSpan(text: 'I agree to the '),
                 TextSpan(
                   text: 'Terms & Conditions',
                   style: TextStyle(
-                      color: kPrimary, fontWeight: FontWeight.bold),
+                    color: kPrimary,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 TextSpan(text: ' and '),
                 TextSpan(
                   text: 'Privacy Policy',
                   style: TextStyle(
-                      color: kPrimary, fontWeight: FontWeight.bold),
+                    color: kPrimary,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 TextSpan(text: ' of Events Affairs.'),
               ],
@@ -1155,7 +1277,6 @@ class _TermsRow extends StatelessWidget {
   }
 }
 
-// ──────────────────────────────────────────────────────────────
 class _SubmitButton extends StatelessWidget {
   final String label;
   final bool isLoading;
@@ -1176,7 +1297,8 @@ class _SubmitButton extends StatelessWidget {
         style: ElevatedButton.styleFrom(
           backgroundColor: kPrimary,
           shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12)),
+            borderRadius: BorderRadius.circular(12),
+          ),
           elevation: 2,
         ),
         onPressed: isLoading ? null : onPressed,
@@ -1185,7 +1307,9 @@ class _SubmitButton extends StatelessWidget {
                 height: 22,
                 width: 22,
                 child: CircularProgressIndicator(
-                    color: Colors.white, strokeWidth: 2.5),
+                  color: Colors.white,
+                  strokeWidth: 2.5,
+                ),
               )
             : Text(
                 label,
@@ -1201,7 +1325,6 @@ class _SubmitButton extends StatelessWidget {
   }
 }
 
-// ──────────────────────────────────────────────────────────────
 class _LoginLink extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -1217,12 +1340,12 @@ class _LoginLink extends StatelessWidget {
             style: TextStyle(fontSize: 13),
             children: [
               TextSpan(
-                  text: 'Already have an account? ',
-                  style: TextStyle(color: Colors.black54)),
+                text: 'Already have an account? ',
+                style: TextStyle(color: Colors.black54),
+              ),
               TextSpan(
                 text: 'Login',
-                style: TextStyle(
-                    color: kPrimary, fontWeight: FontWeight.bold),
+                style: TextStyle(color: kPrimary, fontWeight: FontWeight.bold),
               ),
             ],
           ),
@@ -1232,7 +1355,6 @@ class _LoginLink extends StatelessWidget {
   }
 }
 
-// ──────────────────────────────────────────────────────────────
 class _SuccessCard extends StatelessWidget {
   final String message;
   final VoidCallback onLogin;
@@ -1265,8 +1387,11 @@ class _SuccessCard extends StatelessWidget {
               color: Colors.green.withOpacity(0.12),
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.check_circle_outline,
-                color: Colors.green, size: 44),
+            child: const Icon(
+              Icons.check_circle_outline,
+              color: Colors.green,
+              size: 44,
+            ),
           ),
           const SizedBox(height: 18),
           const Text(
@@ -1278,7 +1403,10 @@ class _SuccessCard extends StatelessWidget {
             message,
             textAlign: TextAlign.center,
             style: const TextStyle(
-                fontSize: 13, color: Colors.grey, height: 1.6),
+              fontSize: 13,
+              color: Colors.grey,
+              height: 1.6,
+            ),
           ),
           const SizedBox(height: 24),
           SizedBox(
@@ -1288,15 +1416,17 @@ class _SuccessCard extends StatelessWidget {
               style: ElevatedButton.styleFrom(
                 backgroundColor: kPrimary,
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
               onPressed: onLogin,
               child: const Text(
                 'Go to Login',
                 style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold),
+                  color: Colors.white,
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ),

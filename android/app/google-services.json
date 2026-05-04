@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "99745095312",
+    "firebase_url": "https://eventsaffairs-90430-default-rtdb.firebaseio.com",
+    "project_id": "eventsaffairs-90430",
+    "storage_bucket": "eventsaffairs-90430.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:99745095312:android:bbc343d62d2921c3644215",
+        "android_client_info": {
+          "package_name": "com.example.events_affairs"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBx1wdjo-PXe0zqZRmSiVANuRNPI_SNv5Y"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

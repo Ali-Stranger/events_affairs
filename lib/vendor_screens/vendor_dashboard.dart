@@ -1,5 +1,5 @@
-
 // import 'package:flutter/material.dart';
+
 // import 'vendor_bookings.dart';
 // import 'vendor_other_screens.dart';
 
@@ -18,7 +18,6 @@
 
 // class _VendorDashboardPageState extends State<VendorDashboardPage> {
 //   int _unreadNotifs = 5;
-
 
 // Future<void> _openNotifications() async {
 //   await showModalBottomSheet(
@@ -205,7 +204,6 @@
 //   _Inquiry(name: 'Sara Raza', event: 'Stage Setup',         date: 'Jun 2',  city: 'Karachi', budget: 45000),
 //   _Inquiry(name: 'M. Bilal',  event: 'Floral Arrangement',  date: 'May 28', city: 'Karachi', budget: 25000),
 // ];
-
 
 // class _NotificationsSheet extends StatelessWidget {
 //   const _NotificationsSheet();
@@ -670,8 +668,9 @@
 //       );
 // }
 
-
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart'; // ← ADD
+import 'package:cloud_firestore/cloud_firestore.dart'; // ← ADD
 import 'vendor_bookings.dart';
 import 'vendor_other_screens.dart';
 
@@ -686,11 +685,41 @@ class VendorDashboardPage extends StatefulWidget {
 
 class _VendorDashboardPageState extends State<VendorDashboardPage> {
   int _unreadNotifs = 5;
+  String _vendorName = 'Loading...';
+  String _businessName = 'Loading...';
+  String _category = '';
+  String _city = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadVendorData();
+  }
+
+  Future<void> _loadVendorData() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+
+    final doc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .get();
+
+    if (doc.exists) {
+      setState(() {
+        _vendorName = doc.data()?['name'] ?? 'Vendor';
+        _businessName = doc.data()?['businessName'] ?? 'My Business';
+        _category = doc.data()?['businessCategory'] ?? '';
+        _city = doc.data()?['city'] ?? '';
+      });
+    }
+  }
 
   Future<void> _openNotifications() async {
     await showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.transparent, // Allow custom shape/color in builder
+      backgroundColor:
+          Colors.transparent, // Allow custom shape/color in builder
       isScrollControlled: true,
       builder: (_) => const _NotificationsSheet(),
     );
@@ -700,10 +729,12 @@ class _VendorDashboardPageState extends State<VendorDashboardPage> {
   @override
   Widget build(BuildContext context) {
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     // Better Dark Mode Colors
     final Color surfaceColor = isDark ? const Color(0xff1A1A24) : Colors.white;
-    final Color scaffoldBg = isDark ? const Color(0xff0F0F14) : const Color(0xffF4F7FA);
+    final Color scaffoldBg = isDark
+        ? const Color(0xff0F0F14)
+        : const Color(0xffF4F7FA);
 
     return Scaffold(
       backgroundColor: scaffoldBg,
@@ -711,7 +742,11 @@ class _VendorDashboardPageState extends State<VendorDashboardPage> {
         backgroundColor: kPrimary,
         title: const Text(
           'Vendor Dashboard',
-          style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         elevation: 0,
         automaticallyImplyLeading: false,
@@ -720,7 +755,10 @@ class _VendorDashboardPageState extends State<VendorDashboardPage> {
             alignment: Alignment.center,
             children: [
               IconButton(
-                icon: const Icon(Icons.notifications_outlined, color: Colors.white),
+                icon: const Icon(
+                  Icons.notifications_outlined,
+                  color: Colors.white,
+                ),
                 onPressed: _openNotifications,
               ),
               if (_unreadNotifs > 0)
@@ -746,25 +784,46 @@ class _VendorDashboardPageState extends State<VendorDashboardPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _ProfileHeader(isDark: isDark),
+            _ProfileHeader(
+              isDark: isDark,
+              vendorName: _vendorName,
+              businessName: _businessName,
+              category: _category,
+              city: _city,
+            ),
             const SizedBox(height: 16),
-            
+
             // Statistics Section
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Row(
                 children: [
-                  _StatCard(value: '23', label: 'Inquiries', isDark: isDark, surface: surfaceColor),
+                  _StatCard(
+                    value: '23',
+                    label: 'Inquiries',
+                    isDark: isDark,
+                    surface: surfaceColor,
+                  ),
                   const SizedBox(width: 10),
-                  _StatCard(value: '8', label: 'Leads', isDark: isDark, surface: surfaceColor),
+                  _StatCard(
+                    value: '8',
+                    label: 'Leads',
+                    isDark: isDark,
+                    surface: surfaceColor,
+                  ),
                   const SizedBox(width: 10),
-                  _StatCard(value: '4.8 ★', label: 'Rating', isDark: isDark, surface: surfaceColor),
+                  _StatCard(
+                    value: '4.8 ★',
+                    label: 'Rating',
+                    isDark: isDark,
+                    surface: surfaceColor,
+                  ),
                 ],
               ),
             ),
-            
+
             const SizedBox(height: 24),
-            
+
             // Quick Actions
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -784,46 +843,76 @@ class _VendorDashboardPageState extends State<VendorDashboardPage> {
                         icon: Icons.event_note_outlined,
                         label: 'Bookings',
                         surface: surfaceColor,
-                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const VendorBookingsPage())),
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const VendorBookingsPage(),
+                          ),
+                        ),
                       ),
                       _QuickAction(
                         icon: Icons.photo_library_outlined,
                         label: 'Gallery',
                         surface: surfaceColor,
-                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const VendorGalleryPage())),
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const VendorGalleryPage(),
+                          ),
+                        ),
                       ),
                       _QuickAction(
                         icon: Icons.star_outline,
                         label: 'Reviews',
                         surface: surfaceColor,
-                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const VendorReviewsPage())),
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const VendorReviewsPage(),
+                          ),
+                        ),
                       ),
                       _QuickAction(
                         icon: Icons.bar_chart_outlined,
                         label: 'Analytics',
                         surface: surfaceColor,
-                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const VendorAnalyticsPage())),
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const VendorAnalyticsPage(),
+                          ),
+                        ),
                       ),
                       _QuickAction(
                         icon: Icons.edit_outlined,
                         label: 'Edit Profile',
                         surface: surfaceColor,
-                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const VendorProfileEditPage())),
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const VendorProfileEditPage(),
+                          ),
+                        ),
                       ),
                       _QuickAction(
                         icon: Icons.settings_outlined,
                         label: 'Settings',
                         surface: surfaceColor,
-                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const VendorSettingsPage())),
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const VendorSettingsPage(),
+                          ),
+                        ),
                       ),
                     ],
                   ),
                 ],
               ),
             ),
-            
+
             const SizedBox(height: 24),
-            
+
             // Recent Inquiries
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -836,16 +925,29 @@ class _VendorDashboardPageState extends State<VendorDashboardPage> {
                       _SectionHeading('Recent Inquiries', isDark: isDark),
                       TextButton(
                         onPressed: () {},
-                        child: const Text('View All', style: TextStyle(color: kPrimary, fontWeight: FontWeight.bold, fontSize: 13)),
+                        child: const Text(
+                          'View All',
+                          style: TextStyle(
+                            color: kPrimary,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                          ),
+                        ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 8),
-                  ..._sampleInquiries.map((inq) => _InquiryTile(inquiry: inq, surface: surfaceColor, isDark: isDark)),
+                  ..._sampleInquiries.map(
+                    (inq) => _InquiryTile(
+                      inquiry: inq,
+                      surface: surfaceColor,
+                      isDark: isDark,
+                    ),
+                  ),
                 ],
               ),
             ),
-            
+
             const SizedBox(height: 16),
             _ProfileCompleteness(surface: surfaceColor, isDark: isDark),
             const SizedBox(height: 32),
@@ -860,7 +962,18 @@ class _VendorDashboardPageState extends State<VendorDashboardPage> {
 
 class _ProfileHeader extends StatelessWidget {
   final bool isDark;
-  const _ProfileHeader({required this.isDark});
+  final String vendorName;
+  final String businessName;
+  final String category;
+  final String city;
+
+  const _ProfileHeader({
+    required this.isDark,
+    required this.vendorName,
+    required this.businessName,
+    required this.category,
+    required this.city,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -868,17 +981,31 @@ class _ProfileHeader extends StatelessWidget {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: isDark ? const Color(0xff1A1A24) : Colors.white,
-        border: Border(bottom: BorderSide(color: isDark ? Colors.white10 : Colors.black.withOpacity(0.05))),
+        border: Border(
+          bottom: BorderSide(
+            color: isDark ? Colors.white10 : Colors.black.withOpacity(0.05),
+          ),
+        ),
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(2),
-            decoration: const BoxDecoration(color: kPrimary, shape: BoxShape.circle),
-            child: const CircleAvatar(
+            decoration: const BoxDecoration(
+              color: kPrimary,
+              shape: BoxShape.circle,
+            ),
+            child: CircleAvatar(
               radius: 28,
               backgroundColor: kPrimary,
-              child: Text('DD', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
+              child: Text(
+                vendorName.isNotEmpty ? vendorName[0].toUpperCase() : 'V',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                ),
+              ),
             ),
           ),
           const SizedBox(width: 16),
@@ -887,25 +1014,52 @@ class _ProfileHeader extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Dream Décor Co.',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black87),
+                  businessName,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: isDark ? Colors.white : Colors.black87,
+                  ),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Decoration · Karachi',
-                  style: TextStyle(fontSize: 12, color: isDark ? Colors.white54 : Colors.black54),
+                  '$category · $city',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: isDark ? Colors.white54 : Colors.black54,
+                  ),
                 ),
                 const SizedBox(height: 6),
                 Row(
                   children: [
                     const Icon(Icons.star, color: Colors.amber, size: 14),
                     const SizedBox(width: 4),
-                    Text('4.8', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black87)),
+                    Text(
+                      '4.8',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: isDark ? Colors.white : Colors.black87,
+                      ),
+                    ),
                     const SizedBox(width: 8),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                      decoration: BoxDecoration(color: Colors.green.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
-                      child: const Text('Live', style: TextStyle(color: Colors.green, fontSize: 10, fontWeight: FontWeight.bold)),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.green.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Text(
+                        'Live',
+                        style: TextStyle(
+                          color: Colors.green,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -922,7 +1076,12 @@ class _StatCard extends StatelessWidget {
   final String value, label;
   final bool isDark;
   final Color surface;
-  const _StatCard({required this.value, required this.label, required this.isDark, required this.surface});
+  const _StatCard({
+    required this.value,
+    required this.label,
+    required this.isDark,
+    required this.surface,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -933,14 +1092,33 @@ class _StatCard extends StatelessWidget {
           color: surface,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
-            BoxShadow(color: Colors.black.withOpacity(isDark ? 0.2 : 0.03), blurRadius: 10, offset: const Offset(0, 4))
+            BoxShadow(
+              color: Colors.black.withOpacity(isDark ? 0.2 : 0.03),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
           ],
         ),
         child: Column(
           children: [
-            Text(value, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: kPrimary)),
+            Text(
+              value,
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w900,
+                color: kPrimary,
+              ),
+            ),
             const SizedBox(height: 4),
-            Text(label, textAlign: TextAlign.center, style: TextStyle(fontSize: 10, color: isDark ? Colors.white38 : Colors.black45, fontWeight: FontWeight.w500)),
+            Text(
+              label,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 10,
+                color: isDark ? Colors.white38 : Colors.black45,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
           ],
         ),
       ),
@@ -953,7 +1131,12 @@ class _QuickAction extends StatelessWidget {
   final String label;
   final Color surface;
   final VoidCallback onTap;
-  const _QuickAction({required this.icon, required this.label, required this.onTap, required this.surface});
+  const _QuickAction({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    required this.surface,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -965,18 +1148,30 @@ class _QuickAction extends StatelessWidget {
         decoration: BoxDecoration(
           color: surface,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: isDark ? Colors.white.withOpacity(0.05) : Colors.transparent),
+          border: Border.all(
+            color: isDark ? Colors.white.withOpacity(0.05) : Colors.transparent,
+          ),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
               padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(color: kPrimary.withOpacity(0.1), shape: BoxShape.circle),
+              decoration: BoxDecoration(
+                color: kPrimary.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
               child: Icon(icon, color: kPrimary, size: 22),
             ),
             const SizedBox(height: 8),
-            Text(label, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: isDark ? Colors.white70 : Colors.black87)),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: isDark ? Colors.white70 : Colors.black87,
+              ),
+            ),
           ],
         ),
       ),
@@ -988,32 +1183,65 @@ class _InquiryTile extends StatelessWidget {
   final _Inquiry inquiry;
   final Color surface;
   final bool isDark;
-  const _InquiryTile({required this.inquiry, required this.surface, required this.isDark});
+  const _InquiryTile({
+    required this.inquiry,
+    required this.surface,
+    required this.isDark,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(color: surface, borderRadius: BorderRadius.circular(16)),
+      decoration: BoxDecoration(
+        color: surface,
+        borderRadius: BorderRadius.circular(16),
+      ),
       child: Row(
         children: [
           CircleAvatar(
             radius: 20,
             backgroundColor: kPrimary.withOpacity(0.1),
-            child: Text(inquiry.name[0], style: const TextStyle(color: kPrimary, fontWeight: FontWeight.bold)),
+            child: Text(
+              inquiry.name[0],
+              style: const TextStyle(
+                color: kPrimary,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(inquiry.name, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: isDark ? Colors.white : Colors.black87)),
-                Text('${inquiry.event} · ${inquiry.date}', style: TextStyle(fontSize: 11, color: isDark ? Colors.white38 : Colors.black54)),
+                Text(
+                  inquiry.name,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                    color: isDark ? Colors.white : Colors.black87,
+                  ),
+                ),
+                Text(
+                  '${inquiry.event} · ${inquiry.date}',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: isDark ? Colors.white38 : Colors.black54,
+                  ),
+                ),
               ],
             ),
           ),
-          Text('PKR ${inquiry.budget.toInt()}', style: const TextStyle(fontWeight: FontWeight.bold, color: kPrimary, fontSize: 12)),
+          Text(
+            'PKR ${inquiry.budget.toInt()}',
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              color: kPrimary,
+              fontSize: 12,
+            ),
+          ),
         ],
       ),
     );
@@ -1037,18 +1265,48 @@ class _NotificationsSheet extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.withOpacity(0.2), borderRadius: BorderRadius.circular(10))),
+          Container(
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: Colors.grey.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
           const SizedBox(height: 20),
           Row(
             children: [
-              Text('Notifications', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black)),
+              Text(
+                'Notifications',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: isDark ? Colors.white : Colors.black,
+                ),
+              ),
             ],
           ),
           const Divider(height: 30),
-          const _NotifTile(text: 'New inquiry from Ali Khan', time: 'Just now', unread: true),
-          const _NotifTile(text: 'Sara Raza connected with you', time: '1 hr ago', unread: true),
-          const _NotifTile(text: 'Profile visible in Karachi', time: 'Yesterday', unread: false),
-          const _NotifTile(text: 'Profile completeness reached 92% — almost there!', time: '2 days ago', unread: false),
+          const _NotifTile(
+            text: 'New inquiry from Ali Khan',
+            time: 'Just now',
+            unread: true,
+          ),
+          const _NotifTile(
+            text: 'Sara Raza connected with you',
+            time: '1 hr ago',
+            unread: true,
+          ),
+          const _NotifTile(
+            text: 'Profile visible in Karachi',
+            time: 'Yesterday',
+            unread: false,
+          ),
+          const _NotifTile(
+            text: 'Profile completeness reached 92% — almost there!',
+            time: '2 days ago',
+            unread: false,
+          ),
           const SizedBox(height: 20),
         ],
       ),
@@ -1056,12 +1314,14 @@ class _NotificationsSheet extends StatelessWidget {
   }
 }
 
-
-
 class _NotifTile extends StatelessWidget {
   final String text, time;
   final bool unread;
-  const _NotifTile({required this.text, required this.time, required this.unread});
+  const _NotifTile({
+    required this.text,
+    required this.time,
+    required this.unread,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1070,14 +1330,32 @@ class _NotifTile extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 16),
       child: Row(
         children: [
-          Container(width: 8, height: 8, decoration: BoxDecoration(shape: BoxShape.circle, color: unread ? kPrimary : Colors.transparent, border: unread ? null : Border.all(color: Colors.grey))),
+          Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: unread ? kPrimary : Colors.transparent,
+              border: unread ? null : Border.all(color: Colors.grey),
+            ),
+          ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(text, style: TextStyle(fontSize: 14, color: isDark ? Colors.white : Colors.black87, fontWeight: unread ? FontWeight.bold : FontWeight.normal)),
-                Text(time, style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                Text(
+                  text,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: isDark ? Colors.white : Colors.black87,
+                    fontWeight: unread ? FontWeight.bold : FontWeight.normal,
+                  ),
+                ),
+                Text(
+                  time,
+                  style: const TextStyle(fontSize: 11, color: Colors.grey),
+                ),
               ],
             ),
           ),
@@ -1097,7 +1375,10 @@ class _ProfileCompleteness extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(color: surface, borderRadius: BorderRadius.circular(20)),
+      decoration: BoxDecoration(
+        color: surface,
+        borderRadius: BorderRadius.circular(20),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1105,13 +1386,24 @@ class _ProfileCompleteness extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               _SectionHeading('Profile Completeness', isDark: isDark),
-              const Text('92%', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.green)),
+              const Text(
+                '92%',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.green,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 12),
           ClipRRect(
             borderRadius: BorderRadius.circular(10),
-            child: const LinearProgressIndicator(value: 0.92, minHeight: 6, backgroundColor: Colors.black12, valueColor: AlwaysStoppedAnimation(Colors.green)),
+            child: const LinearProgressIndicator(
+              value: 0.92,
+              minHeight: 6,
+              backgroundColor: Colors.black12,
+              valueColor: AlwaysStoppedAnimation(Colors.green),
+            ),
           ),
           const SizedBox(height: 16),
           const _TodoItem(text: 'Add WhatsApp number', done: false),
@@ -1133,9 +1425,20 @@ class _TodoItem extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 6),
       child: Row(
         children: [
-          Icon(done ? Icons.check_circle : Icons.radio_button_unchecked, size: 16, color: done ? Colors.green : Colors.grey),
+          Icon(
+            done ? Icons.check_circle : Icons.radio_button_unchecked,
+            size: 16,
+            color: done ? Colors.green : Colors.grey,
+          ),
           const SizedBox(width: 8),
-          Text(text, style: TextStyle(fontSize: 12, color: done ? Colors.grey : null, decoration: done ? TextDecoration.lineThrough : null)),
+          Text(
+            text,
+            style: TextStyle(
+              fontSize: 12,
+              color: done ? Colors.grey : null,
+              decoration: done ? TextDecoration.lineThrough : null,
+            ),
+          ),
         ],
       ),
     );
@@ -1149,18 +1452,25 @@ class _SectionHeading extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Text(
-        text,
-        style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black87),
-      );
+    text,
+    style: TextStyle(
+      fontSize: 15,
+      fontWeight: FontWeight.bold,
+      color: isDark ? Colors.white : Colors.black87,
+    ),
+  );
 }
 
 class _Inquiry {
   final String name, event, date, city;
   final double budget;
-  const _Inquiry({required this.name, required this.event, required this.date, required this.city, required this.budget});
+  const _Inquiry({
+    required this.name,
+    required this.event,
+    required this.date,
+    required this.city,
+    required this.budget,
+  });
 }
 
-const List<_Inquiry> _sampleInquiries = [
-  _Inquiry(name: 'Ali Khan', event: 'Wedding Décor', date: 'May 15', city: 'Lahore', budget: 60000),
-  _Inquiry(name: 'Sara Raza', event: 'Stage Setup', date: 'Jun 2', city: 'Karachi', budget: 45000),
-];
+const List<_Inquiry> _sampleInquiries = [];

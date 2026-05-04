@@ -66,52 +66,59 @@ class _CommonDrawerState extends State<CommonDrawer> {
       child: ListView(
         padding: EdgeInsets.zero,
         children: [
-                // ===== NORMAL MENU HEADER =====
-                SizedBox(
-                  height: 88,
-                  child: const DrawerHeader(
-                    decoration: BoxDecoration(color: Color(0xffB4245D)),
-                    child: Text(
-                      "Events Affairs Menu",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
+          // ===== NORMAL MENU HEADER =====
+          SizedBox(
+            height: 88,
+            child: const DrawerHeader(
+              decoration: BoxDecoration(color: Color(0xffB4245D)),
+              child: Text(
+                "Events Affairs Menu",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
                 ),
-                ListTile(
-                  title: const Text("Home", style: headingStyle),
-                  onTap: () => Navigator.pushAndRemoveUntil(
-                    context,
-                    MaterialPageRoute(builder: (_) => const CreateHomePage()),
-                    (route) => false,
-                  ),
-                ),
-                ListTile(
-                  title: const Text("Venues", style: headingStyle),
-                  onTap: () => Navigator.push(context,
-                      MaterialPageRoute(builder: (_) => const VenuesPage())),
-                ),
-                ListTile(
-                  title: const Text("Blogs", style: headingStyle),
-                  onTap: () => Navigator.push(context,
-                      MaterialPageRoute(builder: (_) => const BlogsPage())),
-                ),
-                
-                
-                ListTile(
-                  title: const Text("Contact Us", style: headingStyle),
-                  onTap: () => Navigator.push(context,
-                      MaterialPageRoute(builder: (_) => const ContactUs())),
-                ),
-                ListTile(
-                  title: const Text("Settings", style: headingStyle),
-                  onTap: () => Navigator.push(context,
-                      MaterialPageRoute(builder: (_) => const SettingsPage())),
-                ),
-              ],
+              ),
+            ),
+          ),
+          ListTile(
+            title: const Text("Home", style: headingStyle),
+            onTap: () => Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(builder: (_) => const CreateHomePage()),
+              (route) => false,
+            ),
+          ),
+          ListTile(
+            title: const Text("Venues", style: headingStyle),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const VenuesPage()),
+            ),
+          ),
+          ListTile(
+            title: const Text("Blogs", style: headingStyle),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const BlogsPage()),
+            ),
+          ),
+
+          ListTile(
+            title: const Text("Contact Us", style: headingStyle),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const ContactUs()),
+            ),
+          ),
+          ListTile(
+            title: const Text("Settings", style: headingStyle),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const SettingsPage()),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -133,11 +140,7 @@ class CommonHeader extends StatelessWidget {
             onPressed: () => Scaffold.of(context).openDrawer(),
           ),
         ),
-        Image.asset(
-          'assets/images/logo.png',
-          width: 90,
-          height: 90,
-        ),
+        Image.asset('assets/images/logo.png', width: 90, height: 90),
       ],
     );
   }
