@@ -192,8 +192,9 @@ class AdminStore extends ChangeNotifier {
 
   void toggleBlogVendorService(int blogId, String vendorName, String service) {
     final key = '${vendorName.trim()}|${service.trim()}';
-    if (key == '|' || vendorName.trim().isEmpty || service.trim().isEmpty)
+    if (key == '|' || vendorName.trim().isEmpty || service.trim().isEmpty) {
       return;
+    }
     final set = blogVendorServices.putIfAbsent(blogId, () => <String>{});
     if (set.contains(key)) {
       set.remove(key);
