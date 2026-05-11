@@ -768,6 +768,22 @@ class _SettingsPageState extends State<SettingsPage> {
 
   final Color primaryColor = const Color(0xffB4245D);
 User? get user => FirebaseAuth.instance.currentUser;
+String getInitials(String? name, String? email) {
+  if (name != null && name.trim().isNotEmpty) {
+    final parts = name.trim().split(' ');
+    if (parts.length == 1) {
+      return parts[0][0].toUpperCase();
+    } else {
+      return (parts[0][0] + parts[1][0]).toUpperCase();
+    }
+  }
+
+  if (email != null && email.isNotEmpty) {
+    return email[0].toUpperCase();
+  }
+
+  return 'U';
+}
   void _showLogoutDialog() {
     showDialog(
       context: context,
@@ -1177,18 +1193,32 @@ User? get user => FirebaseAuth.instance.currentUser;
               ),
               child: Row(
                 children: [
+
+                  // CircleAvatar(
+                  //   radius: 30,
+                  //   backgroundColor: primaryColor,
+                  //   child: const Text(
+                  //     'AK',
+                  //     style: TextStyle(
+                  //       fontSize: 20,
+                  //       fontWeight: FontWeight.bold,
+                  //       color: Colors.white,
+                  //     ),
+                  //   ),
+                  // ),
+
                   CircleAvatar(
-                    radius: 30,
-                    backgroundColor: primaryColor,
-                    child: const Text(
-                      'AK',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
+  radius: 30,
+  backgroundColor: primaryColor,
+  child: Text(
+    getInitials(user?.displayName, user?.email),
+    style: const TextStyle(
+      fontSize: 20,
+      fontWeight: FontWeight.bold,
+      color: Colors.white,
+    ),
+  ),
+),
                   const SizedBox(width: 14),
                   // const Expanded(
                   //   child: Column(

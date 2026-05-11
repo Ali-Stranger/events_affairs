@@ -4892,7 +4892,23 @@ class _VendorSettingsPageState extends State<VendorSettingsPage> {
   final Color kPrimary = const Color(0xffB4245D);
 User? get user => FirebaseAuth.instance.currentUser;
   // ─── HELPERS ───
+  String _getInitials(String? fullName) {
+  if (fullName == null || fullName.trim().isEmpty) {
+    return 'VA';
+  }
 
+  final cleanName = fullName.trim().replaceAll(RegExp(r'\s+'), ' ');
+  final parts = cleanName.split(' ');
+
+  if (parts.length == 1) {
+    return parts[0][0].toUpperCase() + (parts[0].length > 1 ? parts[0][1].toUpperCase() : '');
+  }
+
+  final first = parts.first[0];
+  final last = parts.last[0];
+
+  return (first + last).toUpperCase();
+}
   void _showCityPicker() {
     final cities = ['Karachi', 'Lahore', 'Islamabad', 'Multan', 'Peshawar'];
     showModalBottomSheet(
@@ -5235,18 +5251,32 @@ User? get user => FirebaseAuth.instance.currentUser;
               ),
               child: Row(
                 children: [
+                  // CircleAvatar(
+                  //   radius: 30,
+                  //   backgroundColor: kPrimary,
+                  //   child: const Text(
+                  //     'DD',
+                  //     style: TextStyle(
+                  //       fontSize: 20,
+                  //       fontWeight: FontWeight.bold,
+                  //       color: Colors.white,
+                  //     ),
+                  //   ),
+                  // ),
                   CircleAvatar(
-                    radius: 30,
-                    backgroundColor: kPrimary,
-                    child: const Text(
-                      'DD',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
+  radius: 30,
+  backgroundColor: kPrimary,
+  child: Text(
+    _getInitials(
+      user?.displayName ?? user?.email,
+    ),
+    style: const TextStyle(
+      fontSize: 20,
+      fontWeight: FontWeight.bold,
+      color: Colors.white,
+    ),
+  ),
+),
                   const SizedBox(width: 14),
                   // Expanded(
                   //   child: Column(
@@ -5292,6 +5322,7 @@ User? get user => FirebaseAuth.instance.currentUser;
     ],
   ),
 ),
+
                   _StatusBadge(isPaused: _isListingPaused),
                 ],
               ),
