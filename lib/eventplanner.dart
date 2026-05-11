@@ -985,6 +985,7 @@ class EventPlannerVendor {
   final List<String> services;
   final String phone;
   final String description;
+  final String capacity;
 
   const EventPlannerVendor({
     required this.name,
@@ -999,6 +1000,7 @@ class EventPlannerVendor {
     required this.services,
     required this.phone,
     required this.description,
+    required this.capacity,
   });
 
   /// Factory constructor to build from a Firestore document snapshot
@@ -1023,6 +1025,11 @@ class EventPlannerVendor {
       parsedPriceValue = double.tryParse(cleaned) ?? 0;
     }
 
+    String capacityStr = (data['capacity'] ?? '').toString().trim();
+    if (capacityStr.isEmpty) {
+      capacityStr = 'Contact for guest capacity';
+    }
+
     return EventPlannerVendor(
       name: data['businessName'] ?? data['name'] ?? 'Unknown Vendor',
       location: data['city'] ?? data['location'] ?? 'Pakistan',
@@ -1036,6 +1043,7 @@ class EventPlannerVendor {
       services: servicesList,
       phone: data['phone'] ?? '',
       description: data['description'] ?? '',
+      capacity: capacityStr,
     );
   }
 }
@@ -1555,7 +1563,7 @@ class _EventplannerState extends State<Eventplanner> {
                                     physics:
                                         const NeverScrollableScrollPhysics(),
                                     itemCount: vendors.length,
-                                    itemBuilder: (ctx, i) => _VendorCard(
+                                    itemBuilder: (ctx, i) => EventPlannerVendorCard(
                                       vendor: vendors[i],
                                       isFavorite: _favorites
                                           .contains(vendors[i].name),
@@ -1688,15 +1696,16 @@ class _EventplannerState extends State<Eventplanner> {
 }
 
 // ═══════════════════════════════════════════════════════════════
-//  VENDOR CARD
+//  VENDOR CARD (shared with VenuesPage)
 // ═══════════════════════════════════════════════════════════════
 
-class _VendorCard extends StatelessWidget {
+class EventPlannerVendorCard extends StatelessWidget {
   final EventPlannerVendor vendor;
   final bool isFavorite;
   final VoidCallback onFavoriteToggle;
 
-  const _VendorCard({
+  const EventPlannerVendorCard({
+    super.key,
     required this.vendor,
     required this.isFavorite,
     required this.onFavoriteToggle,
@@ -1716,7 +1725,7 @@ class _VendorCard extends StatelessWidget {
             category: vendor.category,
             rating: vendor.rating,
             reviews: vendor.reviews,
-            capacity: 'N/A',
+            capacity: vendor.capacity,
             amenities: vendor.services,
             description: vendor.description,
           ),
@@ -1973,7 +1982,7 @@ class _VendorCard extends StatelessWidget {
                               category: vendor.category,
                               rating: vendor.rating,
                               reviews: vendor.reviews,
-                              capacity: 'N/A',
+                              capacity: vendor.capacity,
                               amenities: vendor.services,
                               description: vendor.description,
                             ),

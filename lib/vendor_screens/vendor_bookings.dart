@@ -183,20 +183,27 @@
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 // Your Brand Primary Color
 const Color kPrimary = Color(0xffB4245D);
 
 class InquiryModel {
   final String name, date, city, phone;
-  final double budget;
+  /// Service / listing category from the enquiry (e.g. venue contact form).
+  final String category;
+  /// Optional note from the customer (`message` on `quotes`).
+  final String message;
+  final String email;
 
   const InquiryModel({
     required this.name,
     required this.date,
     required this.city,
-    required this.budget,
     required this.phone,
+    required this.category,
+    required this.message,
+    required this.email,
   });
 }
 
@@ -218,24 +225,55 @@ class _VendorBookingsPageState extends State<VendorBookingsPage> {
   }
 
   Future<void> _loadInquiries() async {
-    final snap = await FirebaseFirestore.instance
-        .collection('quotes')
-        .orderBy('createdAt', descending: true)
-        .get();
+    final vendorId = FirebaseAuth.instance.currentUser?.uid;
+    if (vendorId == null) {
+      if (mounted) setState(() => _isLoading = false);
+      return;
+    }
 
-    setState(() {
-      inquiries = snap.docs.map((doc) {
-        final d = doc.data();
-        return InquiryModel(
-          name: d['name'] ?? 'Unknown',
-          date: d['eventDate'] ?? 'N/A',
-          city: d['city'] ?? 'N/A',
-          budget: 0,
-          phone: d['phone'] ?? 'N/A',
-        );
-      }).toList();
-      _isLoading = false;
-    });
+    try {
+      // Single-field equality only — avoids needing a composite index for
+      // vendorId + createdAt (missing index would leave this page loading forever).
+      final snap = await FirebaseFirestore.instance
+          .collection('quotes')
+          .where('vendorId', isEqualTo: vendorId)
+          .get();
+
+      final docs = snap.docs.toList()
+        ..sort((a, b) {
+          final ta =
+              (a.data()['createdAt'] as Timestamp?)?.millisecondsSinceEpoch ??
+                  0;
+          final tb =
+              (b.data()['createdAt'] as Timestamp?)?.millisecondsSinceEpoch ??
+                  0;
+          return tb.compareTo(ta);
+        });
+
+      if (!mounted) return;
+      setState(() {
+        inquiries = docs.map((doc) {
+          final d = doc.data();
+          return InquiryModel(
+            name: d['name'] ?? 'Unknown',
+            date: d['eventDate'] ?? 'N/A',
+            city: d['city'] ?? 'N/A',
+            phone: d['phone'] ?? 'N/A',
+            category: (d['category'] ?? '').toString().trim(),
+            message: (d['message'] ?? '').toString().trim(),
+            email: (d['customerEmail'] ?? '').toString().trim(),
+          );
+        }).toList();
+        _isLoading = false;
+      });
+    } catch (e, st) {
+      debugPrint('VendorBookingsPage: failed to load quotes: $e\n$st');
+      if (!mounted) return;
+      setState(() {
+        inquiries = [];
+        _isLoading = false;
+      });
+    }
   }
 
   @override
@@ -347,6 +385,18 @@ class _InquiryCard extends StatelessWidget {
                         color: isDark ? Colors.white38 : Colors.black54,
                       ),
                     ),
+                    if (inquiry.email.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        inquiry.email,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: isDark ? Colors.white54 : Colors.black45,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -363,18 +413,69 @@ class _InquiryCard extends StatelessWidget {
             child: Divider(height: 1, thickness: 0.5),
           ),
 
-          // Middle Row: Metrics
+          // Middle row: event date + category from enquiry
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildMetric(Icons.calendar_today_rounded, "DATE", inquiry.date),
-              _buildMetric(
-                Icons.account_balance_wallet_rounded,
-                "BUDGET",
-                "PKR ${inquiry.budget.toInt()}",
+              Expanded(
+                child: _buildMetric(
+                  Icons.calendar_today_rounded,
+                  "DATE",
+                  inquiry.date,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildMetric(
+                  Icons.category_outlined,
+                  "CATEGORY",
+                  inquiry.category.isEmpty ? '—' : inquiry.category,
+                ),
               ),
             ],
           ),
+
+          if (inquiry.message.isNotEmpty) ...[
+            const SizedBox(height: 14),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.message_outlined,
+                        size: 12,
+                        color: kPrimary.withOpacity(0.6),
+                      ),
+                      const SizedBox(width: 5),
+                      Text(
+                        'MESSAGE',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          color: isDark ? Colors.white54 : Colors.black45,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    inquiry.message,
+                    style: TextStyle(
+                      fontSize: 13,
+                      height: 1.35,
+                      color: isDark ? Colors.white70 : const Color(0xff2D3436),
+                    ),
+                    maxLines: 4,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+          ],
 
           const SizedBox(height: 22),
 
@@ -462,6 +563,8 @@ class _InquiryCard extends StatelessWidget {
             fontWeight: FontWeight.w700,
             color: isDark ? Colors.white70 : const Color(0xff2D3436),
           ),
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
         ),
       ],
     );

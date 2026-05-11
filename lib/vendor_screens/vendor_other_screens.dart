@@ -2673,6 +2673,18 @@ class _VendorGalleryPageState extends State<VendorGalleryPage> {
 // Assuming kPrimary is defined somewhere in your app.
 // Used Deep Purple here for demonstration.
 
+class _CityAgg {
+  final String city;
+  final int count;
+  final double fraction;
+
+  _CityAgg({
+    required this.city,
+    required this.count,
+    required this.fraction,
+  });
+}
+
 class VendorAnalyticsPage extends StatefulWidget {
   const VendorAnalyticsPage({super.key});
   @override
@@ -2683,15 +2695,146 @@ class _VendorAnalyticsPageState extends State<VendorAnalyticsPage> {
   int _selectedPeriod = 0; // 0=Month, 1=3 Months, 2=All Time
   final List<String> _periods = ['This Month', 'Last 3 Months', 'All Time'];
 
-  final _weekData = [3, 7, 4, 6, 9, 5, 2];
-  final _weekLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-
-  final _servicePerformance = [
-    {'name': 'Stage Décor', 'pct': 0.75},
-    {'name': 'Floral Arrangements', 'pct': 0.55},
-    {'name': 'Lighting', 'pct': 0.30},
-    {'name': 'Table Centerpieces', 'pct': 0.20},
+  bool _loading = true;
+  int _inquiriesInPeriod = 0;
+  int _reviewsInPeriod = 0;
+  final List<int> _last7DaysInquiries = List<int>.filled(7, 0);
+  List<String> _last7DayLabels = const [
+    'Mon',
+    'Tue',
+    'Wed',
+    'Thu',
+    'Fri',
+    'Sat',
+    'Sun',
   ];
+  List<_CityAgg> _cityAggs = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _refresh();
+  }
+
+  DateTime? _periodLowerBound() {
+    final n = DateTime.now();
+    switch (_selectedPeriod) {
+      case 0:
+        return DateTime(n.year, n.month, 1);
+      case 1:
+        return n.subtract(const Duration(days: 90));
+      default:
+        return null;
+    }
+  }
+
+  bool _inPeriod(DateTime? ts, DateTime? lower) {
+    if (lower == null) return true;
+    if (ts == null) return false;
+    return !ts.isBefore(lower);
+  }
+
+  List<String> _labelsForWeekStarting(DateTime weekStart) {
+    const names = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    return List.generate(7, (i) {
+      final d = weekStart.add(Duration(days: i));
+      return names[d.weekday - 1];
+    });
+  }
+
+  Future<void> _refresh() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) {
+      if (mounted) {
+        setState(() {
+          _loading = false;
+          _inquiriesInPeriod = 0;
+          _reviewsInPeriod = 0;
+          for (var i = 0; i < 7; i++) {
+            _last7DaysInquiries[i] = 0;
+          }
+          _cityAggs = [];
+        });
+      }
+      return;
+    }
+
+    setState(() => _loading = true);
+
+    try {
+      final quotesSnap = await FirebaseFirestore.instance
+          .collection('quotes')
+          .where('vendorId', isEqualTo: uid)
+          .get();
+      final reviewsSnap = await FirebaseFirestore.instance
+          .collection('reviews')
+          .where('vendorId', isEqualTo: uid)
+          .get();
+
+      final lower = _periodLowerBound();
+      final today = DateTime.now();
+      final todayDay = DateTime(today.year, today.month, today.day);
+      final weekStart = todayDay.subtract(const Duration(days: 6));
+
+      for (var i = 0; i < 7; i++) {
+        _last7DaysInquiries[i] = 0;
+      }
+
+      var inquiries = 0;
+      final cityMap = <String, int>{};
+
+      for (final doc in quotesSnap.docs) {
+        final d = doc.data();
+        final created = (d['createdAt'] as Timestamp?)?.toDate();
+
+        if (_inPeriod(created, lower)) {
+          inquiries++;
+          final rawCity = (d['city'] ?? 'Unknown').toString().trim();
+          final cityKey = rawCity.isEmpty ? 'Unknown' : rawCity;
+          cityMap[cityKey] = (cityMap[cityKey] ?? 0) + 1;
+        }
+
+        if (created != null) {
+          final cd = DateTime(created.year, created.month, created.day);
+          if (!cd.isBefore(weekStart) && !cd.isAfter(todayDay)) {
+            final idx = cd.difference(weekStart).inDays;
+            if (idx >= 0 && idx < 7) {
+              _last7DaysInquiries[idx]++;
+            }
+          }
+        }
+      }
+
+      var reviews = 0;
+      for (final doc in reviewsSnap.docs) {
+        final d = doc.data();
+        final created = (d['createdAt'] as Timestamp?)?.toDate();
+        if (_inPeriod(created, lower)) {
+          reviews++;
+        }
+      }
+
+      final totalCity = cityMap.values.fold<int>(0, (a, b) => a + b);
+      final sorted = cityMap.entries.toList()
+        ..sort((a, b) => b.value.compareTo(a.value));
+      final aggs = sorted.take(6).map((e) {
+        final fraction = totalCity == 0 ? 0.0 : e.value / totalCity;
+        return _CityAgg(city: e.key, count: e.value, fraction: fraction);
+      }).toList();
+
+      if (!mounted) return;
+      setState(() {
+        _loading = false;
+        _inquiriesInPeriod = inquiries;
+        _reviewsInPeriod = reviews;
+        _last7DayLabels = _labelsForWeekStarting(weekStart);
+        _cityAggs = aggs;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _loading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -2723,6 +2866,15 @@ class _VendorAnalyticsPageState extends State<VendorAnalyticsPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            if (_loading)
+              const Padding(
+                padding: EdgeInsets.only(bottom: 12),
+                child: LinearProgressIndicator(
+                  minHeight: 3,
+                  color: kPrimary,
+                  backgroundColor: Colors.black12,
+                ),
+              ),
             // Period selector
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
@@ -2730,7 +2882,10 @@ class _VendorAnalyticsPageState extends State<VendorAnalyticsPage> {
                 children: List.generate(_periods.length, (i) {
                   final isSelected = _selectedPeriod == i;
                   return GestureDetector(
-                    onTap: () => setState(() => _selectedPeriod = i),
+                    onTap: () {
+                      setState(() => _selectedPeriod = i);
+                      _refresh();
+                    },
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 200),
                       margin: const EdgeInsets.only(right: 8),
@@ -2768,31 +2923,34 @@ class _VendorAnalyticsPageState extends State<VendorAnalyticsPage> {
               crossAxisSpacing: 12,
               mainAxisSpacing: 12,
               childAspectRatio: 2.2, // Adjusted for better text fitting
-              children: const [
+              children: [
                 _AnalyticStat(
-                  value: '1,240',
-                  label: 'Profile Views',
-                  icon: Icons.visibility_outlined,
-                ),
-                _AnalyticStat(
-                  value: '23',
-                  label: 'Inquiries',
+                  value: '$_inquiriesInPeriod',
+                  label: 'Inquiries (period)',
                   icon: Icons.inbox_outlined,
                 ),
-                // _AnalyticStat(value: '35%', label: 'Conversion Rate', icon: Icons.trending_up),
-                //  _AnalyticStat(value: 'PKR 2.4L', label: 'Revenue Earned', icon: Icons.account_balance_wallet_outlined),
+                _AnalyticStat(
+                  value: '$_reviewsInPeriod',
+                  label: 'Reviews (period)',
+                  icon: Icons.star_outline,
+                ),
               ],
             ),
             const SizedBox(height: 24),
 
-            // Bar chart
+            // Bar chart (last 7 calendar days; not filtered by period chips)
             Text(
-              'Weekly Inquiries',
+              'Inquiries (last 7 days)',
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
                 color: onSurfaceColor,
               ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Daily counts from your venue/contact enquiries.',
+              style: TextStyle(fontSize: 12, color: mutedTextColor),
             ),
             const SizedBox(height: 12),
             Container(
@@ -2814,14 +2972,18 @@ class _VendorAnalyticsPageState extends State<VendorAnalyticsPage> {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: List.generate(_weekData.length, (i) {
-                    final maxVal = _weekData.reduce((a, b) => a > b ? a : b);
-                    final pct = _weekData[i] / maxVal;
+                  children: List.generate(_last7DaysInquiries.length, (i) {
+                    final v = _last7DaysInquiries[i];
+                    final maxVal = _last7DaysInquiries.reduce(
+                      (a, b) => a > b ? a : b,
+                    );
+                    final denom = maxVal < 1 ? 1 : maxVal;
+                    final pct = v / denom;
                     return Column(
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
                         Text(
-                          '${_weekData[i]}',
+                          '$v',
                           style: TextStyle(
                             fontSize: 11,
                             color: mutedTextColor,
@@ -2840,7 +3002,9 @@ class _VendorAnalyticsPageState extends State<VendorAnalyticsPage> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          _weekLabels[i],
+                          i < _last7DayLabels.length
+                              ? _last7DayLabels[i]
+                              : '',
                           style: TextStyle(fontSize: 11, color: mutedTextColor),
                         ),
                       ],
@@ -2854,7 +3018,7 @@ class _VendorAnalyticsPageState extends State<VendorAnalyticsPage> {
 
             // Location breakdown
             Text(
-              'Inquiries by City',
+              'Inquiries by city (period)',
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
@@ -2876,15 +3040,27 @@ class _VendorAnalyticsPageState extends State<VendorAnalyticsPage> {
                   ),
                 ],
               ),
-              child: Column(
-                children: [
-                  _CityRow(city: 'Karachi', count: 14, pct: 0.60),
-                  Divider(color: dividerColor, height: 24),
-                  _CityRow(city: 'Lahore', count: 6, pct: 0.26),
-                  Divider(color: dividerColor, height: 24),
-                  _CityRow(city: 'Islamabad', count: 3, pct: 0.14),
-                ],
-              ),
+              child: _cityAggs.isEmpty
+                  ? Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      child: Text(
+                        'No city data for this period yet.',
+                        style: TextStyle(fontSize: 13, color: mutedTextColor),
+                      ),
+                    )
+                  : Column(
+                      children: [
+                        for (var i = 0; i < _cityAggs.length; i++) ...[
+                          if (i > 0)
+                            Divider(color: dividerColor, height: 24),
+                          _CityRow(
+                            city: _cityAggs[i].city,
+                            count: _cityAggs[i].count,
+                            pct: _cityAggs[i].fraction,
+                          ),
+                        ],
+                      ],
+                    ),
             ),
             const SizedBox(height: 20),
           ],
@@ -3871,12 +4047,8 @@ class _VendorProfileEditPageState extends State<VendorProfileEditPage> {
   final _facebookCtrl = TextEditingController();
   final _yearsCtrl = TextEditingController();
   bool _isLoading = true;
-  final List<String> _selectedServices = [
-    'Stage Décor',
-    'Floral Arrangements',
-    'Lighting',
-    'Table Centerpieces',
-  ];
+  /// Persisted in Firestore as `services` (list of strings). Starts empty until _loadProfile runs.
+  final List<String> _selectedServices = [];
   final _allServices = [
     'Stage Décor',
     'Floral Arrangements',
@@ -3887,6 +4059,19 @@ class _VendorProfileEditPageState extends State<VendorProfileEditPage> {
     'Table Centerpieces',
     'Venue Booking',
   ];
+
+  /// Preset options first, then any saved services not in the preset list (so they stay editable).
+  List<String> get _serviceChips {
+    final seen = <String>{};
+    final out = <String>[];
+    for (final s in _allServices) {
+      if (seen.add(s)) out.add(s);
+    }
+    for (final s in _selectedServices) {
+      if (seen.add(s)) out.add(s);
+    }
+    return out;
+  }
 
   bool _isSaving = false;
 
@@ -3913,6 +4098,15 @@ class _VendorProfileEditPageState extends State<VendorProfileEditPage> {
       _instagramCtrl.text = d['instagram'] ?? '';
       _facebookCtrl.text = d['facebook'] ?? '';
       _yearsCtrl.text = d['yearsExperience'] ?? '';
+
+      _selectedServices.clear();
+      final raw = d['services'];
+      if (raw is List) {
+        for (final e in raw) {
+          final s = e.toString().trim();
+          if (s.isNotEmpty) _selectedServices.add(s);
+        }
+      }
     }
     setState(() => _isLoading = false);
   }
@@ -4129,7 +4323,7 @@ class _VendorProfileEditPageState extends State<VendorProfileEditPage> {
                   Wrap(
                     spacing: 8,
                     runSpacing: 8,
-                    children: _allServices.map((s) {
+                    children: _serviceChips.map((s) {
                       final isSelected = _selectedServices.contains(s);
                       return GestureDetector(
                         onTap: () => setState(() {

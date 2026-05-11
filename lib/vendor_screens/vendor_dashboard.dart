@@ -676,6 +676,58 @@ import 'vendor_other_screens.dart';
 
 const Color kPrimary = Color(0xffB4245D);
 
+/// Matches `VendorProfileEditPage` fields in `vendor_other_screens.dart`.
+class _VendorProfileCompletion {
+  final int percent;
+  final List<String> missingHints;
+
+  _VendorProfileCompletion({required this.percent, required this.missingHints});
+
+  static bool _nonEmpty(dynamic v) =>
+      (v?.toString().trim() ?? '').isNotEmpty;
+
+  static bool _hasServicesList(dynamic v) {
+    if (v is! List) return false;
+    return v.any((e) => e.toString().trim().isNotEmpty);
+  }
+
+  factory _VendorProfileCompletion.fromUserData(Map<String, dynamic> d) {
+    final checks = <String, bool>{
+      'Business name': _nonEmpty(d['businessName']),
+      'Tagline': _nonEmpty(d['tagline']),
+      'Starting price': _nonEmpty(d['startingPrice']),
+      'Years of experience': _nonEmpty(d['yearsExperience']),
+      'Phone number': _nonEmpty(d['phone']),
+      'WhatsApp': _nonEmpty(d['whatsapp']),
+      'Instagram': _nonEmpty(d['instagram']),
+      'Facebook': _nonEmpty(d['facebook']),
+      'Services offered': _hasServicesList(d['services']),
+    };
+    final done = checks.values.where((v) => v).length;
+    final total = checks.length;
+    final percent = total == 0 ? 0 : ((done / total) * 100).round();
+    final missing = checks.entries
+        .where((e) => !e.value)
+        .map((e) => e.key)
+        .toList();
+    return _VendorProfileCompletion(percent: percent, missingHints: missing);
+  }
+}
+
+/// First letter of first name + first letter of last name (e.g. "Ali Khan" → "AK").
+String _vendorNameInitials(String fullName) {
+  final trimmed = fullName.trim();
+  if (trimmed.isEmpty) return 'V';
+  final parts =
+      trimmed.split(RegExp(r'\s+')).where((p) => p.isNotEmpty).toList();
+  if (parts.length >= 2) {
+    final first = parts.first;
+    final last = parts.last;
+    return '${first[0]}${last[0]}'.toUpperCase();
+  }
+  return parts.first[0].toUpperCase();
+}
+
 class VendorDashboardPage extends StatefulWidget {
   const VendorDashboardPage({super.key});
 
@@ -689,6 +741,11 @@ class _VendorDashboardPageState extends State<VendorDashboardPage> {
   String _businessName = 'Loading...';
   String _category = '';
   String _city = '';
+  int _profileCompletenessPercent = 0;
+  List<String> _profileMissingHints = [];
+  int _inquiriesCount = 0;
+  int _leadsCount = 0;
+  String _ratingDisplay = '—';
 
   @override
   void initState() {
@@ -700,17 +757,76 @@ class _VendorDashboardPageState extends State<VendorDashboardPage> {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) return;
 
-    final doc = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(uid)
-        .get();
+    try {
+      final results = await Future.wait<Object>([
+        FirebaseFirestore.instance.collection('users').doc(uid).get(),
+        FirebaseFirestore.instance
+            .collection('quotes')
+            .where('vendorId', isEqualTo: uid)
+            .get(),
+        FirebaseFirestore.instance
+            .collection('reviews')
+            .where('vendorId', isEqualTo: uid)
+            .get(),
+      ]);
 
-    if (doc.exists) {
+      final doc = results[0] as DocumentSnapshot<Map<String, dynamic>>;
+      final quotesSnap = results[1] as QuerySnapshot<Map<String, dynamic>>;
+      final reviewsSnap = results[2] as QuerySnapshot<Map<String, dynamic>>;
+
+      final inquiries = quotesSnap.docs.length;
+      var leads = 0;
+      for (final q in quotesSnap.docs) {
+        final status =
+            (q.data()['status'] ?? 'pending').toString().toLowerCase().trim();
+        if (status == 'pending' || status == 'new') {
+          leads++;
+        }
+      }
+
+      var ratingSum = 0.0;
+      var ratingCount = 0;
+      for (final r in reviewsSnap.docs) {
+        final val = r.data()['rating'];
+        if (val is num) {
+          ratingSum += val.toDouble();
+          ratingCount++;
+        }
+      }
+      final ratingStr = ratingCount == 0
+          ? '—'
+          : '${(ratingSum / ratingCount).toStringAsFixed(1)} ★';
+
+      if (!doc.exists) {
+        if (!mounted) return;
+        setState(() {
+          _inquiriesCount = inquiries;
+          _leadsCount = leads;
+          _ratingDisplay = ratingStr;
+        });
+        return;
+      }
+
+      final data = doc.data()!;
+      final completion = _VendorProfileCompletion.fromUserData(data);
+      if (!mounted) return;
       setState(() {
-        _vendorName = doc.data()?['name'] ?? 'Vendor';
-        _businessName = doc.data()?['businessName'] ?? 'My Business';
-        _category = doc.data()?['businessCategory'] ?? '';
-        _city = doc.data()?['city'] ?? '';
+        _vendorName = data['name'] ?? 'Vendor';
+        _businessName = data['businessName'] ?? 'My Business';
+        _category = data['businessCategory'] ?? '';
+        _city = data['city'] ?? '';
+        _profileCompletenessPercent = completion.percent;
+        _profileMissingHints = completion.missingHints;
+        _inquiriesCount = inquiries;
+        _leadsCount = leads;
+        _ratingDisplay = ratingStr;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _inquiriesCount = 0;
+        _leadsCount = 0;
+        _ratingDisplay = '—';
       });
     }
   }
@@ -787,6 +903,7 @@ class _VendorDashboardPageState extends State<VendorDashboardPage> {
             _ProfileHeader(
               isDark: isDark,
               vendorName: _vendorName,
+              nameInitials: _vendorNameInitials(_vendorName),
               businessName: _businessName,
               category: _category,
               city: _city,
@@ -799,21 +916,21 @@ class _VendorDashboardPageState extends State<VendorDashboardPage> {
               child: Row(
                 children: [
                   _StatCard(
-                    value: '23',
+                    value: '$_inquiriesCount',
                     label: 'Inquiries',
                     isDark: isDark,
                     surface: surfaceColor,
                   ),
                   const SizedBox(width: 10),
                   _StatCard(
-                    value: '8',
+                    value: '$_leadsCount',
                     label: 'Leads',
                     isDark: isDark,
                     surface: surfaceColor,
                   ),
                   const SizedBox(width: 10),
                   _StatCard(
-                    value: '4.8 ★',
+                    value: _ratingDisplay,
                     label: 'Rating',
                     isDark: isDark,
                     surface: surfaceColor,
@@ -887,12 +1004,15 @@ class _VendorDashboardPageState extends State<VendorDashboardPage> {
                         icon: Icons.edit_outlined,
                         label: 'Edit Profile',
                         surface: surfaceColor,
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const VendorProfileEditPage(),
-                          ),
-                        ),
+                        onTap: () async {
+                          await Navigator.push<void>(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const VendorProfileEditPage(),
+                            ),
+                          );
+                          if (mounted) await _loadVendorData();
+                        },
                       ),
                       _QuickAction(
                         icon: Icons.settings_outlined,
@@ -949,7 +1069,12 @@ class _VendorDashboardPageState extends State<VendorDashboardPage> {
             ),
 
             const SizedBox(height: 16),
-            _ProfileCompleteness(surface: surfaceColor, isDark: isDark),
+            _ProfileCompleteness(
+              surface: surfaceColor,
+              isDark: isDark,
+              percent: _profileCompletenessPercent,
+              missingHints: _profileMissingHints,
+            ),
             const SizedBox(height: 32),
           ],
         ),
@@ -963,6 +1088,7 @@ class _VendorDashboardPageState extends State<VendorDashboardPage> {
 class _ProfileHeader extends StatelessWidget {
   final bool isDark;
   final String vendorName;
+  final String nameInitials;
   final String businessName;
   final String category;
   final String city;
@@ -970,6 +1096,7 @@ class _ProfileHeader extends StatelessWidget {
   const _ProfileHeader({
     required this.isDark,
     required this.vendorName,
+    required this.nameInitials,
     required this.businessName,
     required this.category,
     required this.city,
@@ -999,11 +1126,11 @@ class _ProfileHeader extends StatelessWidget {
               radius: 28,
               backgroundColor: kPrimary,
               child: Text(
-                vendorName.isNotEmpty ? vendorName[0].toUpperCase() : 'V',
-                style: const TextStyle(
+                nameInitials,
+                style: TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
-                  fontSize: 18,
+                  fontSize: nameInitials.length >= 2 ? 15 : 18,
                 ),
               ),
             ),
@@ -1368,10 +1495,24 @@ class _NotifTile extends StatelessWidget {
 class _ProfileCompleteness extends StatelessWidget {
   final Color surface;
   final bool isDark;
-  const _ProfileCompleteness({required this.surface, required this.isDark});
+  final int percent;
+  final List<String> missingHints;
+
+  const _ProfileCompleteness({
+    required this.surface,
+    required this.isDark,
+    required this.percent,
+    required this.missingHints,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final p = percent.clamp(0, 100);
+    final progress = p / 100.0;
+    final Color accent = p >= 90
+        ? Colors.green
+        : (p >= 50 ? Colors.orange : kPrimary);
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       padding: const EdgeInsets.all(20),
@@ -1386,11 +1527,11 @@ class _ProfileCompleteness extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               _SectionHeading('Profile Completeness', isDark: isDark),
-              const Text(
-                '92%',
+              Text(
+                '$p%',
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
-                  color: Colors.green,
+                  color: accent,
                 ),
               ),
             ],
@@ -1398,16 +1539,48 @@ class _ProfileCompleteness extends StatelessWidget {
           const SizedBox(height: 12),
           ClipRRect(
             borderRadius: BorderRadius.circular(10),
-            child: const LinearProgressIndicator(
-              value: 0.92,
+            child: LinearProgressIndicator(
+              value: progress,
               minHeight: 6,
               backgroundColor: Colors.black12,
-              valueColor: AlwaysStoppedAnimation(Colors.green),
+              valueColor: AlwaysStoppedAnimation<Color>(accent),
             ),
           ),
           const SizedBox(height: 16),
-          const _TodoItem(text: 'Add WhatsApp number', done: false),
-          const _TodoItem(text: 'Upload CNIC Verification', done: true),
+          Text(
+            p >= 100
+                ? 'Your edit-profile sections are complete. Great job!'
+                : 'Complete the items below in Edit Profile to reach 100%.',
+            style: TextStyle(
+              fontSize: 12,
+              color: isDark ? Colors.white70 : Colors.grey.shade700,
+            ),
+          ),
+          const SizedBox(height: 10),
+          if (p >= 100)
+            const _TodoItem(
+              text: 'All tracked fields are filled',
+              done: true,
+            )
+          else ...[
+            ...missingHints.take(6).map(
+                  (hint) => _TodoItem(
+                    text: 'Add: $hint',
+                    done: false,
+                  ),
+                ),
+            if (missingHints.length > 6)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  '+ ${missingHints.length - 6} more in Edit Profile',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: Colors.grey.shade600,
+                  ),
+                ),
+              ),
+          ],
         ],
       ),
     );

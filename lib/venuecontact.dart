@@ -769,6 +769,7 @@ class _VenueContactPageState extends State<VenueContactPage> {
   final _emailCtrl = TextEditingController();
   final _messageCtrl = TextEditingController();
   DateTime? _selectedDate;
+  bool _vendorUidLoaded = false;
 
   // State
   // State
@@ -782,12 +783,36 @@ class _VenueContactPageState extends State<VenueContactPage> {
   final _reviewCtrl = TextEditingController();
   bool _reviewSubmitted = false;
   bool _reviewSubmitting = false;
+  String? _vendorUid; // users/{vendorUid}
 
   @override
   void initState() {
     super.initState();
     _initNotifications();
+    _loadVendorUid();
   }
+
+  Future<String?> _fetchVendorUid() async {
+    // widget.name is passed as the vendor business name from the listing page.
+    final vendorSnap = await FirebaseFirestore.instance
+        .collection('users')
+        .where('businessName', isEqualTo: widget.name)
+        .where('role', isEqualTo: 'vendor')
+        .limit(1)
+        .get();
+
+    if (vendorSnap.docs.isEmpty) return null;
+    return vendorSnap.docs.first.id;
+  }
+
+  void _loadVendorUid() async {
+  final id = await _fetchVendorUid();
+  if (!mounted) return;
+  setState(() {
+    _vendorUid = id;
+    _vendorUidLoaded = true; // 👈 only flips once, never goes back
+  });
+}
 
   @override
   void dispose() {
@@ -863,8 +888,59 @@ class _VenueContactPageState extends State<VenueContactPage> {
       return;
     }
 
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please login to send an enquiry.'),
+          backgroundColor: Colors.orange,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
     setState(() => _isSubmitting = true);
-    await Future.delayed(const Duration(seconds: 1)); // simulate network call
+
+    final vendorUid = _vendorUid ?? await _fetchVendorUid();
+    if (vendorUid == null) {
+      setState(() => _isSubmitting = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Vendor not found. Please try again later.'),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    try {
+      await FirebaseFirestore.instance.collection('quotes').add({
+        'vendorId': vendorUid,
+        'customerId': user.uid,
+        'customerEmail': _emailCtrl.text.trim(),
+        'name': _nameCtrl.text.trim(),
+        'phone': _phoneCtrl.text.trim(),
+        'category': widget.category,
+        'city': widget.location,
+        'eventDate': _formatDate(_selectedDate!),
+        'message': _messageCtrl.text.trim(),
+        'createdAt': FieldValue.serverTimestamp(),
+        'status': 'pending',
+      });
+    } catch (_) {
+      setState(() => _isSubmitting = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Failed to send enquiry. Please try again.'),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
     await _showNotification();
     setState(() {
       _isSubmitting = false;
@@ -892,18 +968,40 @@ class _VenueContactPageState extends State<VenueContactPage> {
           .where('role', isEqualTo: 'vendor')
           .get();
 
-      final vendorId = vendorSnap.docs.isNotEmpty
-          ? vendorSnap.docs.first.id
-          : widget.name;
+      if (vendorSnap.docs.isEmpty) {
+        setState(() => _reviewSubmitting = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Vendor not found.'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        return;
+      }
+
+      final vendorId = vendorSnap.docs.first.id;
 
       final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        setState(() => _reviewSubmitting = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please login to leave a review.'),
+            backgroundColor: Colors.orange,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        return;
+      }
+
       final customerName =
-          user?.displayName ?? user?.email?.split('@').first ?? 'Anonymous';
+          user.displayName ?? user.email?.split('@').first ?? 'Anonymous';
 
       await FirebaseFirestore.instance.collection('reviews').add({
         'vendorId': vendorId,
         'customerName': customerName,
-        'customerId': user?.uid ?? '',
+        'customerId': user.uid,
         'rating': _reviewRating,
         'service': widget.category,
         'text': _reviewCtrl.text.trim(),
@@ -1437,131 +1535,140 @@ class _VenueContactPageState extends State<VenueContactPage> {
                   ),
                   const SizedBox(height: 12),
 
-                  // Show reviews from Firestore
-                  StreamBuilder<QuerySnapshot>(
-                    stream: FirebaseFirestore.instance
-                        .collection('reviews')
-                        .where('vendorId', isEqualTo: widget.name) // fallback
-                        .orderBy('createdAt', descending: true)
-                        .limit(5)
-                        .snapshots(),
-                    builder: (ctx, snap) {
-                      if (!snap.hasData || snap.data!.docs.isEmpty) {
-                        return Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: primary.withOpacity(0.04),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: primary.withOpacity(0.15),
-                            ),
-                          ),
-                          child: const Text(
-                            'No reviews yet. Be the first to review!',
-                            style: TextStyle(color: Colors.grey),
-                          ),
-                        );
-                      }
-                      return ListView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: snap.data!.docs.length,
-                        itemBuilder: (ctx, i) {
-                          final d =
-                              snap.data!.docs[i].data() as Map<String, dynamic>;
-                          return Container(
-                            margin: const EdgeInsets.only(bottom: 10),
-                            padding: const EdgeInsets.all(14),
-                            decoration: BoxDecoration(
-                              color: primary.withOpacity(0.04),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: primary.withOpacity(0.12),
-                              ),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    CircleAvatar(
-                                      radius: 16,
-                                      backgroundColor: primary.withOpacity(
-                                        0.15,
-                                      ),
-                                      child: Text(
-                                        (d['customerName'] ?? 'A')[0]
-                                            .toUpperCase(),
-                                        style: const TextStyle(
-                                          color: primary,
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 12,
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 10),
-                                    Expanded(
-                                      child: Text(
-                                        d['customerName'] ?? 'Anonymous',
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 13,
-                                        ),
-                                      ),
-                                    ),
-                                    Row(
-                                      children: List.generate(
-                                        5,
-                                        (j) => Icon(
-                                          Icons.star,
-                                          size: 13,
-                                          color: j < (d['rating'] ?? 5)
-                                              ? Colors.amber
-                                              : Colors.grey.shade300,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  d['text'] ?? '',
-                                  style: const TextStyle(
-                                    fontSize: 13,
-                                    height: 1.5,
-                                  ),
-                                ),
-                                if ((d['reply'] ?? '').isNotEmpty) ...[
-                                  const SizedBox(height: 8),
-                                  Container(
-                                    padding: const EdgeInsets.all(10),
-                                    decoration: BoxDecoration(
-                                      color: primary.withOpacity(0.06),
-                                      borderRadius: BorderRadius.circular(8),
-                                      border: const Border(
-                                        left: BorderSide(
-                                          color: primary,
-                                          width: 3,
-                                        ),
-                                      ),
-                                    ),
-                                    child: Text(
-                                      'Vendor: ${d['reply']}',
-                                      style: const TextStyle(
-                                        fontSize: 12,
-                                        color: Colors.black87,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ],
-                            ),
-                          );
-                        },
-                      );
-                    },
-                  ),
+  //                 // Show reviews from Firestore
+  //                 StreamBuilder<QuerySnapshot>(
+                    
+  //                   key: ValueKey(_vendorUidLoaded ? (_vendorUid ?? 'none') : 'loading'), // 👈
+  // stream: !_vendorUidLoaded || _vendorUid == null
+  //     ? const Stream.empty(): FirebaseFirestore.instance
+  //                       .collection('reviews')
+  //                       .where('vendorId', isEqualTo: _vendorUid ?? '')
+  //                       .orderBy('createdAt', descending: true)
+  //                       .limit(5)
+  //                       .snapshots(),
+  //                   builder: (ctx, snap) {
+  //                     if (!snap.hasData || snap.data!.docs.isEmpty) {
+  //                       return Container(
+  //                         padding: const EdgeInsets.all(16),
+  //                         decoration: BoxDecoration(
+  //                           color: primary.withOpacity(0.04),
+  //                           borderRadius: BorderRadius.circular(12),
+  //                           border: Border.all(
+  //                             color: primary.withOpacity(0.15),
+  //                           ),
+  //                         ),
+  //                         // child: const Text(
+  //                         //   'No reviews yet. Be the first to review!',
+  //                         //   style: TextStyle(color: Colors.grey),
+  //                         // ),
+  //                       );
+  //                     }
+  //                     return ListView.builder(
+  //                       shrinkWrap: true,
+  //                       physics: const NeverScrollableScrollPhysics(),
+  //                       itemCount: snap.data!.docs.length,
+  //                       itemBuilder: (ctx, i) {
+  //                         final d =
+  //                             snap.data!.docs[i].data() as Map<String, dynamic>;
+  //                         return Container(
+  //                           margin: const EdgeInsets.only(bottom: 10),
+  //                           padding: const EdgeInsets.all(14),
+  //                           decoration: BoxDecoration(
+  //                             color: primary.withOpacity(0.04),
+  //                             borderRadius: BorderRadius.circular(12),
+  //                             border: Border.all(
+  //                               color: primary.withOpacity(0.12),
+  //                             ),
+  //                           ),
+  //                           child: Column(
+  //                             crossAxisAlignment: CrossAxisAlignment.start,
+  //                             children: [
+  //                               Row(
+  //                                 children: [
+  //                                   CircleAvatar(
+  //                                     radius: 16,
+  //                                     backgroundColor: primary.withOpacity(
+  //                                       0.15,
+  //                                     ),
+  //                                     child: Text(
+  //                                       (d['customerName'] ?? 'A')[0]
+  //                                           .toUpperCase(),
+  //                                       style: const TextStyle(
+  //                                         color: primary,
+  //                                         fontWeight: FontWeight.bold,
+  //                                         fontSize: 12,
+  //                                       ),
+  //                                     ),
+  //                                   ),
+  //                                   const SizedBox(width: 10),
+  //                                   Expanded(
+  //                                     child: Text(
+  //                                       d['customerName'] ?? 'Anonymous',
+  //                                       style: const TextStyle(
+  //                                         fontWeight: FontWeight.bold,
+  //                                         fontSize: 13,
+  //                                       ),
+  //                                     ),
+  //                                   ),
+  //                                   Row(
+  //                                     children: List.generate(
+  //                                       5,
+  //                                       (j) => Icon(
+  //                                         Icons.star,
+  //                                         size: 13,
+  //                                         color: j < (d['rating'] ?? 5)
+  //                                             ? Colors.amber
+  //                                             : Colors.grey.shade300,
+  //                                       ),
+  //                                     ),
+  //                                   ),
+  //                                 ],
+  //                               ),
+  //                               const SizedBox(height: 8),
+  //                               Text(
+  //                                 d['text'] ?? '',
+  //                                 style: const TextStyle(
+  //                                   fontSize: 13,
+  //                                   height: 1.5,
+  //                                 ),
+  //                               ),
+  //                               if ((d['reply'] ?? '').isNotEmpty) ...[
+  //                                 const SizedBox(height: 8),
+  //                                 Container(
+  //                                   padding: const EdgeInsets.all(10),
+  //                                   decoration: BoxDecoration(
+  //                                     color: primary.withOpacity(0.06),
+  //                                     borderRadius: BorderRadius.circular(8),
+  //                                     border: const Border(
+  //                                       left: BorderSide(
+  //                                         color: primary,
+  //                                         width: 3,
+  //                                       ),
+  //                                     ),
+  //                                   ),
+  //                                   child: Text(
+  //                                     'Vendor: ${d['reply']}',
+  //                                     style: const TextStyle(
+  //                                       fontSize: 12,
+  //                                       color: Colors.black87,
+  //                                     ),
+  //                                   ),
+  //                                 ),
+  //                               ],
+  //                             ],
+  //                           ),
+  //                         );
+  //                       },
+  //                     );
+  //                   },
+  //                 ),
 
+
+// Replace the StreamBuilder(...) widget with:
+_ReviewsList(
+  vendorUid: _vendorUid,
+  vendorUidLoaded: _vendorUidLoaded,
+),
                   const SizedBox(height: 16),
 
                   // Leave a review button / form
@@ -1861,6 +1968,138 @@ class _SuccessView extends StatelessWidget {
         ),
         const SizedBox(height: 10),
       ],
+    );
+  }
+}
+
+
+
+
+
+
+
+
+
+// Add this class at the bottom of the file, outside VenueContactPage
+
+class _ReviewsList extends StatelessWidget {
+  final String? vendorUid;
+  final bool vendorUidLoaded;
+  static const Color primary = Color(0xffB4245D);
+
+  const _ReviewsList({
+    required this.vendorUid,
+    required this.vendorUidLoaded,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (!vendorUidLoaded) {
+      return const Padding(
+        padding: EdgeInsets.all(16),
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (vendorUid == null) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: primary.withOpacity(0.04),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: primary.withOpacity(0.15)),
+        ),
+        child: const Text('No reviews yet.', style: TextStyle(color: Colors.grey)),
+      );
+    }
+
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('reviews')
+          .where('vendorId', isEqualTo: vendorUid)
+          .orderBy('createdAt', descending: true)
+          .limit(5)
+          .snapshots(),
+      builder: (ctx, snap) {
+         if (snap.hasError) {
+      debugPrint('Reviews stream error: ${snap.error}');
+      return Text('Error: ${snap.error}', style: const TextStyle(color: Colors.red));
+    }
+        if (!snap.hasData || snap.data!.docs.isEmpty) {
+          return Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: primary.withOpacity(0.04),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: primary.withOpacity(0.15)),
+            ),
+            child: const Text('No reviews yet. Be the first to review!',
+                style: TextStyle(color: Colors.grey)),
+          );
+        }
+        return ListView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: snap.data!.docs.length,
+          itemBuilder: (ctx, i) {
+            final d = snap.data!.docs[i].data() as Map<String, dynamic>;
+            return Container(
+              margin: const EdgeInsets.only(bottom: 10),
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: primary.withOpacity(0.04),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: primary.withOpacity(0.12)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 16,
+                        backgroundColor: primary.withOpacity(0.15),
+                        child: Text(
+                          (d['customerName'] ?? 'A')[0].toUpperCase(),
+                          style: const TextStyle(
+                              color: primary, fontWeight: FontWeight.bold, fontSize: 12),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(d['customerName'] ?? 'Anonymous',
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                      ),
+                      Row(
+                        children: List.generate(5, (j) => Icon(
+                          Icons.star,
+                          size: 13,
+                          color: j < (d['rating'] ?? 5) ? Colors.amber : Colors.grey.shade300,
+                        )),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(d['text'] ?? '', style: const TextStyle(fontSize: 13, height: 1.5)),
+                  if ((d['reply'] ?? '').isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: primary.withOpacity(0.06),
+                        borderRadius: BorderRadius.circular(8),
+                        border: const Border(left: BorderSide(color: primary, width: 3)),
+                      ),
+                      child: Text('Vendor: ${d['reply']}',
+                          style: const TextStyle(fontSize: 12, color: Colors.black87)),
+                    ),
+                  ],
+                ],
+              ),
+            );
+          },
+        );
+      },
     );
   }
 }
