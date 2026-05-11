@@ -681,8 +681,9 @@ class _ForgotPasswordSheetState extends State<_ForgotPasswordSheet> {
                   ),
                 ),
                 validator: (v) {
-                  if (v == null || v.trim().isEmpty)
+                  if (v == null || v.trim().isEmpty) {
                     return 'Please enter your email';
+                  }
                   if (!v.contains('@') || !v.contains('.')) {
                     return 'Enter a valid email address';
                   }

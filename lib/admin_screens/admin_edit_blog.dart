@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../blogs.dart';
 import '../eventplanner.dart';
 import 'admin_store.dart';
@@ -207,37 +207,131 @@ class _AdminEditBlogPageState extends State<AdminEditBlogPage> {
                     ),
                     const SizedBox(height: 12),
                   ],
-                  ...allVendors.where((v) {
-                    if (_vendorSearch.isEmpty) return true;
-                    final primary = adminStore.vendorPrimaryService[v.name] ?? (v.services.isNotEmpty ? v.services.first : v.category);
-                    return v.name.toLowerCase().contains(_vendorSearch) ||
-                        primary.toLowerCase().contains(_vendorSearch);
-                  }).map((v) {
-                    final primary = adminStore.vendorPrimaryService[v.name] ?? (v.services.isNotEmpty ? v.services.first : v.category);
-                    final isAttached = attachedVendorServices.contains('${v.name}|$primary');
-                    return ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      leading: CircleAvatar(
-                        backgroundColor: kPrimary.withValues(alpha: 0.12),
-                        child: Text(v.name.substring(0, 1), style: const TextStyle(color: kPrimary, fontWeight: FontWeight.bold)),
-                      ),
-                      title: Text(v.name, style: const TextStyle(fontWeight: FontWeight.w700)),
-                      subtitle: Text('Service: $primary · ${v.location}', style: const TextStyle(fontSize: 12)),
-                      trailing: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: isAttached ? Colors.grey : kPrimary,
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                          elevation: 0,
-                        ),
-                        onPressed: () {
-                          adminStore.toggleBlogVendorService(widget.blog.id, v.name, primary);
-                          setState(() {});
-                        },
-                        child: Text(isAttached ? 'Added' : 'Add'),
-                      ),
-                    );
-                  }),
+
+                  // ...allVendors.where((v) {
+                  //   if (_vendorSearch.isEmpty) return true;
+                  //   final primary = adminStore.vendorPrimaryService[v.name] ?? (v.services.isNotEmpty ? v.services.first : v.category);
+                  //   return v.name.toLowerCase().contains(_vendorSearch) ||
+                  //       primary.toLowerCase().contains(_vendorSearch);
+                  // }).map((v) {
+                  //   final primary = adminStore.vendorPrimaryService[v.name] ?? (v.services.isNotEmpty ? v.services.first : v.category);
+                  //   final isAttached = attachedVendorServices.contains('${v.name}|$primary');
+                  //   return ListTile(
+                  //     contentPadding: EdgeInsets.zero,
+                  //     leading: CircleAvatar(
+                  //       backgroundColor: kPrimary.withValues(alpha: 0.12),
+                  //       child: Text(v.name.substring(0, 1), style: const TextStyle(color: kPrimary, fontWeight: FontWeight.bold)),
+                  //     ),
+                  //     title: Text(v.name, style: const TextStyle(fontWeight: FontWeight.w700)),
+                  //     subtitle: Text('Service: $primary · ${v.location}', style: const TextStyle(fontSize: 12)),
+                  //     trailing: ElevatedButton(
+                  //       style: ElevatedButton.styleFrom(
+                  //         backgroundColor: isAttached ? Colors.grey : kPrimary,
+                  //         foregroundColor: Colors.white,
+                  //         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  //         elevation: 0,
+                  //       ),
+                  //       onPressed: () {
+                  //         adminStore.toggleBlogVendorService(widget.blog.id, v.name, primary);
+                  //         setState(() {});
+                  //       },
+                  //       child: Text(isAttached ? 'Added' : 'Add'),
+                  //     ),
+                  //   );
+                  // }),
+
+                  FutureBuilder<QuerySnapshot>(
+  future: FirebaseFirestore.instance
+      .collection('users')
+      .where('role', isEqualTo: 'vendor')
+      .get(),
+  builder: (context, snapshot) {
+    if (!snapshot.hasData) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(20),
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    final vendors = snapshot.data!.docs.where((doc) {
+      final data = doc.data() as Map<String, dynamic>;
+
+      final name =
+          (data['businessName'] ?? data['name'] ?? '').toString();
+
+      final service =
+          (data['service'] ?? data['category'] ?? '').toString();
+
+      if (_vendorSearch.isEmpty) return true;
+
+      return name.toLowerCase().contains(_vendorSearch) ||
+          service.toLowerCase().contains(_vendorSearch);
+    }).toList();
+
+    return Column(
+      children: vendors.map((doc) {
+        final data = doc.data() as Map<String, dynamic>;
+
+        final vendorName =
+            (data['businessName'] ?? data['name'] ?? 'Vendor').toString();
+
+        final primary =
+            (data['service'] ?? data['category'] ?? 'Service').toString();
+
+        final location =
+            (data['location'] ?? 'Unknown').toString();
+
+        final isAttached =
+            attachedVendorServices.contains('$vendorName|$primary');
+
+        return ListTile(
+          contentPadding: EdgeInsets.zero,
+          leading: CircleAvatar(
+            backgroundColor: kPrimary.withValues(alpha: 0.12),
+            child: Text(
+              vendorName.substring(0, 1).toUpperCase(),
+              style: const TextStyle(
+                color: kPrimary,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          title: Text(
+            vendorName,
+            style: const TextStyle(fontWeight: FontWeight.w700),
+          ),
+          subtitle: Text(
+            'Service: $primary · $location',
+            style: const TextStyle(fontSize: 12),
+          ),
+          trailing: ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor:
+                  isAttached ? Colors.grey : kPrimary,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+              elevation: 0,
+            ),
+            onPressed: () {
+              adminStore.toggleBlogVendorService(
+                widget.blog.id,
+                vendorName,
+                primary,
+              );
+
+              setState(() {});
+            },
+            child: Text(isAttached ? 'Added' : 'Add'),
+          ),
+        );
+      }).toList(),
+    );
+  },
+),
                 ],
               ),
             ),

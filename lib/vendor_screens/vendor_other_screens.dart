@@ -3518,6 +3518,343 @@ class _ReviewCardState extends State<_ReviewCard> {
 // vendor_profile_edit.dart
 // ═══════════════════════════════════════════════════════════════
 
+// class VendorProfileEditPage extends StatefulWidget {
+//   const VendorProfileEditPage({super.key});
+//   @override
+//   State<VendorProfileEditPage> createState() => _VendorProfileEditPageState();
+// }
+
+// class _VendorProfileEditPageState extends State<VendorProfileEditPage> {
+//   final _businessCtrl = TextEditingController(text: 'Dream Décor Co.');
+//   final _taglineCtrl = TextEditingController(
+//     text: 'Turning your vision into reality',
+//   );
+//   final _priceCtrl = TextEditingController(text: '30,000');
+//   final _phoneCtrl = TextEditingController(text: '0321-9876543');
+//   final _whatsappCtrl = TextEditingController(text: '0321-9876543');
+//   final _instagramCtrl = TextEditingController(
+//     text: 'instagram.com/dreamdecorco',
+//   );
+//   final _facebookCtrl = TextEditingController();
+//   final _yearsCtrl = TextEditingController(text: '7');
+
+//   final List<String> _selectedServices = [
+//     'Stage Décor',
+//     'Floral Arrangements',
+//     'Lighting',
+//     'Table Centerpieces',
+//   ];
+//   final _allServices = [
+//     'Stage Décor',
+//     'Floral Arrangements',
+//     'Lighting',
+//     'Catering Coordination',
+//     'Photography',
+//     'Bridal Bouquets',
+//     'Table Centerpieces',
+//     'Venue Booking',
+//   ];
+
+//   bool _isSaving = false;
+
+//   @override
+//   void dispose() {
+//     _businessCtrl.dispose();
+//     _taglineCtrl.dispose();
+//     _priceCtrl.dispose();
+//     _phoneCtrl.dispose();
+//     _whatsappCtrl.dispose();
+//     _instagramCtrl.dispose();
+//     _facebookCtrl.dispose();
+//     _yearsCtrl.dispose();
+//     super.dispose();
+//   }
+
+//   Future<void> _save() async {
+//     setState(() => _isSaving = true);
+//     await Future.delayed(const Duration(milliseconds: 800));
+//     setState(() => _isSaving = false);
+//     if (!mounted) return;
+//     ScaffoldMessenger.of(context).showSnackBar(
+//       const SnackBar(
+//         content: Text('Profile updated successfully!'),
+//         backgroundColor: Colors.green,
+//         behavior: SnackBarBehavior.floating,
+//       ),
+//     );
+//     Navigator.pop(context);
+//   }
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return Scaffold(
+//       appBar: AppBar(
+//         backgroundColor: kPrimary,
+//         title: const Text(
+//           'Edit Business Profile',
+//           style: TextStyle(color: Colors.white, fontSize: 16),
+//         ),
+//         iconTheme: const IconThemeData(color: Colors.white),
+//         actions: [
+//           TextButton(
+//             onPressed: _isSaving ? null : _save,
+//             child: _isSaving
+//                 ? const SizedBox(
+//                     height: 18,
+//                     width: 18,
+//                     child: CircularProgressIndicator(
+//                       color: Colors.white,
+//                       strokeWidth: 2,
+//                     ),
+//                   )
+//                 : const Text(
+//                     'Save',
+//                     style: TextStyle(
+//                       color: Colors.white,
+//                       fontWeight: FontWeight.bold,
+//                       fontSize: 15,
+//                     ),
+//                   ),
+//           ),
+//         ],
+//       ),
+//       body: SingleChildScrollView(
+//         padding: const EdgeInsets.all(20),
+//         child: Column(
+//           crossAxisAlignment: CrossAxisAlignment.start,
+//           children: [
+//             // Cover + Logo
+//             Container(
+//               height: 120,
+//               decoration: BoxDecoration(
+//                 color: kPrimary.withOpacity(0.12),
+//                 borderRadius: BorderRadius.circular(12),
+//               ),
+//               child: const Center(
+//                 child: Icon(Icons.image_outlined, color: kPrimary, size: 40),
+//               ),
+//             ),
+//             const SizedBox(height: 8),
+//             Row(
+//               children: [
+//                 Expanded(
+//                   child: OutlinedButton.icon(
+//                     style: OutlinedButton.styleFrom(
+//                       side: const BorderSide(color: kPrimary),
+//                       foregroundColor: kPrimary,
+//                       shape: RoundedRectangleBorder(
+//                         borderRadius: BorderRadius.circular(8),
+//                       ),
+//                     ),
+//                     onPressed: () {},
+//                     icon: const Icon(Icons.image, size: 16),
+//                     label: const Text(
+//                       'Change Cover',
+//                       style: TextStyle(fontSize: 12),
+//                     ),
+//                   ),
+//                 ),
+//                 const SizedBox(width: 10),
+//                 Expanded(
+//                   child: OutlinedButton.icon(
+//                     style: OutlinedButton.styleFrom(
+//                       side: const BorderSide(color: kPrimary),
+//                       foregroundColor: kPrimary,
+//                       shape: RoundedRectangleBorder(
+//                         borderRadius: BorderRadius.circular(8),
+//                       ),
+//                     ),
+//                     onPressed: () {},
+//                     icon: const Icon(Icons.business, size: 16),
+//                     label: const Text(
+//                       'Add Logo',
+//                       style: TextStyle(fontSize: 12),
+//                     ),
+//                   ),
+//                 ),
+//               ],
+//             ),
+//             const SizedBox(height: 20),
+//             _profileSectionLabel('Basic Info'),
+//             const SizedBox(height: 10),
+//             _editField(
+//               ctrl: _businessCtrl,
+//               label: 'Business Name',
+//               icon: Icons.store_outlined,
+//             ),
+//             const SizedBox(height: 10),
+//             _editField(
+//               ctrl: _taglineCtrl,
+//               label: 'Tagline',
+//               icon: Icons.format_quote_outlined,
+//             ),
+//             const SizedBox(height: 10),
+//             _editField(
+//               ctrl: _priceCtrl,
+//               label: 'Starting Price (PKR)',
+//               icon: Icons.currency_rupee,
+//               type: TextInputType.number,
+//             ),
+//             const SizedBox(height: 10),
+//             _editField(
+//               ctrl: _yearsCtrl,
+//               label: 'Years of Experience',
+//               icon: Icons.work_outline,
+//               type: TextInputType.number,
+//             ),
+//             const SizedBox(height: 20),
+//             _profileSectionLabel('Contact'),
+//             const SizedBox(height: 10),
+//             _editField(
+//               ctrl: _phoneCtrl,
+//               label: 'Phone Number',
+//               icon: Icons.phone_outlined,
+//               type: TextInputType.phone,
+//             ),
+//             const SizedBox(height: 10),
+//             _editField(
+//               ctrl: _whatsappCtrl,
+//               label: 'WhatsApp Number',
+//               icon: Icons.chat_outlined,
+//               type: TextInputType.phone,
+//             ),
+//             const SizedBox(height: 20),
+//             _profileSectionLabel('Social Media'),
+//             const SizedBox(height: 10),
+//             _editField(
+//               ctrl: _instagramCtrl,
+//               label: 'Instagram URL',
+//               icon: Icons.camera_alt_outlined,
+//             ),
+//             const SizedBox(height: 10),
+//             _editField(
+//               ctrl: _facebookCtrl,
+//               label: 'Facebook URL',
+//               icon: Icons.facebook,
+//             ),
+//             const SizedBox(height: 20),
+//             _profileSectionLabel('Services Offered'),
+//             const SizedBox(height: 10),
+//             Wrap(
+//               spacing: 8,
+//               runSpacing: 8,
+//               children: _allServices.map((s) {
+//                 final isSelected = _selectedServices.contains(s);
+//                 return GestureDetector(
+//                   onTap: () => setState(() {
+//                     isSelected
+//                         ? _selectedServices.remove(s)
+//                         : _selectedServices.add(s);
+//                   }),
+//                   child: AnimatedContainer(
+//                     duration: const Duration(milliseconds: 180),
+//                     padding: const EdgeInsets.symmetric(
+//                       horizontal: 12,
+//                       vertical: 7,
+//                     ),
+//                     decoration: BoxDecoration(
+//                       color: isSelected ? kPrimary : Colors.transparent,
+//                       borderRadius: BorderRadius.circular(20),
+//                       border: Border.all(color: kPrimary),
+//                     ),
+//                     child: Text(
+//                       s,
+//                       style: TextStyle(
+//                         fontSize: 12,
+//                         fontWeight: FontWeight.w500,
+//                         color: isSelected ? Colors.white : kPrimary,
+//                       ),
+//                     ),
+//                   ),
+//                 );
+//               }).toList(),
+//             ),
+//             const SizedBox(height: 24),
+//             SizedBox(
+//               width: double.infinity,
+//               height: 50,
+//               child: ElevatedButton(
+//                 style: ElevatedButton.styleFrom(
+//                   backgroundColor: kPrimary,
+//                   shape: RoundedRectangleBorder(
+//                     borderRadius: BorderRadius.circular(12),
+//                   ),
+//                 ),
+//                 onPressed: _isSaving ? null : _save,
+//                 child: _isSaving
+//                     ? const SizedBox(
+//                         height: 22,
+//                         width: 22,
+//                         child: CircularProgressIndicator(
+//                           color: Colors.white,
+//                           strokeWidth: 2,
+//                         ),
+//                       )
+//                     : const Text(
+//                         'Save Changes',
+//                         style: TextStyle(
+//                           color: Colors.white,
+//                           fontSize: 15,
+//                           fontWeight: FontWeight.bold,
+//                         ),
+//                       ),
+//               ),
+//             ),
+//             const SizedBox(height: 20),
+//           ],
+//         ),
+//       ),
+//     );
+//   }
+
+//   Widget _editField({
+//     required TextEditingController ctrl,
+//     required String label,
+//     required IconData icon,
+//     TextInputType? type,
+//   }) => TextField(
+//     controller: ctrl,
+//     keyboardType: type,
+//     cursorColor: kPrimary,
+//     decoration: InputDecoration(
+//       labelText: label,
+//       prefixIcon: Icon(icon, color: kPrimary, size: 20),
+//       floatingLabelStyle: const TextStyle(color: kPrimary),
+//       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+//       focusedBorder: OutlineInputBorder(
+//         borderRadius: BorderRadius.circular(12),
+//         borderSide: const BorderSide(color: kPrimary, width: 1.8),
+//       ),
+//       enabledBorder: OutlineInputBorder(
+//         borderRadius: BorderRadius.circular(12),
+//         borderSide: BorderSide(color: Colors.grey.shade300),
+//       ),
+//     ),
+//   );
+
+//   Widget _profileSectionLabel(String text) => Row(
+//     children: [
+//       Container(
+//         width: 3,
+//         height: 16,
+//         decoration: BoxDecoration(
+//           color: kPrimary,
+//           borderRadius: BorderRadius.circular(2),
+//         ),
+//       ),
+//       const SizedBox(width: 8),
+//       Text(
+//         text,
+//         style: const TextStyle(
+//           fontSize: 14,
+//           fontWeight: FontWeight.bold,
+//           color: kPrimary,
+//         ),
+//       ),
+//     ],
+//   );
+// }
+
 class VendorProfileEditPage extends StatefulWidget {
   const VendorProfileEditPage({super.key});
   @override
@@ -3525,19 +3862,15 @@ class VendorProfileEditPage extends StatefulWidget {
 }
 
 class _VendorProfileEditPageState extends State<VendorProfileEditPage> {
-  final _businessCtrl = TextEditingController(text: 'Dream Décor Co.');
-  final _taglineCtrl = TextEditingController(
-    text: 'Turning your vision into reality',
-  );
-  final _priceCtrl = TextEditingController(text: '30,000');
-  final _phoneCtrl = TextEditingController(text: '0321-9876543');
-  final _whatsappCtrl = TextEditingController(text: '0321-9876543');
-  final _instagramCtrl = TextEditingController(
-    text: 'instagram.com/dreamdecorco',
-  );
+  final _businessCtrl = TextEditingController();
+  final _taglineCtrl = TextEditingController();
+  final _priceCtrl = TextEditingController();
+  final _phoneCtrl = TextEditingController();
+  final _whatsappCtrl = TextEditingController();
+  final _instagramCtrl = TextEditingController();
   final _facebookCtrl = TextEditingController();
-  final _yearsCtrl = TextEditingController(text: '7');
-
+  final _yearsCtrl = TextEditingController();
+  bool _isLoading = true;
   final List<String> _selectedServices = [
     'Stage Décor',
     'Floral Arrangements',
@@ -3558,6 +3891,33 @@ class _VendorProfileEditPageState extends State<VendorProfileEditPage> {
   bool _isSaving = false;
 
   @override
+  void initState() {
+    super.initState();
+    _loadProfile();
+  }
+
+  Future<void> _loadProfile() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+    final doc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .get();
+    if (doc.exists) {
+      final d = doc.data()!;
+      _businessCtrl.text = d['businessName'] ?? '';
+      _taglineCtrl.text = d['tagline'] ?? '';
+      _priceCtrl.text = d['startingPrice'] ?? '';
+      _phoneCtrl.text = d['phone'] ?? '';
+      _whatsappCtrl.text = d['whatsapp'] ?? '';
+      _instagramCtrl.text = d['instagram'] ?? '';
+      _facebookCtrl.text = d['facebook'] ?? '';
+      _yearsCtrl.text = d['yearsExperience'] ?? '';
+    }
+    setState(() => _isLoading = false);
+  }
+
+  @override
   void dispose() {
     _businessCtrl.dispose();
     _taglineCtrl.dispose();
@@ -3572,17 +3932,42 @@ class _VendorProfileEditPageState extends State<VendorProfileEditPage> {
 
   Future<void> _save() async {
     setState(() => _isSaving = true);
-    await Future.delayed(const Duration(milliseconds: 800));
-    setState(() => _isSaving = false);
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Profile updated successfully!'),
-        backgroundColor: Colors.green,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-    Navigator.pop(context);
+    try {
+      final uid = FirebaseAuth.instance.currentUser?.uid;
+      if (uid != null) {
+        await FirebaseFirestore.instance.collection('users').doc(uid).update({
+          'businessName': _businessCtrl.text.trim(),
+          'tagline': _taglineCtrl.text.trim(),
+          'startingPrice': _priceCtrl.text.trim(),
+          'phone': _phoneCtrl.text.trim(),
+          'whatsapp': _whatsappCtrl.text.trim(),
+          'instagram': _instagramCtrl.text.trim(),
+          'facebook': _facebookCtrl.text.trim(),
+          'yearsExperience': _yearsCtrl.text.trim(),
+          'services': _selectedServices,
+        });
+      }
+      setState(() => _isSaving = false);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Profile updated successfully!'),
+          backgroundColor: Colors.green,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      Navigator.pop(context);
+    } catch (e) {
+      setState(() => _isSaving = false);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Failed to save. Please try again.'),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
   }
 
   @override
@@ -3618,192 +4003,198 @@ class _VendorProfileEditPageState extends State<VendorProfileEditPage> {
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Cover + Logo
-            Container(
-              height: 120,
-              decoration: BoxDecoration(
-                color: kPrimary.withOpacity(0.12),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Center(
-                child: Icon(Icons.image_outlined, color: kPrimary, size: 40),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: kPrimary),
-                      foregroundColor: kPrimary,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    onPressed: () {},
-                    icon: const Icon(Icons.image, size: 16),
-                    label: const Text(
-                      'Change Cover',
-                      style: TextStyle(fontSize: 12),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: OutlinedButton.icon(
-                    style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: kPrimary),
-                      foregroundColor: kPrimary,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    onPressed: () {},
-                    icon: const Icon(Icons.business, size: 16),
-                    label: const Text(
-                      'Add Logo',
-                      style: TextStyle(fontSize: 12),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            _profileSectionLabel('Basic Info'),
-            const SizedBox(height: 10),
-            _editField(
-              ctrl: _businessCtrl,
-              label: 'Business Name',
-              icon: Icons.store_outlined,
-            ),
-            const SizedBox(height: 10),
-            _editField(
-              ctrl: _taglineCtrl,
-              label: 'Tagline',
-              icon: Icons.format_quote_outlined,
-            ),
-            const SizedBox(height: 10),
-            _editField(
-              ctrl: _priceCtrl,
-              label: 'Starting Price (PKR)',
-              icon: Icons.currency_rupee,
-              type: TextInputType.number,
-            ),
-            const SizedBox(height: 10),
-            _editField(
-              ctrl: _yearsCtrl,
-              label: 'Years of Experience',
-              icon: Icons.work_outline,
-              type: TextInputType.number,
-            ),
-            const SizedBox(height: 20),
-            _profileSectionLabel('Contact'),
-            const SizedBox(height: 10),
-            _editField(
-              ctrl: _phoneCtrl,
-              label: 'Phone Number',
-              icon: Icons.phone_outlined,
-              type: TextInputType.phone,
-            ),
-            const SizedBox(height: 10),
-            _editField(
-              ctrl: _whatsappCtrl,
-              label: 'WhatsApp Number',
-              icon: Icons.chat_outlined,
-              type: TextInputType.phone,
-            ),
-            const SizedBox(height: 20),
-            _profileSectionLabel('Social Media'),
-            const SizedBox(height: 10),
-            _editField(
-              ctrl: _instagramCtrl,
-              label: 'Instagram URL',
-              icon: Icons.camera_alt_outlined,
-            ),
-            const SizedBox(height: 10),
-            _editField(
-              ctrl: _facebookCtrl,
-              label: 'Facebook URL',
-              icon: Icons.facebook,
-            ),
-            const SizedBox(height: 20),
-            _profileSectionLabel('Services Offered'),
-            const SizedBox(height: 10),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: _allServices.map((s) {
-                final isSelected = _selectedServices.contains(s);
-                return GestureDetector(
-                  onTap: () => setState(() {
-                    isSelected
-                        ? _selectedServices.remove(s)
-                        : _selectedServices.add(s);
-                  }),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 180),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 7,
-                    ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator(color: kPrimary))
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Cover + Logo
+                  Container(
+                    height: 120,
                     decoration: BoxDecoration(
-                      color: isSelected ? kPrimary : Colors.transparent,
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: kPrimary),
+                      color: kPrimary.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Text(
-                      s,
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                        color: isSelected ? Colors.white : kPrimary,
+                    child: const Center(
+                      child: Icon(
+                        Icons.image_outlined,
+                        color: kPrimary,
+                        size: 40,
                       ),
                     ),
                   ),
-                );
-              }).toList(),
-            ),
-            const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: kPrimary,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                onPressed: _isSaving ? null : _save,
-                child: _isSaving
-                    ? const SizedBox(
-                        height: 22,
-                        width: 22,
-                        child: CircularProgressIndicator(
-                          color: Colors.white,
-                          strokeWidth: 2,
-                        ),
-                      )
-                    : const Text(
-                        'Save Changes',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 15,
-                          fontWeight: FontWeight.bold,
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: kPrimary),
+                            foregroundColor: kPrimary,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          onPressed: () {},
+                          icon: const Icon(Icons.image, size: 16),
+                          label: const Text(
+                            'Change Cover',
+                            style: TextStyle(fontSize: 12),
+                          ),
                         ),
                       ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: kPrimary),
+                            foregroundColor: kPrimary,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          onPressed: () {},
+                          icon: const Icon(Icons.business, size: 16),
+                          label: const Text(
+                            'Add Logo',
+                            style: TextStyle(fontSize: 12),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  _profileSectionLabel('Basic Info'),
+                  const SizedBox(height: 10),
+                  _editField(
+                    ctrl: _businessCtrl,
+                    label: 'Business Name',
+                    icon: Icons.store_outlined,
+                  ),
+                  const SizedBox(height: 10),
+                  _editField(
+                    ctrl: _taglineCtrl,
+                    label: 'Tagline',
+                    icon: Icons.format_quote_outlined,
+                  ),
+                  const SizedBox(height: 10),
+                  _editField(
+                    ctrl: _priceCtrl,
+                    label: 'Starting Price (PKR)',
+                    icon: Icons.currency_rupee,
+                    type: TextInputType.number,
+                  ),
+                  const SizedBox(height: 10),
+                  _editField(
+                    ctrl: _yearsCtrl,
+                    label: 'Years of Experience',
+                    icon: Icons.work_outline,
+                    type: TextInputType.number,
+                  ),
+                  const SizedBox(height: 20),
+                  _profileSectionLabel('Contact'),
+                  const SizedBox(height: 10),
+                  _editField(
+                    ctrl: _phoneCtrl,
+                    label: 'Phone Number',
+                    icon: Icons.phone_outlined,
+                    type: TextInputType.phone,
+                  ),
+                  const SizedBox(height: 10),
+                  _editField(
+                    ctrl: _whatsappCtrl,
+                    label: 'WhatsApp Number',
+                    icon: Icons.chat_outlined,
+                    type: TextInputType.phone,
+                  ),
+                  const SizedBox(height: 20),
+                  _profileSectionLabel('Social Media'),
+                  const SizedBox(height: 10),
+                  _editField(
+                    ctrl: _instagramCtrl,
+                    label: 'Instagram URL',
+                    icon: Icons.camera_alt_outlined,
+                  ),
+                  const SizedBox(height: 10),
+                  _editField(
+                    ctrl: _facebookCtrl,
+                    label: 'Facebook URL',
+                    icon: Icons.facebook,
+                  ),
+                  const SizedBox(height: 20),
+                  _profileSectionLabel('Services Offered'),
+                  const SizedBox(height: 10),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: _allServices.map((s) {
+                      final isSelected = _selectedServices.contains(s);
+                      return GestureDetector(
+                        onTap: () => setState(() {
+                          isSelected
+                              ? _selectedServices.remove(s)
+                              : _selectedServices.add(s);
+                        }),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 180),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 7,
+                          ),
+                          decoration: BoxDecoration(
+                            color: isSelected ? kPrimary : Colors.transparent,
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: kPrimary),
+                          ),
+                          child: Text(
+                            s,
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                              color: isSelected ? Colors.white : kPrimary,
+                            ),
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: kPrimary,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      onPressed: _isSaving ? null : _save,
+                      child: _isSaving
+                          ? const SizedBox(
+                              height: 22,
+                              width: 22,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              ),
+                            )
+                          : const Text(
+                              'Save Changes',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 15,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                ],
               ),
             ),
-            const SizedBox(height: 20),
-          ],
-        ),
-      ),
     );
   }
 
@@ -3854,6 +4245,8 @@ class _VendorProfileEditPageState extends State<VendorProfileEditPage> {
     ],
   );
 }
+
+
 
 // ═══════════════════════════════════════════════════════════════
 // vendor_notifications.dart
@@ -4497,7 +4890,7 @@ class _VendorSettingsPageState extends State<VendorSettingsPage> {
   bool _isListingPaused = false;
 
   final Color kPrimary = const Color(0xffB4245D);
-
+User? get user => FirebaseAuth.instance.currentUser;
   // ─── HELPERS ───
 
   void _showCityPicker() {
@@ -4855,28 +5248,50 @@ class _VendorSettingsPageState extends State<VendorSettingsPage> {
                     ),
                   ),
                   const SizedBox(width: 14),
+                  // Expanded(
+                  //   child: Column(
+                  //     crossAxisAlignment: CrossAxisAlignment.start,
+                  //     children: [
+                  //       const Text(
+                  //         'Dream Décor Co.',
+                  //         style: TextStyle(
+                  //           fontSize: 16,
+                  //           fontWeight: FontWeight.bold,
+                  //         ),
+                  //       ),
+                  //       const SizedBox(height: 2),
+                  //       Text(
+                  //         'Verified Vendor · $_selectedCity',
+                  //         style: const TextStyle(
+                  //           fontSize: 13,
+                  //           color: Colors.grey,
+                  //         ),
+                  //       ),
+                  //     ],
+                  //   ),
+                  // ),
                   Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Dream Décor Co.',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          'Verified Vendor · $_selectedCity',
-                          style: const TextStyle(
-                            fontSize: 13,
-                            color: Colors.grey,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+  child: Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(
+        user?.displayName ?? 'Vendor Name',
+        style: const TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      const SizedBox(height: 2),
+      Text(
+        '${user?.email ?? ''} · $_selectedCity',
+        style: const TextStyle(
+          fontSize: 13,
+          color: Colors.grey,
+        ),
+      ),
+    ],
+  ),
+),
                   _StatusBadge(isPaused: _isListingPaused),
                 ],
               ),

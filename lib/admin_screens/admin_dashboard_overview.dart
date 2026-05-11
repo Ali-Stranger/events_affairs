@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../blogs.dart';
 import '../eventplanner.dart';
 import 'admin_settings.dart';
@@ -107,17 +107,46 @@ class _AdminDashboardOverviewPageState extends State<AdminDashboardOverviewPage>
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Row(
                     children: [
-                      _MetricCard(
-                        surface: surface,
-                        isDark: isDark,
-                        icon: Icons.storefront_outlined,
-                        title: 'Vendors',
-                        value: '${allVendors.length}',
-                        subtitle: pendingVendors > 0
-                            ? '$pendingVendors pending approval'
-                            : 'All approved',
-                        accent: kPrimary,
-                      ),
+                      // _MetricCard(
+                      //   surface: surface,
+                      //   isDark: isDark,
+                      //   icon: Icons.storefront_outlined,
+                      //   title: 'Vendors',
+                      //   value: '${allVendors.length}',
+                      //   subtitle: pendingVendors > 0
+                      //       ? '$pendingVendors pending approval'
+                      //       : 'All approved',
+                      //   accent: kPrimary,
+                      // ),
+                      FutureBuilder<QuerySnapshot>(
+  future: FirebaseFirestore.instance
+      .collection('users')
+      .where('role', isEqualTo: 'vendor')
+      .get(),
+  builder: (context, snapshot) {
+    if (snapshot.connectionState == ConnectionState.waiting) {
+      return const Expanded(
+        child: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    final vendorCount = snapshot.data?.docs.length ?? 0;
+
+    return _MetricCard(
+      surface: surface,
+      isDark: isDark,
+      icon: Icons.storefront_outlined,
+      title: 'Vendors',
+      value: '$vendorCount',
+      subtitle: pendingVendors > 0
+          ? '$pendingVendors pending approval'
+          : 'All approved',
+      accent: kPrimary,
+    );
+  },
+),
                       const SizedBox(width: 10),
                       _MetricCard(
                         surface: surface,

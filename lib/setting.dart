@@ -767,7 +767,7 @@ class _SettingsPageState extends State<SettingsPage> {
   String selectedLanguage = 'English';
 
   final Color primaryColor = const Color(0xffB4245D);
-
+User? get user => FirebaseAuth.instance.currentUser;
   void _showLogoutDialog() {
     showDialog(
       context: context,
@@ -1190,25 +1190,44 @@ class _SettingsPageState extends State<SettingsPage> {
                     ),
                   ),
                   const SizedBox(width: 14),
-                  const Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Ali',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        SizedBox(height: 2),
-                        Text(
-                          'ali@email.com',
-                          style: TextStyle(fontSize: 13, color: Colors.grey),
-                        ),
-                      ],
-                    ),
-                  ),
+                  // const Expanded(
+                  //   child: Column(
+                  //     crossAxisAlignment: CrossAxisAlignment.start,
+                  //     children: [
+                  //       Text(
+                  //         'Ali',
+                  //         style: TextStyle(
+                  //           fontSize: 16,
+                  //           fontWeight: FontWeight.w600,
+                  //         ),
+                  //       ),
+                  //       SizedBox(height: 2),
+                  //       Text(
+                  //         'ali@email.com',
+                  //         style: TextStyle(fontSize: 13, color: Colors.grey),
+                  //       ),
+                  //     ],
+                  //   ),
+                  // ),
+                  Expanded(
+  child: Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(
+        user?.displayName ?? user?.email?.split('@')[0] ?? 'User',
+        style: const TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+      const SizedBox(height: 2),
+      Text(
+        user?.email ?? '',
+        style: const TextStyle(fontSize: 13, color: Colors.grey),
+      ),
+    ],
+  ),
+),
                   OutlinedButton(
                     style: OutlinedButton.styleFrom(
                       side: BorderSide(color: primaryColor),

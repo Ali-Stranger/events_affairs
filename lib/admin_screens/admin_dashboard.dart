@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../blogs.dart';
 import '../eventplanner.dart';
 import 'admin_blogs.dart';
@@ -20,7 +20,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
   int _unreadNotifs = 3;
 
   // Sample data for demonstration - in production these would come from backend
-  int get _totalVendors => allVendors.length;
+  // int get _totalVendors => allVendors.length;
   int get _totalBlogs => allBlogs.length;
   int get _totalLeads => 156; // Demo value
   int get _totalUsers => 89; // Demo value
@@ -102,15 +102,46 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                   const SizedBox(height: 12),
                   Row(
                     children: [
-                      _StatCard(
-                        value: '$_totalVendors',
-                        label: 'Vendors',
-                        isDark: isDark,
-                        surface: surfaceColor,
-                        icon: Icons.storefront,
-                        trend: '+5 this week',
-                        trendUp: true,
-                      ),
+                      // _StatCard(
+                      //   value: '$_totalVendors',
+                      //   label: 'Vendors',
+                      //   isDark: isDark,
+                      //   surface: surfaceColor,
+                      //   icon: Icons.storefront,
+                      //   trend: '+5 this week',
+                      //   trendUp: true,
+                      // ),
+                      FutureBuilder<QuerySnapshot>(
+  future: FirebaseFirestore.instance
+      .collection('users')
+      .where('role', isEqualTo: 'vendor')
+      .get(),
+  builder: (context, snapshot) {
+    if (!snapshot.hasData) {
+      return _StatCard(
+        value: '...',
+        label: 'Vendors',
+        isDark: isDark,
+        surface: surfaceColor,
+        icon: Icons.storefront,
+        trend: 'Loading',
+        trendUp: true,
+      );
+    }
+
+    final vendorCount = snapshot.data!.docs.length;
+
+    return _StatCard(
+      value: '$vendorCount',
+      label: 'Vendors',
+      isDark: isDark,
+      surface: surfaceColor,
+      icon: Icons.storefront,
+      trend: '+5 this week',
+      trendUp: true,
+    );
+  },
+),
                       const SizedBox(width: 10),
                       _StatCard(
                         value: '$_totalUsers',
