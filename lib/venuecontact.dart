@@ -767,6 +767,7 @@ class _VenueContactPageState extends State<VenueContactPage> {
   final _nameCtrl = TextEditingController();
   final _phoneCtrl = TextEditingController();
   final _emailCtrl = TextEditingController();
+  final _budgetCtrl = TextEditingController();
   final _messageCtrl = TextEditingController();
   DateTime? _selectedDate;
   bool _vendorUidLoaded = false;
@@ -819,6 +820,7 @@ class _VenueContactPageState extends State<VenueContactPage> {
     _nameCtrl.dispose();
     _phoneCtrl.dispose();
     _emailCtrl.dispose();
+    _budgetCtrl.dispose();
     _messageCtrl.dispose();
     _reviewCtrl.dispose();
     super.dispose();
@@ -916,6 +918,8 @@ class _VenueContactPageState extends State<VenueContactPage> {
     }
 
     try {
+      final budgetPkr = _parseBudgetPkr(_budgetCtrl.text) ?? 0;
+
       await FirebaseFirestore.instance.collection('quotes').add({
         'vendorId': vendorUid,
         'customerId': user.uid,
@@ -926,6 +930,7 @@ class _VenueContactPageState extends State<VenueContactPage> {
         'city': widget.location,
         'eventDate': _formatDate(_selectedDate!),
         'message': _messageCtrl.text.trim(),
+        'budget': budgetPkr,
         'createdAt': FieldValue.serverTimestamp(),
         'status': 'pending',
       });
@@ -1024,6 +1029,13 @@ class _VenueContactPageState extends State<VenueContactPage> {
         ),
       );
     }
+  }
+
+  /// Parses "50000" or "50,000" → PKR integer.
+  int? _parseBudgetPkr(String raw) {
+    final s = raw.replaceAll(',', '').replaceAll(' ', '').trim();
+    if (s.isEmpty) return null;
+    return int.tryParse(s);
   }
 
   String _formatDate(DateTime d) => '${d.day} ${_monthName(d.month)} ${d.year}';
@@ -1398,6 +1410,30 @@ class _VenueContactPageState extends State<VenueContactPage> {
                               }
                               if (!v.contains('@') || !v.contains('.')) {
                                 return 'Enter a valid email address';
+                              }
+                              return null;
+                            },
+                          ),
+
+                          const SizedBox(height: 12),
+
+                          // Estimated budget (PKR)
+                          _formField(
+                            controller: _budgetCtrl,
+                            label: 'Estimated budget (PKR)',
+                            icon: Icons.account_balance_wallet_outlined,
+                            keyboardType: TextInputType.number,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.allow(
+                                RegExp(r'[0-9,]')),
+                            ],
+                            validator: (v) {
+                              final n = _parseBudgetPkr(v ?? '');
+                              if (n == null || n <= 0) {
+                                return 'Enter a valid budget amount';
+                              }
+                              if (n > 100000000) {
+                                return 'Amount is too large';
                               }
                               return null;
                             },

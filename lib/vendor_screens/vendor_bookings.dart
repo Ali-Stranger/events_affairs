@@ -188,20 +188,33 @@ import 'package:firebase_auth/firebase_auth.dart';
 // Your Brand Primary Color
 const Color kPrimary = Color(0xffB4245D);
 
+String _formatPkrAmount(int n) {
+  if (n <= 0) return '—';
+  final s = n.toString();
+  final buf = StringBuffer();
+  for (var i = 0; i < s.length; i++) {
+    if (i > 0 && (s.length - i) % 3 == 0) buf.write(',');
+    buf.write(s[i]);
+  }
+  return 'PKR ${buf.toString()}';
+}
+
 class InquiryModel {
   final String name, date, city, phone;
-  /// Service / listing category from the enquiry (e.g. venue contact form).
-  final String category;
+  /// Stored on `quotes` as `budget` (PKR integer) from venue contact enquiries.
+  final int budgetPkr;
   /// Optional note from the customer (`message` on `quotes`).
   final String message;
   final String email;
+
+  String get budgetLine => _formatPkrAmount(budgetPkr);
 
   const InquiryModel({
     required this.name,
     required this.date,
     required this.city,
     required this.phone,
-    required this.category,
+    required this.budgetPkr,
     required this.message,
     required this.email,
   });
@@ -254,12 +267,23 @@ class _VendorBookingsPageState extends State<VendorBookingsPage> {
       setState(() {
         inquiries = docs.map((doc) {
           final d = doc.data();
+          var budgetPkr = 0;
+          final b = d['budget'];
+          if (b is int) {
+            budgetPkr = b;
+          } else if (b is num) {
+            budgetPkr = b.round();
+          } else if (b != null) {
+            budgetPkr =
+                int.tryParse(b.toString().replaceAll(RegExp(r'[^0-9]'), '')) ??
+                    0;
+          }
           return InquiryModel(
             name: d['name'] ?? 'Unknown',
             date: d['eventDate'] ?? 'N/A',
             city: d['city'] ?? 'N/A',
             phone: d['phone'] ?? 'N/A',
-            category: (d['category'] ?? '').toString().trim(),
+            budgetPkr: budgetPkr,
             message: (d['message'] ?? '').toString().trim(),
             email: (d['customerEmail'] ?? '').toString().trim(),
           );
@@ -427,9 +451,9 @@ class _InquiryCard extends StatelessWidget {
               const SizedBox(width: 12),
               Expanded(
                 child: _buildMetric(
-                  Icons.category_outlined,
-                  "CATEGORY",
-                  inquiry.category.isEmpty ? '—' : inquiry.category,
+                  Icons.account_balance_wallet_rounded,
+                  "BUDGET",
+                  inquiry.budgetLine,
                 ),
               ),
             ],
