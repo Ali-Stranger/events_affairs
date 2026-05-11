@@ -2354,6 +2354,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:io';
+import '../login.dart';
 
 const Color kPrimary = Color(0xffB4245D);
 
@@ -3988,6 +3989,494 @@ class VendorNotificationsPage extends StatelessWidget {
 // vendor_settings.dart
 // ═══════════════════════════════════════════════════════════════
 
+// class VendorSettingsPage extends StatefulWidget {
+//   const VendorSettingsPage({super.key});
+
+//   @override
+//   State<VendorSettingsPage> createState() => _VendorSettingsPageState();
+// }
+
+// class _VendorSettingsPageState extends State<VendorSettingsPage> {
+//   // Notification States
+//   bool _newInquiryAlerts = true;
+//   bool _weeklyReport = true;
+//   final bool _reviewNotifs = true;
+//   bool _bookingReminders = false;
+//   bool _twoFactorEnabled = false;
+
+//   // Business States
+//   String _selectedCity = 'Karachi';
+//   bool _isListingPaused = false;
+
+//   final Color kPrimary = const Color(0xffB4245D);
+
+//   // ─── HELPERS ───
+
+//   void _showCityPicker() {
+//     final cities = ['Karachi', 'Lahore', 'Islamabad', 'Multan', 'Peshawar'];
+//     showModalBottomSheet(
+//       context: context,
+//       shape: const RoundedRectangleBorder(
+//         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+//       ),
+//       builder: (context) => Column(
+//         mainAxisSize: MainAxisSize.min,
+//         children: [
+//           const Padding(
+//             padding: EdgeInsets.all(16),
+//             child: Text(
+//               'Select Business City',
+//               style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+//             ),
+//           ),
+//           ...cities.map(
+//             (city) => ListTile(
+//               title: Text(city),
+//               trailing: _selectedCity == city
+//                   ? Icon(Icons.check, color: kPrimary)
+//                   : null,
+//               onTap: () {
+//                 setState(() => _selectedCity = city);
+//                 Navigator.pop(context);
+//               },
+//             ),
+//           ),
+//           const SizedBox(height: 16),
+//         ],
+//       ),
+//     );
+//   }
+
+//   void _showDeleteAccountDialog() {
+//     showDialog(
+//       context: context,
+//       builder: (context) => AlertDialog(
+//         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+//         title: const Text('Delete Vendor Account?'),
+//         content: const Text(
+//           'This will permanently remove your business listing, reviews, and booking history. This action is irreversible.',
+//         ),
+//         actions: [
+//           TextButton(
+//             onPressed: () => Navigator.pop(context),
+//             child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+//           ),
+//           ElevatedButton(
+//             style: ElevatedButton.styleFrom(
+//               backgroundColor: Colors.red,
+//               shape: RoundedRectangleBorder(
+//                 borderRadius: BorderRadius.circular(8),
+//               ),
+//             ),
+//             onPressed: () => Navigator.pop(context),
+//             child: const Text(
+//               'Delete Permanently',
+//               style: TextStyle(color: Colors.white),
+//             ),
+//           ),
+//         ],
+//       ),
+//     );
+//   }
+
+//   void _showLogoutDialog() {
+//     showDialog(
+//       context: context,
+//       builder: (ctx) => AlertDialog(
+//         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+//         title: const Text('Log out?'),
+//         content: const Text(
+//           'You\'ll need to sign in again to manage your vendor dashboard.',
+//         ),
+//         actions: [
+//           TextButton(
+//             onPressed: () => Navigator.pop(ctx),
+//             child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+//           ),
+//           ElevatedButton(
+//             style: ElevatedButton.styleFrom(
+//               backgroundColor: kPrimary,
+//               shape: RoundedRectangleBorder(
+//                 borderRadius: BorderRadius.circular(8),
+//               ),
+//             ),
+//             onPressed: () => Navigator.pop(ctx),
+//             child: const Text('Log Out', style: TextStyle(color: Colors.white)),
+//           ),
+//         ],
+//       ),
+//     );
+//   }
+
+//   Widget _sectionLabel(String text) {
+//     return Padding(
+//       padding: const EdgeInsets.fromLTRB(16, 20, 16, 6),
+//       child: Text(
+//         text.toUpperCase(),
+//         style: const TextStyle(
+//           fontSize: 11,
+//           fontWeight: FontWeight.bold,
+//           color: Colors.grey,
+//           letterSpacing: 0.8,
+//         ),
+//       ),
+//     );
+//   }
+
+//   Widget _settingsCard(List<Widget> children) {
+//     return Container(
+//       margin: const EdgeInsets.symmetric(horizontal: 16),
+//       decoration: BoxDecoration(
+//         borderRadius: BorderRadius.circular(14),
+//         border: Border.all(color: Colors.grey.withOpacity(0.15)),
+//       ),
+//       child: Column(children: children),
+//     );
+//   }
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return Scaffold(
+//       appBar: AppBar(
+//         backgroundColor: kPrimary,
+//         title: const Text(
+//           'Vendor Settings',
+//           style: TextStyle(color: Colors.white, fontSize: 16),
+//         ),
+//         iconTheme: const IconThemeData(color: Colors.white),
+//         elevation: 0,
+//       ),
+//       body: SingleChildScrollView(
+//         child: Column(
+//           crossAxisAlignment: CrossAxisAlignment.start,
+//           children: [
+//             // ─── VENDOR PROFILE CARD ───
+//             Container(
+//               margin: const EdgeInsets.all(16),
+//               padding: const EdgeInsets.all(16),
+//               decoration: BoxDecoration(
+//                 color: kPrimary.withOpacity(0.08),
+//                 borderRadius: BorderRadius.circular(14),
+//                 border: Border.all(color: kPrimary.withOpacity(0.2)),
+//               ),
+//               child: Row(
+//                 children: [
+//                   CircleAvatar(
+//                     radius: 30,
+//                     backgroundColor: kPrimary,
+//                     child: const Text(
+//                       'DD',
+//                       style: TextStyle(
+//                         fontSize: 20,
+//                         fontWeight: FontWeight.bold,
+//                         color: Colors.white,
+//                       ),
+//                     ),
+//                   ),
+//                   const SizedBox(width: 14),
+//                   Expanded(
+//                     child: Column(
+//                       crossAxisAlignment: CrossAxisAlignment.start,
+//                       children: [
+//                         const Text(
+//                           'Dream Décor Co.',
+//                           style: TextStyle(
+//                             fontSize: 16,
+//                             fontWeight: FontWeight.bold,
+//                           ),
+//                         ),
+//                         const SizedBox(height: 2),
+//                         Text(
+//                           'Verified Vendor · $_selectedCity',
+//                           style: const TextStyle(
+//                             fontSize: 13,
+//                             color: Colors.grey,
+//                           ),
+//                         ),
+//                       ],
+//                     ),
+//                   ),
+//                   _StatusBadge(isPaused: _isListingPaused),
+//                 ],
+//               ),
+//             ),
+
+//             // ─── PREFERENCES (App Behavior) ───
+//             _sectionLabel('Preferences'),
+//             _settingsCard([
+//               _SettingsTile(
+//                 icon: Icons.dark_mode_outlined,
+//                 iconBg: kPrimary.withOpacity(0.13),
+//                 title: 'Dark Mode',
+//                 subtitle: 'Switch app appearance',
+//                 trailing: ValueListenableBuilder<ThemeMode>(
+//                   valueListenable: themeNotifier,
+//                   builder: (context, mode, _) => Switch(
+//                     value: mode == ThemeMode.dark,
+//                     activeThumbColor: kPrimary,
+//                     onChanged: (val) => themeNotifier.value = val
+//                         ? ThemeMode.dark
+//                         : ThemeMode.light,
+//                   ),
+//                 ),
+//               ),
+//               _SettingsTile(
+//                 icon: Icons.location_on_outlined,
+//                 iconBg: Colors.blue.withOpacity(0.13),
+//                 title: 'Service City',
+//                 subtitle: _selectedCity,
+//                 onTap: _showCityPicker,
+//                 showDivider: false,
+//               ),
+//             ]),
+
+//             // ─── NOTIFICATIONS ───
+//             _sectionLabel('Notifications'),
+//             _settingsCard([
+//               _SettingsTile(
+//                 icon: Icons.notifications_outlined,
+//                 iconBg: Colors.orange.withOpacity(0.13),
+//                 title: 'New Inquiry Alerts',
+//                 trailing: Switch(
+//                   value: _newInquiryAlerts,
+//                   activeThumbColor: kPrimary,
+//                   onChanged: (v) => setState(() => _newInquiryAlerts = v),
+//                 ),
+//               ),
+//               _SettingsTile(
+//                 icon: Icons.bar_chart_outlined,
+//                 iconBg: Colors.blue.withOpacity(0.13),
+//                 title: 'Weekly Reports',
+//                 trailing: Switch(
+//                   value: _weeklyReport,
+//                   activeThumbColor: kPrimary,
+//                   onChanged: (v) => setState(() => _weeklyReport = v),
+//                 ),
+//               ),
+//               _SettingsTile(
+//                 icon: Icons.calendar_today_outlined,
+//                 iconBg: Colors.green.withOpacity(0.13),
+//                 title: 'Booking Reminders',
+//                 trailing: Switch(
+//                   value: _bookingReminders,
+//                   activeThumbColor: kPrimary,
+//                   onChanged: (v) => setState(() => _bookingReminders = v),
+//                 ),
+//                 showDivider: false,
+//               ),
+//             ]),
+
+//             // ─── BUSINESS MANAGEMENT ───
+//             _sectionLabel('Business'),
+//             _settingsCard([
+//               _SettingsTile(
+//                 icon: Icons.event_available_outlined,
+//                 iconBg: Colors.teal.withOpacity(0.13),
+//                 title: 'Manage Availability',
+//                 onTap: () {},
+//               ),
+//               _SettingsTile(
+//                 icon: Icons.description_outlined,
+//                 iconBg: Colors.purple.withOpacity(0.13),
+//                 title: 'Business Documents',
+//                 onTap: () {},
+//               ),
+//               _SettingsTile(
+//                 icon: Icons.account_balance_outlined,
+//                 iconBg: Colors.indigo.withOpacity(0.13),
+//                 title: 'Payout Settings',
+//                 showDivider: false,
+//                 onTap: () {},
+//               ),
+//             ]),
+
+//             // ─── SECURITY ───
+//             _sectionLabel('Security'),
+//             _settingsCard([
+//               _SettingsTile(
+//                 icon: Icons.security,
+//                 iconBg: Colors.green.withOpacity(0.13),
+//                 title: 'Two-Factor Auth',
+//                 trailing: Switch(
+//                   value: _twoFactorEnabled,
+//                   activeThumbColor: kPrimary,
+//                   onChanged: (v) => setState(() => _twoFactorEnabled = v),
+//                 ),
+//               ),
+//               _SettingsTile(
+//                 icon: Icons.lock_outline,
+//                 iconBg: Colors.orange.withOpacity(0.13),
+//                 title: 'Change Password',
+//                 showDivider: false,
+//                 onTap: () {},
+//               ),
+//             ]),
+
+//             // ─── DANGER ZONE ───
+//             _sectionLabel('Danger Zone'),
+//             _settingsCard([
+//               _SettingsTile(
+//                 icon: _isListingPaused
+//                     ? Icons.play_arrow
+//                     : Icons.pause_circle_outline,
+//                 iconBg: (_isListingPaused ? Colors.green : Colors.orange)
+//                     .withOpacity(0.13),
+//                 title: _isListingPaused ? 'Activate Listing' : 'Pause Listing',
+//                 titleColor: _isListingPaused ? Colors.green : Colors.orange,
+//                 onTap: () =>
+//                     setState(() => _isListingPaused = !_isListingPaused),
+//               ),
+//               _SettingsTile(
+//                 icon: Icons.delete_outline,
+//                 iconBg: Colors.red.withOpacity(0.13),
+//                 title: 'Delete Vendor Account',
+//                 titleColor: Colors.red,
+//                 showDivider: false,
+//                 onTap: _showDeleteAccountDialog,
+//               ),
+//             ]),
+
+//             // ─── LOGOUT ───
+//             Padding(
+//               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+//               child: SizedBox(
+//                 width: double.infinity,
+//                 height: 52,
+//                 child: OutlinedButton.icon(
+//                   style: OutlinedButton.styleFrom(
+//                     side: const BorderSide(color: Colors.red, width: 1.5),
+//                     foregroundColor: Colors.red,
+//                     shape: RoundedRectangleBorder(
+//                       borderRadius: BorderRadius.circular(12),
+//                     ),
+//                   ),
+//                   onPressed: _showLogoutDialog,
+//                   icon: const Icon(Icons.logout),
+//                   label: const Text(
+//                     'Log Out',
+//                     style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+//                   ),
+//                 ),
+//               ),
+//             ),
+
+//             const Center(
+//               child: Padding(
+//                 padding: EdgeInsets.only(bottom: 24),
+//                 child: Text(
+//                   'Events Affairs v1.0.0 · Vendor Portal',
+//                   style: TextStyle(fontSize: 12, color: Colors.grey),
+//                 ),
+//               ),
+//             ),
+//           ],
+//         ),
+//       ),
+//     );
+//   }
+// }
+
+// // ─── REUSABLE COMPONENTS ───
+
+// class _StatusBadge extends StatelessWidget {
+//   final bool isPaused;
+//   const _StatusBadge({required this.isPaused});
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return Container(
+//       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+//       decoration: BoxDecoration(
+//         color: isPaused
+//             ? Colors.orange.withOpacity(0.15)
+//             : Colors.green.withOpacity(0.12),
+//         borderRadius: BorderRadius.circular(20),
+//       ),
+//       child: Text(
+//         isPaused ? 'Paused' : 'Active',
+//         style: TextStyle(
+//           color: isPaused ? Colors.orange : Colors.green,
+//           fontSize: 11,
+//           fontWeight: FontWeight.bold,
+//         ),
+//       ),
+//     );
+//   }
+// }
+
+// class _SettingsTile extends StatelessWidget {
+//   final String title;
+//   final String? subtitle;
+//   final IconData icon;
+//   final Color iconBg;
+//   final Widget? trailing;
+//   final VoidCallback? onTap;
+//   final bool showDivider;
+//   final Color? titleColor;
+
+//   const _SettingsTile({
+//     required this.title,
+//     this.subtitle,
+//     required this.icon,
+//     required this.iconBg,
+//     this.trailing,
+//     this.onTap,
+//     this.showDivider = true,
+//     this.titleColor,
+//   });
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return Column(
+//       children: [
+//         ListTile(
+//           onTap: onTap,
+//           contentPadding: const EdgeInsets.symmetric(
+//             horizontal: 16,
+//             vertical: 2,
+//           ),
+//           leading: Container(
+//             width: 38,
+//             height: 38,
+//             decoration: BoxDecoration(
+//               color: iconBg,
+//               borderRadius: BorderRadius.circular(10),
+//             ),
+//             child: Icon(icon, size: 20, color: titleColor ?? Colors.black87),
+//           ),
+//           title: Text(
+//             title,
+//             style: TextStyle(
+//               fontSize: 14,
+//               fontWeight: FontWeight.w600,
+//               color: titleColor,
+//             ),
+//           ),
+//           subtitle: subtitle != null
+//               ? Text(
+//                   subtitle!,
+//                   style: const TextStyle(fontSize: 12, color: Colors.grey),
+//                 )
+//               : null,
+//           trailing:
+//               trailing ??
+//               (onTap != null
+//                   ? const Icon(
+//                       Icons.chevron_right,
+//                       color: Colors.grey,
+//                       size: 20,
+//                     )
+//                   : null),
+//         ),
+//         if (showDivider) const Divider(height: 1, indent: 70, endIndent: 16),
+//       ],
+//     );
+//   }
+// }
+
+
+
+
 class VendorSettingsPage extends StatefulWidget {
   const VendorSettingsPage({super.key});
 
@@ -4099,10 +4588,203 @@ class _VendorSettingsPageState extends State<VendorSettingsPage> {
                 borderRadius: BorderRadius.circular(8),
               ),
             ),
-            onPressed: () => Navigator.pop(ctx),
+            onPressed: () async {
+              Navigator.pop(ctx);
+              await FirebaseAuth.instance.signOut();
+              if (!context.mounted) return;
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(builder: (_) => const LoginPage()),
+                (route) => false,
+              );
+            },
             child: const Text('Log Out', style: TextStyle(color: Colors.white)),
           ),
         ],
+      ),
+    );
+  }
+
+  void _showChangePasswordDialog() {
+    final currentCtrl = TextEditingController();
+    final newCtrl = TextEditingController();
+    final confirmCtrl = TextEditingController();
+    bool isLoading = false;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setModalState) => Padding(
+          padding: EdgeInsets.only(
+            left: 24,
+            right: 24,
+            top: 24,
+            bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                'Change Password',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 20),
+              TextField(
+                controller: currentCtrl,
+                obscureText: true,
+                cursorColor: kPrimary,
+                decoration: InputDecoration(
+                  labelText: 'Current Password',
+                  prefixIcon: Icon(Icons.lock_outline, color: kPrimary),
+                  floatingLabelStyle: TextStyle(color: kPrimary),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: kPrimary, width: 1.8),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: newCtrl,
+                obscureText: true,
+                cursorColor: kPrimary,
+                decoration: InputDecoration(
+                  labelText: 'New Password',
+                  prefixIcon: Icon(Icons.lock_outline, color: kPrimary),
+                  floatingLabelStyle: TextStyle(color: kPrimary),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: kPrimary, width: 1.8),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: confirmCtrl,
+                obscureText: true,
+                cursorColor: kPrimary,
+                decoration: InputDecoration(
+                  labelText: 'Confirm New Password',
+                  prefixIcon: Icon(Icons.lock_outline, color: kPrimary),
+                  floatingLabelStyle: TextStyle(color: kPrimary),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: kPrimary, width: 1.8),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: kPrimary,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  onPressed: isLoading
+                      ? null
+                      : () async {
+                          if (newCtrl.text != confirmCtrl.text) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Passwords do not match'),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                            return;
+                          }
+                          if (newCtrl.text.length < 6) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                    'Password must be at least 6 characters'),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                            return;
+                          }
+                          setModalState(() => isLoading = true);
+                          try {
+                            final user = FirebaseAuth.instance.currentUser!;
+                            final cred = EmailAuthProvider.credential(
+                              email: user.email!,
+                              password: currentCtrl.text,
+                            );
+                            await user.reauthenticateWithCredential(cred);
+                            await user.updatePassword(newCtrl.text);
+                            if (!context.mounted) return;
+                            Navigator.pop(context);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Password changed successfully!'),
+                                backgroundColor: Colors.green,
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            );
+                          } on FirebaseAuthException catch (e) {
+                            setModalState(() => isLoading = false);
+                            String msg = 'Failed to change password.';
+                            if (e.code == 'wrong-password') {
+                              msg = 'Current password is incorrect.';
+                            }
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(msg),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          }
+                        },
+                  child: isLoading
+                      ? const SizedBox(
+                          height: 22,
+                          width: 22,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2.5,
+                          ),
+                        )
+                      : const Text(
+                          'Change Password',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -4200,7 +4882,7 @@ class _VendorSettingsPageState extends State<VendorSettingsPage> {
               ),
             ),
 
-            // ─── PREFERENCES (App Behavior) ───
+            // ─── PREFERENCES ───
             _sectionLabel('Preferences'),
             _settingsCard([
               _SettingsTile(
@@ -4213,9 +4895,8 @@ class _VendorSettingsPageState extends State<VendorSettingsPage> {
                   builder: (context, mode, _) => Switch(
                     value: mode == ThemeMode.dark,
                     activeThumbColor: kPrimary,
-                    onChanged: (val) => themeNotifier.value = val
-                        ? ThemeMode.dark
-                        : ThemeMode.light,
+                    onChanged: (val) => themeNotifier.value =
+                        val ? ThemeMode.dark : ThemeMode.light,
                   ),
                 ),
               ),
@@ -4307,7 +4988,7 @@ class _VendorSettingsPageState extends State<VendorSettingsPage> {
                 iconBg: Colors.orange.withOpacity(0.13),
                 title: 'Change Password',
                 showDivider: false,
-                onTap: () {},
+                onTap: _showChangePasswordDialog,
               ),
             ]),
 
@@ -4320,7 +5001,8 @@ class _VendorSettingsPageState extends State<VendorSettingsPage> {
                     : Icons.pause_circle_outline,
                 iconBg: (_isListingPaused ? Colors.green : Colors.orange)
                     .withOpacity(0.13),
-                title: _isListingPaused ? 'Activate Listing' : 'Pause Listing',
+                title:
+                    _isListingPaused ? 'Activate Listing' : 'Pause Listing',
                 titleColor: _isListingPaused ? Colors.green : Colors.orange,
                 onTap: () =>
                     setState(() => _isListingPaused = !_isListingPaused),
@@ -4457,8 +5139,7 @@ class _SettingsTile extends StatelessWidget {
                   style: const TextStyle(fontSize: 12, color: Colors.grey),
                 )
               : null,
-          trailing:
-              trailing ??
+          trailing: trailing ??
               (onTap != null
                   ? const Icon(
                       Icons.chevron_right,
