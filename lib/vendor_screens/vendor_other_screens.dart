@@ -5060,9 +5060,19 @@ class VendorNotificationsPage extends StatelessWidget {
 //     );
 //   }
 // }
-
-
-
+/// Same initials rule as [VendorDashboardPage] (Firestore `users.name`).
+String _vendorProfileInitials(String fullName) {
+  final trimmed = fullName.trim();
+  if (trimmed.isEmpty) return 'V';
+  final parts =
+      trimmed.split(RegExp(r'\s+')).where((p) => p.isNotEmpty).toList();
+  if (parts.length >= 2) {
+    final first = parts.first;
+    final last = parts.last;
+    return '${first[0]}${last[0]}'.toUpperCase();
+  }
+  return parts.first[0].toUpperCase();
+}
 
 class VendorSettingsPage extends StatefulWidget {
   const VendorSettingsPage({super.key});
@@ -5083,26 +5093,52 @@ class _VendorSettingsPageState extends State<VendorSettingsPage> {
   String _selectedCity = 'Karachi';
   bool _isListingPaused = false;
 
+  /// Profile header: aligned with vendor dashboard (Firestore `users` doc).
+  String _vendorPersonName = 'Loading...';
+  String _businessName = 'Loading...';
+  String _category = '';
+  String _city = '';
+
   final Color kPrimary = const Color(0xffB4245D);
-User? get user => FirebaseAuth.instance.currentUser;
-  // ─── HELPERS ───
-  String _getInitials(String? fullName) {
-  if (fullName == null || fullName.trim().isEmpty) {
-    return 'VA';
+  User? get user => FirebaseAuth.instance.currentUser;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadVendorProfile();
   }
 
-  final cleanName = fullName.trim().replaceAll(RegExp(r'\s+'), ' ');
-  final parts = cleanName.split(' ');
-
-  if (parts.length == 1) {
-    return parts[0][0].toUpperCase() + (parts[0].length > 1 ? parts[0][1].toUpperCase() : '');
+  Future<void> _loadVendorProfile() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+    try {
+      final doc =
+          await FirebaseFirestore.instance.collection('users').doc(uid).get();
+      if (!mounted) return;
+      if (!doc.exists) {
+        setState(() {
+          _vendorPersonName = 'Vendor';
+          _businessName = 'My Business';
+        });
+        return;
+      }
+      final data = doc.data()!;
+      final city = (data['city'] ?? '').toString();
+      setState(() {
+        _vendorPersonName = (data['name'] ?? 'Vendor').toString();
+        _businessName = (data['businessName'] ?? 'My Business').toString();
+        _category = (data['businessCategory'] ?? '').toString();
+        _city = city;
+        if (city.isNotEmpty) _selectedCity = city;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _vendorPersonName = 'Vendor';
+        _businessName = 'My Business';
+      });
+    }
   }
-
-  final first = parts.first[0];
-  final last = parts.last[0];
-
-  return (first + last).toUpperCase();
-}
   void _showCityPicker() {
     final cities = ['Karachi', 'Lahore', 'Islamabad', 'Multan', 'Peshawar'];
     showModalBottomSheet(
@@ -5420,6 +5456,15 @@ User? get user => FirebaseAuth.instance.currentUser;
 
   @override
   Widget build(BuildContext context) {
+    final avatarInitials = _vendorProfileInitials(_vendorPersonName);
+    final subtitleParts = <String>[
+      if (_category.isNotEmpty) _category,
+      if (_city.isNotEmpty) _city,
+    ];
+    final profileSubtitle = subtitleParts.isEmpty
+        ? (user?.email ?? '')
+        : subtitleParts.join(' · ');
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: kPrimary,
@@ -5445,77 +5490,41 @@ User? get user => FirebaseAuth.instance.currentUser;
               ),
               child: Row(
                 children: [
-                  // CircleAvatar(
-                  //   radius: 30,
-                  //   backgroundColor: kPrimary,
-                  //   child: const Text(
-                  //     'DD',
-                  //     style: TextStyle(
-                  //       fontSize: 20,
-                  //       fontWeight: FontWeight.bold,
-                  //       color: Colors.white,
-                  //     ),
-                  //   ),
-                  // ),
                   CircleAvatar(
-  radius: 30,
-  backgroundColor: kPrimary,
-  child: Text(
-    _getInitials(
-      user?.displayName ?? user?.email,
-    ),
-    style: const TextStyle(
-      fontSize: 20,
-      fontWeight: FontWeight.bold,
-      color: Colors.white,
-    ),
-  ),
-),
+                    radius: 30,
+                    backgroundColor: kPrimary,
+                    child: Text(
+                      avatarInitials,
+                      style: TextStyle(
+                        fontSize: avatarInitials.length >= 2 ? 17 : 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
                   const SizedBox(width: 14),
-                  // Expanded(
-                  //   child: Column(
-                  //     crossAxisAlignment: CrossAxisAlignment.start,
-                  //     children: [
-                  //       const Text(
-                  //         'Dream Décor Co.',
-                  //         style: TextStyle(
-                  //           fontSize: 16,
-                  //           fontWeight: FontWeight.bold,
-                  //         ),
-                  //       ),
-                  //       const SizedBox(height: 2),
-                  //       Text(
-                  //         'Verified Vendor · $_selectedCity',
-                  //         style: const TextStyle(
-                  //           fontSize: 13,
-                  //           color: Colors.grey,
-                  //         ),
-                  //       ),
-                  //     ],
-                  //   ),
-                  // ),
                   Expanded(
-  child: Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Text(
-        user?.displayName ?? 'Vendor Name',
-        style: const TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-      const SizedBox(height: 2),
-      Text(
-        '${user?.email ?? ''} · $_selectedCity',
-        style: const TextStyle(
-          fontSize: 13,
-          color: Colors.grey,
-        ),
-      ),
-    ],
-  ),
-),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          _businessName,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          profileSubtitle,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
 
                   _StatusBadge(isPaused: _isListingPaused),
                 ],
@@ -5601,13 +5610,13 @@ User? get user => FirebaseAuth.instance.currentUser;
                 title: 'Business Documents',
                 onTap: () {},
               ),
-              _SettingsTile(
-                icon: Icons.account_balance_outlined,
-                iconBg: Colors.indigo.withOpacity(0.13),
-                title: 'Payout Settings',
-                showDivider: false,
-                onTap: () {},
-              ),
+              // _SettingsTile(
+              //   icon: Icons.account_balance_outlined,
+              //   iconBg: Colors.indigo.withOpacity(0.13),
+              //   title: 'Payout Settings',
+              //   showDivider: false,
+              //   onTap: () {},
+              // ),
             ]),
 
             // ─── SECURITY ───

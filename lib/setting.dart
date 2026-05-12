@@ -747,11 +747,14 @@
 // }
 
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'drawer.dart';
 import 'theme_notifier.dart';
 import 'login.dart';
+import 'my_bookings.dart';
+import 'saved_vendors.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -767,6 +770,38 @@ class _SettingsPageState extends State<SettingsPage> {
   String selectedLanguage = 'English';
 
   final Color primaryColor = const Color(0xffB4245D);
+
+  @override
+  void initState() {
+    super.initState();
+    _loadDefaultCityFromProfile();
+  }
+
+  /// Prefers `users/{uid}.city` (same field as couple signup); keeps UI default until loaded.
+  Future<void> _loadDefaultCityFromProfile() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+    try {
+      final doc =
+          await FirebaseFirestore.instance.collection('users').doc(uid).get();
+      if (!mounted || !doc.exists) return;
+      final city = (doc.data()?['city'] ?? '').toString().trim();
+      if (city.isEmpty) return;
+      setState(() => selectedCity = city);
+    } catch (_) {}
+  }
+
+  Future<void> _persistDefaultCity(String city) async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+    try {
+      await FirebaseFirestore.instance.collection('users').doc(uid).set(
+        {'city': city},
+        SetOptions(merge: true),
+      );
+    } catch (_) {}
+  }
+
 User? get user => FirebaseAuth.instance.currentUser;
 String getInitials(String? name, String? email) {
   if (name != null && name.trim().isNotEmpty) {
@@ -1062,9 +1097,10 @@ String getInitials(String? name, String? email) {
               trailing: selectedCity == city
                   ? Icon(Icons.check, color: primaryColor)
                   : null,
-              onTap: () {
+              onTap: () async {
                 setState(() => selectedCity = city);
                 Navigator.pop(context);
+                await _persistDefaultCity(city);
               },
             ),
           ),
@@ -1343,15 +1379,29 @@ String getInitials(String? name, String? email) {
                 icon: Icons.bookmark_border,
                 iconBg: Colors.purple.withOpacity(0.13),
                 title: 'My Bookings',
-                subtitle: 'View all vendor bookings',
-                onTap: () {},
+                subtitle: 'Vendors you contacted',
+                onTap: () {
+                  Navigator.push<void>(
+                    context,
+                    MaterialPageRoute<void>(
+                      builder: (_) => const MyBookingsPage(),
+                    ),
+                  );
+                },
               ),
               _settingsTile(
                 icon: Icons.favorite_border,
                 iconBg: Colors.red.withOpacity(0.13),
                 title: 'Saved Vendors',
-                subtitle: 'Your favourites list',
-                onTap: () {},
+                subtitle: 'Hearts & bookmarks from listings',
+                onTap: () {
+                  Navigator.push<void>(
+                    context,
+                    MaterialPageRoute<void>(
+                      builder: (_) => const SavedVendorsPage(),
+                    ),
+                  );
+                },
               ),
               _settingsTile(
                 icon: Icons.description_outlined,

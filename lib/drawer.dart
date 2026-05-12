@@ -26,13 +26,20 @@ class CommonAppBar extends StatelessWidget implements PreferredSizeWidget {
       ),
       backgroundColor: const Color(0xffB4245D),
       actions: [
-        Padding(
-          padding: const EdgeInsets.only(top: 16),
-          child: IconButton(
-            onPressed: () {},
-            icon: const Icon(Icons.search, color: Colors.white),
-          ),
-        ),
+        // Padding(
+        //   padding: const EdgeInsets.only(top: 16),
+        //   child: IconButton(
+        //     tooltip: 'Search vendors',
+        //     onPressed: () {
+        //       Navigator.of(context).push(
+        //         MaterialPageRoute<void>(
+        //           builder: (_) => const VenuesPage(),
+        //         ),
+        //       );
+        //     },
+        //     icon: const Icon(Icons.search, color: Colors.white),
+        //   ),
+        // ),
       ],
     );
   }

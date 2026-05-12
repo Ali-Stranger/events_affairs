@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../blogs.dart';
-import '../eventplanner.dart';
 import 'admin_store.dart';
 
 const Color kPrimary = Color(0xffB4245D);

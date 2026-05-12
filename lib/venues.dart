@@ -1,8 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'footer.dart';
 import 'eventplanner.dart';
 import 'drawer.dart';
+import 'saved_vendors_repository.dart';
 
 // ═══════════════════════════════════════════════════════════════
 //  VENUES PAGE — same vendor accounts as Eventplanner (Firestore users)
@@ -18,14 +20,14 @@ class VenuesPage extends StatefulWidget {
 class _VenuesPageState extends State<VenuesPage> {
   static const Color primary = Color(0xffB4245D);
 
-  List<EventPlannerVendor> _allVendors = [];
+  List<QueryDocumentSnapshot<Map<String, dynamic>>> _vendorDocs = [];
   bool _isLoading = true;
   String? _error;
 
   String _searchQuery = '';
   String _selectedLocation = 'All';
   String _selectedCategory = 'All';
-  final Set<String> _favorites = {};
+  Set<String> _favoriteVendorIds = {};
   final TextEditingController _searchCtrl = TextEditingController();
 
   static const List<String> _fallbackLocations = [
@@ -41,7 +43,11 @@ class _VenuesPageState extends State<VenuesPage> {
   ];
 
   List<String> get _locationOptions {
-    final fromData = _allVendors.map((v) => v.location).toSet().toList()
+    final fromData = _vendorDocs
+        .map((d) =>
+            EventPlannerVendor.fromFirestore(d.data()).location)
+        .toSet()
+        .toList()
       ..sort();
     if (fromData.isEmpty) return _fallbackLocations;
     return ['All', ...fromData];
@@ -51,6 +57,52 @@ class _VenuesPageState extends State<VenuesPage> {
   void initState() {
     super.initState();
     _fetchVendors();
+    _loadFavoriteIds();
+  }
+
+  Future<void> _loadFavoriteIds() async {
+    final ids = await SavedVendorsRepository.loadIdSet();
+    if (mounted) setState(() => _favoriteVendorIds = ids);
+  }
+
+  Future<void> _toggleFavorite(String vendorDocId) async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Sign in to save vendors to your list.'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    final remove = _favoriteVendorIds.contains(vendorDocId);
+    try {
+      if (remove) {
+        await SavedVendorsRepository.removeVendor(vendorDocId);
+      } else {
+        await SavedVendorsRepository.addVendor(vendorDocId);
+      }
+      if (!mounted) return;
+      setState(() {
+        if (remove) {
+          _favoriteVendorIds.remove(vendorDocId);
+        } else {
+          _favoriteVendorIds.add(vendorDocId);
+        }
+      });
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Could not update saved vendors.'),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
   }
 
   Future<void> _fetchVendors() async {
@@ -65,15 +117,13 @@ class _VenuesPageState extends State<VenuesPage> {
           .where('role', isEqualTo: 'vendor')
           .get();
 
-      final vendors = snapshot.docs
-          .map((doc) => EventPlannerVendor.fromFirestore(
-                doc.data() as Map<String, dynamic>,
-              ))
+      final docs = snapshot.docs
+          .cast<QueryDocumentSnapshot<Map<String, dynamic>>>()
           .toList();
 
       if (!mounted) return;
       setState(() {
-        _allVendors = vendors;
+        _vendorDocs = docs;
         _isLoading = false;
       });
     } catch (e) {
@@ -85,8 +135,9 @@ class _VenuesPageState extends State<VenuesPage> {
     }
   }
 
-  List<EventPlannerVendor> get _filteredVendors {
-    return _allVendors.where((v) {
+  List<QueryDocumentSnapshot<Map<String, dynamic>>> get _filteredVendorDocs {
+    return _vendorDocs.where((doc) {
+      final v = EventPlannerVendor.fromFirestore(doc.data());
       final matchLoc =
           _selectedLocation == 'All' || v.location == _selectedLocation;
       final matchCat =
@@ -157,7 +208,7 @@ class _VenuesPageState extends State<VenuesPage> {
 
   @override
   Widget build(BuildContext context) {
-    final vendors = _filteredVendors;
+    final vendorDocs = _filteredVendorDocs;
     final locations = _locationOptions;
 
     return Scaffold(
@@ -216,7 +267,7 @@ class _VenuesPageState extends State<VenuesPage> {
                                   ),
                                   const SizedBox(height: 2),
                                   Text(
-                                    '${_allVendors.length} verified vendors across Pakistan',
+                                    '${_vendorDocs.length} verified vendors across Pakistan',
                                     style: TextStyle(
                                         color: primary.withOpacity(0.7),
                                         fontSize: 13),
@@ -379,7 +430,7 @@ class _VenuesPageState extends State<VenuesPage> {
                               padding:
                                   const EdgeInsets.symmetric(horizontal: 16),
                               child: Text(
-                                '${vendors.length} vendor${vendors.length == 1 ? '' : 's'} found',
+                                '${vendorDocs.length} vendor${vendorDocs.length == 1 ? '' : 's'} found',
                                 style: TextStyle(
                                   fontSize: 13,
                                   color: Colors.grey.shade600,
@@ -390,7 +441,7 @@ class _VenuesPageState extends State<VenuesPage> {
 
                             const SizedBox(height: 8),
 
-                            vendors.isEmpty
+                            vendorDocs.isEmpty
                                 ? Padding(
                                     padding: const EdgeInsets.all(40),
                                     child: Center(
@@ -406,7 +457,7 @@ class _VenuesPageState extends State<VenuesPage> {
                                                   color: Colors.grey)),
                                           const SizedBox(height: 8),
                                           Text(
-                                            _allVendors.isEmpty
+                                            _vendorDocs.isEmpty
                                                 ? 'No vendor accounts yet. Vendors appear here after they sign up with role vendor in Firebase.'
                                                 : 'Try adjusting filters or search.',
                                             textAlign: TextAlign.center,
@@ -423,23 +474,20 @@ class _VenuesPageState extends State<VenuesPage> {
                                     shrinkWrap: true,
                                     physics:
                                         const NeverScrollableScrollPhysics(),
-                                    itemCount: vendors.length,
-                                    itemBuilder: (ctx, i) =>
-                                        EventPlannerVendorCard(
-                                      vendor: vendors[i],
-                                      isFavorite: _favorites
-                                          .contains(vendors[i].name),
-                                      onFavoriteToggle: () {
-                                        setState(() {
-                                          if (_favorites
-                                              .contains(vendors[i].name)) {
-                                            _favorites.remove(vendors[i].name);
-                                          } else {
-                                            _favorites.add(vendors[i].name);
-                                          }
-                                        });
-                                      },
-                                    ),
+                                    itemCount: vendorDocs.length,
+                                    itemBuilder: (ctx, i) {
+                                      final doc = vendorDocs[i];
+                                      final v = EventPlannerVendor.fromFirestore(
+                                        doc.data(),
+                                      );
+                                      return EventPlannerVendorCard(
+                                        vendor: v,
+                                        isFavorite: _favoriteVendorIds
+                                            .contains(doc.id),
+                                        onFavoriteToggle: () =>
+                                            _toggleFavorite(doc.id),
+                                      );
+                                    },
                                   ),
 
                             const SizedBox(height: 16),

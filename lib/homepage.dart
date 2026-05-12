@@ -1,8 +1,10 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/services.dart';
 import 'eventplanner.dart';
 import 'venues.dart';
+import 'venuecontact.dart';
 import 'footer.dart';
 import 'drawer.dart';
 
@@ -12,13 +14,18 @@ import 'drawer.dart';
 
 const Color kPrimary = Color(0xffB4245D);
 
+/// Matches vendor signup (`businessCategory` in Firestore) so search filters work.
 const List<String> kCategories = [
-  "Wedding",
-  "Catering",
-  "Photography",
-  "Decoration",
-  "Marquee",
-  "Farm House",
+  'Event Planner',
+  'Catering',
+  'Photography',
+  'Decoration / Florist',
+  'Banquet Hall',
+  'Marquee',
+  'Farm House',
+  'Videography',
+  'Makeup Artist',
+  'DJ / Entertainment',
 ];
 
 const List<String> kLocations = [
@@ -122,9 +129,51 @@ class _CreateHomePageState extends State<CreateHomePage> {
   }
 
   // ── Find vendor ────────────────────────────────────────────────────────────
-  void _findVendor() {
-    final name = _vendorSearchCtrl.text.trim();
-    if (name.isEmpty &&
+  String _vendorCategoryFromData(Map<String, dynamic> data) {
+    final raw = (data['businessCategory'] ??
+            data['category'] ??
+            data['service'] ??
+            '')
+        .toString()
+        .trim();
+    return raw;
+  }
+
+  bool _vendorMatchesSearch(
+    Map<String, dynamic> data,
+    String nameQuery,
+    String? category,
+    String? city,
+  ) {
+    final business =
+        (data['businessName'] ?? '').toString().toLowerCase().trim();
+    final person = (data['name'] ?? '').toString().toLowerCase().trim();
+    final desc =
+        (data['description'] ?? '').toString().toLowerCase().trim();
+    final docCatLower = _vendorCategoryFromData(data).toLowerCase();
+    final q = nameQuery.toLowerCase().trim();
+
+    final matchesText = q.isEmpty ||
+        business.contains(q) ||
+        person.contains(q) ||
+        desc.contains(q) ||
+        docCatLower.contains(q);
+
+    final docCity = (data['city'] ?? '').toString().trim();
+    final matchesCity = city == null ||
+        docCity.toLowerCase() == city.trim().toLowerCase();
+
+    final selCat = category?.trim();
+    final matchesCategory = selCat == null ||
+        selCat.isEmpty ||
+        docCatLower == selCat.toLowerCase();
+
+    return matchesText && matchesCity && matchesCategory;
+  }
+
+  Future<void> _findVendor() async {
+    final nameQuery = _vendorSearchCtrl.text.trim();
+    if (nameQuery.isEmpty &&
         _selectedCategory == null &&
         _selectedLocation == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -136,10 +185,192 @@ class _CreateHomePageState extends State<CreateHomePage> {
       );
       return;
     }
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => const Eventplanner()),
+
+    FocusScope.of(context).unfocus();
+
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(
+        child: Card(
+          child: Padding(
+            padding: EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(color: kPrimary),
+                SizedBox(height: 16),
+                Text('Searching vendors…'),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
+
+    try {
+      final snap = await FirebaseFirestore.instance
+          .collection('users')
+          .where('role', isEqualTo: 'vendor')
+          .get();
+
+      final matches = <QueryDocumentSnapshot<Map<String, dynamic>>>[];
+      for (final doc in snap.docs) {
+        final data = doc.data();
+        if (_vendorMatchesSearch(
+              data,
+              nameQuery,
+              _selectedCategory,
+              _selectedLocation,
+            )) {
+          matches.add(doc);
+        }
+      }
+
+      if (!mounted) return;
+      Navigator.of(context, rootNavigator: true).pop();
+
+      if (matches.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'No vendors match your search. Opening the full vendor list.',
+            ),
+            backgroundColor: kPrimary,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        await Navigator.push<void>(
+          context,
+          MaterialPageRoute<void>(
+            builder: (_) => const VenuesPage(),
+          ),
+        );
+        return;
+      }
+
+      void openContact(EventPlannerVendor v) {
+        Navigator.push<void>(
+          context,
+          MaterialPageRoute<void>(
+            builder: (_) => VenueContactPage(
+              name: v.name,
+              location: v.location,
+              price: v.price,
+              image: v.image,
+              category: v.category,
+              rating: v.rating,
+              reviews: v.reviews,
+              capacity: v.capacity,
+              amenities: v.services,
+              description: v.description,
+            ),
+          ),
+        );
+      }
+
+      if (matches.length == 1) {
+        final v = EventPlannerVendor.fromFirestore(matches.first.data());
+        openContact(v);
+        return;
+      }
+
+      await showModalBottomSheet<void>(
+        context: context,
+        isScrollControlled: true,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        ),
+        builder: (sheetCtx) {
+          final h = MediaQuery.of(sheetCtx).size.height * 0.55;
+          return SafeArea(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const SizedBox(height: 8),
+                Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                  child: Text(
+                    '${matches.length} vendors found — tap to view profile',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                SizedBox(
+                  height: h,
+                  child: ListView.builder(
+                    itemCount: matches.length,
+                    itemBuilder: (context, i) {
+                      final v = EventPlannerVendor.fromFirestore(
+                        matches[i].data(),
+                      );
+                      return ListTile(
+                        leading: CircleAvatar(
+                          backgroundColor: kPrimary.withOpacity(0.15),
+                          child: Text(
+                            v.name.isNotEmpty
+                                ? v.name[0].toUpperCase()
+                                : '?',
+                            style: const TextStyle(
+                              color: kPrimary,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        title: Text(
+                          v.name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        subtitle: Text(
+                          '${v.category} · ${v.location}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        onTap: () {
+                          Navigator.pop(sheetCtx);
+                          openContact(v);
+                        },
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      );
+    } catch (e, st) {
+      if (kDebugMode) {
+        debugPrint('Find Vendor error: $e');
+        debugPrint('$st');
+      }
+      if (mounted) {
+        Navigator.of(context, rootNavigator: true).pop();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              kDebugMode
+                  ? 'Search failed: $e'
+                  : 'Could not search vendors. Check connection and try again.',
+            ),
+            backgroundColor: Colors.red.shade700,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
   }
 
   // ── Date picker ────────────────────────────────────────────────────────────
@@ -283,72 +514,89 @@ class _CreateHomePageState extends State<CreateHomePage> {
             ),
 
             // ── Hero + Search Stack ──────────────────────────────────
-            Stack(
-              clipBehavior: Clip.none,
-              children: [
-                // Background image
-                Container(
-                  height: 280,
-                  width: double.infinity,
-                  decoration: const BoxDecoration(
-                    image: DecorationImage(
-                      image: AssetImage("assets/images/download.jpg"),
-                      fit: BoxFit.cover,
+            // Stack height must include the overlaid search card: non-positioned
+            // children alone size the Stack to 280px, so taps below that line
+            // (including "Find Vendor") never hit-test. See RenderBox.hitTest.
+            SizedBox(
+              height: 440,
+              width: double.infinity,
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  // Background image
+                  Positioned(
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    height: 280,
+                    child: Container(
+                      width: double.infinity,
+                      decoration: const BoxDecoration(
+                        image: DecorationImage(
+                          image: AssetImage("assets/images/download.jpg"),
+                          fit: BoxFit.cover,
+                        ),
+                      ),
                     ),
                   ),
-                ),
 
-                // Dark overlay + text
-                Container(
-                  height: 280,
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        Colors.black.withOpacity(0.25),
-                        Colors.black.withOpacity(0.65),
-                      ],
+                  // Dark overlay + text
+                  Positioned(
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    height: 280,
+                    child: Container(
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.black.withOpacity(0.25),
+                            Colors.black.withOpacity(0.65),
+                          ],
+                        ),
+                      ),
+                      child: const Padding(
+                        padding: EdgeInsets.only(left: 20, top: 30),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Find Your Perfect',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 22,
+                                fontWeight: FontWeight.w400,
+                              ),
+                            ),
+                            Text(
+                              'Event Vendor',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 30,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            SizedBox(height: 6),
+                            Text(
+                              'Pakistan\'s #1 Event Planning Platform',
+                              style: TextStyle(
+                                  color: Colors.white70, fontSize: 14),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                   ),
-                  child: const Padding(
-                    padding: EdgeInsets.only(left: 20, top: 30),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Find Your Perfect',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 22,
-                            fontWeight: FontWeight.w400,
-                          ),
-                        ),
-                        Text(
-                          'Event Vendor',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 30,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        SizedBox(height: 6),
-                        Text(
-                          'Pakistan\'s #1 Event Planning Platform',
-                          style: TextStyle(color: Colors.white70, fontSize: 14),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
 
-                // Search box — half inside half outside
-                Positioned(
-                  top: 190,
-                  left: 16,
-                  right: 16,
-                  child: Container(
+                  // Search box — half inside half outside
+                  Positioned(
+                    top: 190,
+                    left: 16,
+                    right: 16,
+                    child: Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       color: const Color(0xFF1A1818).withOpacity(0.88),
@@ -461,9 +709,10 @@ class _CreateHomePageState extends State<CreateHomePage> {
                 ),
               ],
             ),
+            ),
 
-            // ── Spacer for search box overflow ──────────────────────
-            const SizedBox(height: 150),
+            // ── Spacer below hero (search card now inside sized Stack) ─────
+            const SizedBox(height: 24),
 
             // ── Stats row ────────────────────────────────────────────
             Padding(

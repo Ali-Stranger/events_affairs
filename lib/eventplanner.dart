@@ -965,8 +965,10 @@
 
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'drawer.dart';
 import 'venuecontact.dart';
+import 'saved_vendors_repository.dart';
 
 // ═══════════════════════════════════════════════════════════════
 //  DATA MODEL
@@ -1099,8 +1101,9 @@ class Eventplanner extends StatefulWidget {
 }
 
 class _EventplannerState extends State<Eventplanner> {
-  // Firestore data
-  List<EventPlannerVendor> _allVendors = [];
+  // Firestore data (vendor account doc id → model)
+  Map<String, EventPlannerVendor> _vendorById = {};
+  List<String> _vendorIdsInOrder = [];
   bool _isLoading = true;
   String? _error;
 
@@ -1111,12 +1114,58 @@ class _EventplannerState extends State<Eventplanner> {
   String _selectedCategory = 'All';
   double _maxPrice = 1000000;
   String _sortBy = 'Recommended';
-  final Set<String> _favorites = {};
+  Set<String> _favoriteVendorIds = {};
 
   @override
   void initState() {
     super.initState();
     _fetchVendors();
+    _loadFavoriteIds();
+  }
+
+  Future<void> _loadFavoriteIds() async {
+    final ids = await SavedVendorsRepository.loadIdSet();
+    if (mounted) setState(() => _favoriteVendorIds = ids);
+  }
+
+  Future<void> _toggleFavorite(String vendorDocId) async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Sign in to save vendors to your list.'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    final remove = _favoriteVendorIds.contains(vendorDocId);
+    try {
+      if (remove) {
+        await SavedVendorsRepository.removeVendor(vendorDocId);
+      } else {
+        await SavedVendorsRepository.addVendor(vendorDocId);
+      }
+      if (!mounted) return;
+      setState(() {
+        if (remove) {
+          _favoriteVendorIds.remove(vendorDocId);
+        } else {
+          _favoriteVendorIds.add(vendorDocId);
+        }
+      });
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Could not update saved vendors.'),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
   }
 
   // ── Fetch vendors from Firestore ──────────────────────────────────────────
@@ -1136,14 +1185,18 @@ class _EventplannerState extends State<Eventplanner> {
           // .where('approved', isEqualTo: true)
           .get();
 
-      final vendors = snapshot.docs
-          .map((doc) => EventPlannerVendor.fromFirestore(
-                doc.data() as Map<String, dynamic>,
-              ))
-          .toList();
+      final docs = snapshot.docs;
+      final byId = <String, EventPlannerVendor>{
+        for (final doc in docs)
+          doc.id: EventPlannerVendor.fromFirestore(
+            doc.data() as Map<String, dynamic>,
+          ),
+      };
+      final order = docs.map((d) => d.id).toList();
 
       setState(() {
-        _allVendors = vendors;
+        _vendorById = byId;
+        _vendorIdsInOrder = order;
         _isLoading = false;
       });
     } catch (e) {
@@ -1154,9 +1207,10 @@ class _EventplannerState extends State<Eventplanner> {
     }
   }
 
-  // ── Filtered & sorted vendor list ─────────────────────────────────────────
-  List<EventPlannerVendor> get _filteredVendors {
-    List<EventPlannerVendor> list = _allVendors.where((v) {
+  // ── Filtered & sorted vendor ids ─────────────────────────────────────────
+  List<String> get _filteredVendorIds {
+    final ids = _vendorIdsInOrder.where((id) {
+      final v = _vendorById[id]!;
       final matchSearch = _searchQuery.isEmpty ||
           v.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
           v.description.toLowerCase().contains(_searchQuery.toLowerCase());
@@ -1170,19 +1224,33 @@ class _EventplannerState extends State<Eventplanner> {
 
     switch (_sortBy) {
       case 'Price: Low to High':
-        list.sort((a, b) => a.priceValue.compareTo(b.priceValue));
+        ids.sort(
+          (a, b) => _vendorById[a]!
+              .priceValue
+              .compareTo(_vendorById[b]!.priceValue),
+        );
         break;
       case 'Price: High to Low':
-        list.sort((a, b) => b.priceValue.compareTo(a.priceValue));
+        ids.sort(
+          (a, b) => _vendorById[b]!
+              .priceValue
+              .compareTo(_vendorById[a]!.priceValue),
+        );
         break;
       case 'Top Rated':
-        list.sort((a, b) => b.rating.compareTo(a.rating));
+        ids.sort(
+          (a, b) =>
+              _vendorById[b]!.rating.compareTo(_vendorById[a]!.rating),
+        );
         break;
       case 'Most Reviewed':
-        list.sort((a, b) => b.reviews.compareTo(a.reviews));
+        ids.sort(
+          (a, b) =>
+              _vendorById[b]!.reviews.compareTo(_vendorById[a]!.reviews),
+        );
         break;
     }
-    return list;
+    return ids;
   }
 
   void _resetFilters() {
@@ -1212,7 +1280,7 @@ class _EventplannerState extends State<Eventplanner> {
 
   @override
   Widget build(BuildContext context) {
-    final vendors = _filteredVendors;
+    final vendorIds = _filteredVendorIds;
 
     return Scaffold(
       drawer: const CommonDrawer(),
@@ -1272,7 +1340,7 @@ class _EventplannerState extends State<Eventplanner> {
                                   ),
                                   const SizedBox(height: 2),
                                   Text(
-                                    '${_allVendors.length} verified vendors across Pakistan',
+                                    '${_vendorIdsInOrder.length} verified vendors across Pakistan',
                                     style: TextStyle(
                                         color: kPrimary.withOpacity(0.7),
                                         fontSize: 13),
@@ -1502,7 +1570,7 @@ class _EventplannerState extends State<Eventplanner> {
                               child: Row(
                                 children: [
                                   Text(
-                                    '${vendors.length} vendor${vendors.length == 1 ? '' : 's'} found',
+                                    '${vendorIds.length} vendor${vendorIds.length == 1 ? '' : 's'} found',
                                     style: TextStyle(
                                       fontSize: 13,
                                       color: Colors.grey.shade600,
@@ -1531,7 +1599,7 @@ class _EventplannerState extends State<Eventplanner> {
                             const SizedBox(height: 8),
 
                             // ── Vendor cards ──────────────────────────────────
-                            vendors.isEmpty
+                            vendorIds.isEmpty
                                 ? Padding(
                                     padding: const EdgeInsets.symmetric(
                                         vertical: 40),
@@ -1562,23 +1630,18 @@ class _EventplannerState extends State<Eventplanner> {
                                     shrinkWrap: true,
                                     physics:
                                         const NeverScrollableScrollPhysics(),
-                                    itemCount: vendors.length,
-                                    itemBuilder: (ctx, i) => EventPlannerVendorCard(
-                                      vendor: vendors[i],
-                                      isFavorite: _favorites
-                                          .contains(vendors[i].name),
-                                      onFavoriteToggle: () {
-                                        setState(() {
-                                          if (_favorites
-                                              .contains(vendors[i].name)) {
-                                            _favorites
-                                                .remove(vendors[i].name);
-                                          } else {
-                                            _favorites.add(vendors[i].name);
-                                          }
-                                        });
-                                      },
-                                    ),
+                                    itemCount: vendorIds.length,
+                                    itemBuilder: (ctx, i) {
+                                      final id = vendorIds[i];
+                                      final vendor = _vendorById[id]!;
+                                      return EventPlannerVendorCard(
+                                        vendor: vendor,
+                                        isFavorite:
+                                            _favoriteVendorIds.contains(id),
+                                        onFavoriteToggle: () =>
+                                            _toggleFavorite(id),
+                                      );
+                                    },
                                   ),
 
                             const SizedBox(height: 24),

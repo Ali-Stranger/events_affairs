@@ -720,6 +720,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'footer.dart';
 import 'drawer.dart';
+import 'saved_vendors_repository.dart';
 
 // ── Global notification plugin ──────────────────────────────────────────────
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
@@ -785,6 +786,8 @@ class _VenueContactPageState extends State<VenueContactPage> {
   bool _reviewSubmitted = false;
   bool _reviewSubmitting = false;
   String? _vendorUid; // users/{vendorUid}
+  /// Trimmed `startingPrice` from `users/{vendorUid}` when set in vendor profile edit.
+  String? _profileStartingPriceRaw;
 
   @override
   void initState() {
@@ -806,14 +809,124 @@ class _VenueContactPageState extends State<VenueContactPage> {
     return vendorSnap.docs.first.id;
   }
 
-  void _loadVendorUid() async {
-  final id = await _fetchVendorUid();
-  if (!mounted) return;
-  setState(() {
-    _vendorUid = id;
-    _vendorUidLoaded = true; // 👈 only flips once, never goes back
-  });
-}
+  static String _startingPriceFromUserData(Map<String, dynamic> data) {
+    final sp = data['startingPrice'];
+    if (sp == null) return '';
+    if (sp is num) {
+      final n = sp.toDouble();
+      if (n == n.roundToDouble()) return n.round().toString();
+      return n.toString();
+    }
+    return sp.toString().trim();
+  }
+
+  /// Display label: profile starting price when present, else listing fallback (`widget.price`).
+  String _priceDisplayLabel() {
+    final raw = _profileStartingPriceRaw;
+    if (raw != null && raw.isNotEmpty) {
+      final lower = raw.toLowerCase();
+      if (lower.contains('pkr') ||
+          lower.startsWith('rs') ||
+          lower.contains('rs ') ||
+          lower.contains('rs.')) {
+        return raw;
+      }
+      return 'PKR $raw';
+    }
+    return widget.price;
+  }
+
+  Future<void> _loadVendorUid() async {
+    final vendorSnap = await FirebaseFirestore.instance
+        .collection('users')
+        .where('businessName', isEqualTo: widget.name)
+        .where('role', isEqualTo: 'vendor')
+        .limit(1)
+        .get();
+
+    String? id;
+    String? startingRaw;
+    if (vendorSnap.docs.isNotEmpty) {
+      final data = vendorSnap.docs.first.data();
+      id = vendorSnap.docs.first.id;
+      final s = _startingPriceFromUserData(data);
+      if (s.isNotEmpty) startingRaw = s;
+    }
+
+    if (!mounted) return;
+    setState(() {
+      _vendorUid = id;
+      _profileStartingPriceRaw = startingRaw;
+      _vendorUidLoaded = true;
+    });
+    await _syncBookmarkFromSaved();
+  }
+
+  Future<void> _syncBookmarkFromSaved() async {
+    final customerUid = FirebaseAuth.instance.currentUser?.uid;
+    final vid = _vendorUid;
+    if (customerUid == null || vid == null) return;
+    try {
+      final saved = await SavedVendorsRepository.loadIdSet();
+      if (!mounted) return;
+      setState(() => _isBookmarked = saved.contains(vid));
+    } catch (_) {}
+  }
+
+  Future<void> _onBookmarkTap() async {
+    final customerUid = FirebaseAuth.instance.currentUser?.uid;
+    if (customerUid == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Sign in to save vendors to your list.'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+    final vid = _vendorUid;
+    if (vid == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Vendor profile is still loading. Try again.'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    final next = !_isBookmarked;
+    try {
+      if (next) {
+        await SavedVendorsRepository.addVendor(vid);
+      } else {
+        await SavedVendorsRepository.removeVendor(vid);
+      }
+      if (!mounted) return;
+      setState(() => _isBookmarked = next);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            next
+                ? '${widget.name} saved to favourites!'
+                : 'Removed from favourites',
+          ),
+          backgroundColor: primary,
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Could not update saved vendors.'),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
 
   @override
   void dispose() {
@@ -1137,21 +1250,7 @@ class _VenueContactPageState extends State<VenueContactPage> {
                   top: 12,
                   right: 12,
                   child: GestureDetector(
-                    onTap: () {
-                      setState(() => _isBookmarked = !_isBookmarked);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            _isBookmarked
-                                ? '${widget.name} saved to favourites!'
-                                : 'Removed from favourites',
-                          ),
-                          backgroundColor: primary,
-                          behavior: SnackBarBehavior.floating,
-                          duration: const Duration(seconds: 2),
-                        ),
-                      );
-                    },
+                    onTap: _onBookmarkTap,
                     child: Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
@@ -1242,7 +1341,7 @@ class _VenueContactPageState extends State<VenueContactPage> {
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Row(
                 children: [
-                  _infoChip(Icons.attach_money, widget.price, primary),
+                  _infoChip(Icons.attach_money, _priceDisplayLabel(), primary),
                   const SizedBox(width: 10),
                   _infoChip(
                     Icons.people_outline,
