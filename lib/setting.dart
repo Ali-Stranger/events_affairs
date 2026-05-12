@@ -755,6 +755,8 @@ import 'theme_notifier.dart';
 import 'login.dart';
 import 'my_bookings.dart';
 import 'saved_vendors.dart';
+import 'couple_profile_edit.dart';
+import 'account_deletion.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -768,27 +770,62 @@ class _SettingsPageState extends State<SettingsPage> {
   bool twoFactorEnabled = false;
   String selectedCity = 'Lahore';
   String selectedLanguage = 'English';
+  /// Display name from Firestore `users.name` when set.
+  String? _profileNameFromFirestore;
 
   final Color primaryColor = const Color(0xffB4245D);
 
   @override
   void initState() {
     super.initState();
-    _loadDefaultCityFromProfile();
+    _loadUserProfileFromFirestore();
   }
 
-  /// Prefers `users/{uid}.city` (same field as couple signup); keeps UI default until loaded.
-  Future<void> _loadDefaultCityFromProfile() async {
+  /// Loads `users/{uid}` name + city for profile header and default city picker.
+  Future<void> _loadUserProfileFromFirestore() async {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) return;
     try {
       final doc =
           await FirebaseFirestore.instance.collection('users').doc(uid).get();
-      if (!mounted || !doc.exists) return;
-      final city = (doc.data()?['city'] ?? '').toString().trim();
-      if (city.isEmpty) return;
-      setState(() => selectedCity = city);
+      if (!mounted || !doc.exists) {
+        setState(() => _profileNameFromFirestore = null);
+        return;
+      }
+      final d = doc.data()!;
+      final city = (d['city'] ?? '').toString().trim();
+      final name = (d['name'] ?? '').toString().trim();
+      setState(() {
+        _profileNameFromFirestore = name.isNotEmpty ? name : null;
+        if (city.isNotEmpty) selectedCity = city;
+      });
     } catch (_) {}
+  }
+
+  String _profileDisplayTitle() {
+    final u = user;
+    return _profileNameFromFirestore ??
+        u?.displayName ??
+        (u?.email != null ? u!.email!.split('@').first : 'User');
+  }
+
+  Future<void> _openCoupleProfileEdit() async {
+    if (FirebaseAuth.instance.currentUser == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please sign in to edit your profile.'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+    await Navigator.push<void>(
+      context,
+      MaterialPageRoute<void>(
+        builder: (_) => const CoupleProfileEditPage(),
+      ),
+    );
+    if (mounted) await _loadUserProfileFromFirestore();
   }
 
   Future<void> _persistDefaultCity(String city) async {
@@ -1043,34 +1080,12 @@ String getInitials(String? name, String? email) {
   }
 
   void _showDeleteAccountDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Delete account?'),
-        content: const Text(
-          'This will permanently erase all your bookings, quotes and saved vendors. This cannot be undone.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            onPressed: () {
-              Navigator.pop(context);
-              // TODO: delete account API call
-            },
-            child: const Text('Delete', style: TextStyle(color: Colors.white)),
-          ),
-        ],
-      ),
+    promptDeleteAccount(
+      context,
+      title: 'Delete account?',
+      message:
+          'This will permanently remove your profile, saved vendors list, '
+          'and inquiries you sent to vendors. This cannot be undone.',
     );
   }
 
@@ -1244,17 +1259,20 @@ String getInitials(String? name, String? email) {
                   // ),
 
                   CircleAvatar(
-  radius: 30,
-  backgroundColor: primaryColor,
-  child: Text(
-    getInitials(user?.displayName, user?.email),
-    style: const TextStyle(
-      fontSize: 20,
-      fontWeight: FontWeight.bold,
-      color: Colors.white,
-    ),
-  ),
-),
+                    radius: 30,
+                    backgroundColor: primaryColor,
+                    child: Text(
+                      getInitials(
+                        _profileNameFromFirestore ?? user?.displayName,
+                        user?.email,
+                      ),
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
                   const SizedBox(width: 14),
                   // const Expanded(
                   //   child: Column(
@@ -1280,7 +1298,7 @@ String getInitials(String? name, String? email) {
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
       Text(
-        user?.displayName ?? user?.email?.split('@')[0] ?? 'User',
+        _profileDisplayTitle(),
         style: const TextStyle(
           fontSize: 16,
           fontWeight: FontWeight.w600,
@@ -1302,7 +1320,7 @@ String getInitials(String? name, String? email) {
                         borderRadius: BorderRadius.circular(8),
                       ),
                     ),
-                    onPressed: () {},
+                    onPressed: _openCoupleProfileEdit,
                     child: const Text('Edit', style: TextStyle(fontSize: 13)),
                   ),
                 ],
@@ -1366,7 +1384,7 @@ String getInitials(String? name, String? email) {
                 iconBg: primaryColor.withOpacity(0.13),
                 title: 'Personal Information',
                 subtitle: 'Name, phone, email',
-                onTap: () {},
+                onTap: _openCoupleProfileEdit,
               ),
               _settingsTile(
                 icon: Icons.lock_outline,
@@ -1403,43 +1421,43 @@ String getInitials(String? name, String? email) {
                   );
                 },
               ),
-              _settingsTile(
-                icon: Icons.description_outlined,
-                iconBg: Colors.blue.withOpacity(0.13),
-                title: 'My Quotes',
-                subtitle: 'Submitted event requests',
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: primaryColor,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: const Text(
-                        '3',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    const Icon(
-                      Icons.chevron_right,
-                      color: Colors.grey,
-                      size: 20,
-                    ),
-                  ],
-                ),
-                showDivider: false,
-                onTap: () {},
-              ),
+              // _settingsTile(
+              //   icon: Icons.description_outlined,
+              //   iconBg: Colors.blue.withOpacity(0.13),
+              //   title: 'My Quotes',
+              //   subtitle: 'Submitted event requests',
+              //   trailing: Row(
+              //     mainAxisSize: MainAxisSize.min,
+              //     children: [
+              //       Container(
+              //         padding: const EdgeInsets.symmetric(
+              //           horizontal: 8,
+              //           vertical: 2,
+              //         ),
+              //         decoration: BoxDecoration(
+              //           color: primaryColor,
+              //           borderRadius: BorderRadius.circular(20),
+              //         ),
+              //         child: const Text(
+              //           '3',
+              //           style: TextStyle(
+              //             color: Colors.white,
+              //             fontSize: 11,
+              //             fontWeight: FontWeight.bold,
+              //           ),
+              //         ),
+              //       ),
+              //       const SizedBox(width: 8),
+              //       const Icon(
+              //         Icons.chevron_right,
+              //         color: Colors.grey,
+              //         size: 20,
+              //       ),
+              //     ],
+              //   ),
+              //   showDivider: false,
+              //   onTap: () {},
+              // ),
             ]),
 
             // ─── Privacy & Security ───────────────────────────────────

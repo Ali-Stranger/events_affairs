@@ -124,11 +124,14 @@ class _SavedVendorsPageState extends State<SavedVendorsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Scaffold(
+      backgroundColor: scheme.surface,
       drawer: const CommonDrawer(),
       appBar: AppBar(
         backgroundColor: _kPrimary,
         foregroundColor: Colors.white,
+        elevation: 0,
         title: const Text(
           'Saved Vendors',
           style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
@@ -136,16 +139,25 @@ class _SavedVendorsPageState extends State<SavedVendorsPage> {
       ),
       body: RefreshIndicator(
         color: _kPrimary,
+        backgroundColor: scheme.surfaceContainerHigh,
         onRefresh: _load,
-        child: _buildBody(),
+        child: _buildBody(context),
       ),
     );
   }
 
-  Widget _buildBody() {
+  Widget _buildBody(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final muted = scheme.onSurfaceVariant;
+    final cardBg = isDark ? const Color(0xff1E1E28) : scheme.surfaceContainerLow;
+    final borderColor = scheme.outline.withOpacity(isDark ? 0.28 : 0.14);
+    final heartColor =
+        isDark ? const Color(0xffE57373) : Colors.red.shade400;
+
     if (_loading) {
-      return const Center(
-        child: CircularProgressIndicator(color: _kPrimary),
+      return Center(
+        child: CircularProgressIndicator(color: scheme.primary),
       );
     }
     if (_error != null) {
@@ -153,12 +165,12 @@ class _SavedVendorsPageState extends State<SavedVendorsPage> {
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.all(24),
         children: [
-          Icon(Icons.lock_outline, size: 48, color: Colors.grey.shade400),
+          Icon(Icons.lock_outline, size: 48, color: muted.withOpacity(0.65)),
           const SizedBox(height: 16),
           Text(
             _error!,
             textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.grey.shade700, fontSize: 15),
+            style: TextStyle(color: scheme.onSurface, fontSize: 15),
           ),
         ],
       );
@@ -168,7 +180,7 @@ class _SavedVendorsPageState extends State<SavedVendorsPage> {
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.all(24),
         children: [
-          Icon(Icons.favorite_border, size: 56, color: Colors.grey.shade400),
+          Icon(Icons.favorite_border, size: 56, color: muted.withOpacity(0.55)),
           const SizedBox(height: 16),
           Text(
             'No saved vendors yet',
@@ -176,14 +188,14 @@ class _SavedVendorsPageState extends State<SavedVendorsPage> {
             style: TextStyle(
               fontWeight: FontWeight.bold,
               fontSize: 17,
-              color: Colors.grey.shade800,
+              color: scheme.onSurface,
             ),
           ),
           const SizedBox(height: 8),
           Text(
             'Tap the heart on a listing or the bookmark on a vendor profile.',
             textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
+            style: TextStyle(color: muted, fontSize: 14, height: 1.35),
           ),
         ],
       );
@@ -203,16 +215,19 @@ class _SavedVendorsPageState extends State<SavedVendorsPage> {
         final city = (data['city'] ?? '').toString();
 
         return Material(
-          color: Colors.white,
-          elevation: 0.5,
-          borderRadius: BorderRadius.circular(12),
+          color: cardBg,
+          elevation: isDark ? 0 : 0.5,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: BorderSide(color: borderColor),
+          ),
           child: ListTile(
             contentPadding: const EdgeInsets.symmetric(
               horizontal: 12,
               vertical: 8,
             ),
             leading: CircleAvatar(
-              backgroundColor: _kPrimary.withOpacity(0.12),
+              backgroundColor: _kPrimary.withOpacity(isDark ? 0.22 : 0.12),
               child: Text(
                 name.isNotEmpty ? name[0].toUpperCase() : '?',
                 style: const TextStyle(
@@ -225,13 +240,17 @@ class _SavedVendorsPageState extends State<SavedVendorsPage> {
               name,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontWeight: FontWeight.w600),
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                color: scheme.onSurface,
+              ),
             ),
             subtitle: category.isNotEmpty || city.isNotEmpty
                 ? Text(
                     [category, city].where((s) => s.isNotEmpty).join(' · '),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
+                    style: TextStyle(color: muted, fontSize: 13),
                   )
                 : null,
             trailing: Row(
@@ -239,10 +258,10 @@ class _SavedVendorsPageState extends State<SavedVendorsPage> {
               children: [
                 IconButton(
                   tooltip: 'Remove from saved',
-                  icon: Icon(Icons.favorite, color: Colors.red.shade400),
+                  icon: Icon(Icons.favorite, color: heartColor),
                   onPressed: () => _removeSaved(doc.id),
                 ),
-                const Icon(Icons.chevron_right, color: Colors.grey),
+                Icon(Icons.chevron_right, color: muted.withOpacity(0.7)),
               ],
             ),
             onTap: () => _openVendor(data),

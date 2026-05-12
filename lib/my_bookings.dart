@@ -155,11 +155,14 @@ class _MyBookingsPageState extends State<MyBookingsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Scaffold(
+      backgroundColor: scheme.surface,
       drawer: const CommonDrawer(),
       appBar: AppBar(
         backgroundColor: _kPrimary,
         foregroundColor: Colors.white,
+        elevation: 0,
         title: const Text(
           'My Bookings',
           style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
@@ -167,16 +170,23 @@ class _MyBookingsPageState extends State<MyBookingsPage> {
       ),
       body: RefreshIndicator(
         color: _kPrimary,
+        backgroundColor: scheme.surfaceContainerHigh,
         onRefresh: _load,
-        child: _buildBody(),
+        child: _buildBody(context),
       ),
     );
   }
 
-  Widget _buildBody() {
+  Widget _buildBody(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final muted = scheme.onSurfaceVariant;
+    final cardBg = isDark ? const Color(0xff1E1E28) : scheme.surfaceContainerLow;
+    final borderColor = scheme.outline.withOpacity(isDark ? 0.28 : 0.14);
+
     if (_loading) {
-      return const Center(
-        child: CircularProgressIndicator(color: _kPrimary),
+      return Center(
+        child: CircularProgressIndicator(color: scheme.primary),
       );
     }
     if (_error != null) {
@@ -184,12 +194,12 @@ class _MyBookingsPageState extends State<MyBookingsPage> {
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.all(24),
         children: [
-          Icon(Icons.lock_outline, size: 48, color: Colors.grey.shade400),
+          Icon(Icons.lock_outline, size: 48, color: muted.withOpacity(0.65)),
           const SizedBox(height: 16),
           Text(
             _error!,
             textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.grey.shade700, fontSize: 15),
+            style: TextStyle(color: scheme.onSurface, fontSize: 15),
           ),
         ],
       );
@@ -199,7 +209,7 @@ class _MyBookingsPageState extends State<MyBookingsPage> {
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.all(24),
         children: [
-          Icon(Icons.mail_outline, size: 56, color: Colors.grey.shade400),
+          Icon(Icons.mail_outline, size: 56, color: muted.withOpacity(0.55)),
           const SizedBox(height: 16),
           Text(
             'No vendor inquiries yet',
@@ -207,14 +217,14 @@ class _MyBookingsPageState extends State<MyBookingsPage> {
             style: TextStyle(
               fontWeight: FontWeight.bold,
               fontSize: 17,
-              color: Colors.grey.shade800,
+              color: scheme.onSurface,
             ),
           ),
           const SizedBox(height: 8),
           Text(
             'When you contact a vendor from a listing, they appear here.',
             textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
+            style: TextStyle(color: muted, fontSize: 14, height: 1.35),
           ),
         ],
       );
@@ -234,16 +244,19 @@ class _MyBookingsPageState extends State<MyBookingsPage> {
         final city = (data['city'] ?? '').toString();
 
         return Material(
-          color: Colors.white,
-          elevation: 0.5,
-          borderRadius: BorderRadius.circular(12),
+          color: cardBg,
+          elevation: isDark ? 0 : 0.5,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: BorderSide(color: borderColor),
+          ),
           child: ListTile(
             contentPadding: const EdgeInsets.symmetric(
               horizontal: 16,
               vertical: 8,
             ),
             leading: CircleAvatar(
-              backgroundColor: _kPrimary.withOpacity(0.12),
+              backgroundColor: _kPrimary.withOpacity(isDark ? 0.22 : 0.12),
               child: Text(
                 name.isNotEmpty ? name[0].toUpperCase() : '?',
                 style: const TextStyle(
@@ -256,7 +269,10 @@ class _MyBookingsPageState extends State<MyBookingsPage> {
               name,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontWeight: FontWeight.w600),
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                color: scheme.onSurface,
+              ),
             ),
             subtitle: Padding(
               padding: const EdgeInsets.only(top: 4),
@@ -268,16 +284,19 @@ class _MyBookingsPageState extends State<MyBookingsPage> {
                       [category, city].where((s) => s.isNotEmpty).join(' · '),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(fontSize: 13, color: Colors.grey.shade700),
+                      style: TextStyle(fontSize: 13, color: muted),
                     ),
                   Text(
                     'Inquiry · ${_formatWhen(row.lastInquiry)}',
-                    style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: muted.withOpacity(0.85),
+                    ),
                   ),
                 ],
               ),
             ),
-            trailing: const Icon(Icons.chevron_right, color: Colors.grey),
+            trailing: Icon(Icons.chevron_right, color: muted.withOpacity(0.7)),
             onTap: () => _openVendor(data),
           ),
         );

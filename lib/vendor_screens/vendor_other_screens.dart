@@ -2355,6 +2355,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:io';
 import '../login.dart';
+import '../account_deletion.dart';
 
 const Color kPrimary = Color(0xffB4245D);
 
@@ -5175,34 +5176,12 @@ class _VendorSettingsPageState extends State<VendorSettingsPage> {
   }
 
   void _showDeleteAccountDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Delete Vendor Account?'),
-        content: const Text(
-          'This will permanently remove your business listing, reviews, and booking history. This action is irreversible.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            onPressed: () => Navigator.pop(context),
-            child: const Text(
-              'Delete Permanently',
-              style: TextStyle(color: Colors.white),
-            ),
-          ),
-        ],
-      ),
+    promptDeleteAccount(
+      context,
+      title: 'Delete vendor account?',
+      message:
+          'This will permanently remove your business profile, vendor reviews, '
+          'and all quotes linked to your business. This cannot be undone.',
     );
   }
 
