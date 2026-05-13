@@ -20,7 +20,6 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
 
   // Sample data for demonstration - in production these would come from backend
   // int get _totalVendors => allVendors.length;
-  int get _totalBlogs => allBlogs.length;
   int get _totalLeads => 156; // Demo value
   int get _totalUsers => 89; // Demo value
   int get _pendingVendors => 12; // Demo value
@@ -166,14 +165,20 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                         trendUp: false,
                       ),
                       const SizedBox(width: 10),
-                      _StatCard(
-                        value: '$_totalBlogs',
-                        label: 'Blog Posts',
-                        isDark: isDark,
-                        surface: surfaceColor,
-                        icon: Icons.article,
-                        trend: 'Active',
-                        trendUp: true,
+                      StreamBuilder<List<Blog>>(
+                        stream: watchBlogList(publishedOnly: false),
+                        builder: (context, snap) {
+                          final n = snap.data?.length ?? 0;
+                          return _StatCard(
+                            value: '$n',
+                            label: 'Blog Posts',
+                            isDark: isDark,
+                            surface: surfaceColor,
+                            icon: Icons.article,
+                            trend: 'Active',
+                            trendUp: true,
+                          );
+                        },
                       ),
                     ],
                   ),

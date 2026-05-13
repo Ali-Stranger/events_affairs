@@ -293,12 +293,6 @@ class AdminUser {
 }
 
 class AdminStore extends ChangeNotifier {
-  /// blogId -> multiple event types
-  final Map<int, Set<String>> blogEvents = {};
-
-  /// blogId -> attached vendor services
-  final Map<int, Set<String>> blogVendorServices = {};
-
   /// vendorId -> status
   final Map<String, VendorStatus> vendorStatus = {};
 
@@ -429,75 +423,6 @@ class AdminStore extends ChangeNotifier {
       errorMessage = e.toString();
       debugPrint('fetchFromFirebase error: $e');
     }
-  }
-
-  // ───────────────── BLOG EVENTS ─────────────────
-
-  void setBlogEvent(int blogId, String? eventType) {
-    final value = (eventType ?? '').trim();
-
-    if (value.isEmpty) {
-      blogEvents.remove(blogId);
-    } else {
-      blogEvents[blogId] = {value};
-    }
-
-    notifyListeners();
-  }
-
-  void toggleBlogEvent(int blogId, String eventType) {
-    final value = eventType.trim();
-
-    if (value.isEmpty) return;
-
-    final set = blogEvents.putIfAbsent(blogId, () => <String>{});
-
-    if (set.contains(value)) {
-      set.remove(value);
-
-      if (set.isEmpty) {
-        blogEvents.remove(blogId);
-      }
-    } else {
-      set.add(value);
-    }
-
-    notifyListeners();
-  }
-
-  Set<String> getBlogEvents(int blogId) {
-    return blogEvents[blogId] ?? <String>{};
-  }
-
-  // ───────────────── BLOG VENDOR SERVICES ─────────────────
-
-  void toggleBlogVendorService(int blogId, String vendorName, String service) {
-    final cleanVendor = vendorName.trim();
-    final cleanService = service.trim();
-
-    if (cleanVendor.isEmpty || cleanService.isEmpty) {
-      return;
-    }
-
-    final key = '$cleanVendor|$cleanService';
-
-    final set = blogVendorServices.putIfAbsent(blogId, () => <String>{});
-
-    if (set.contains(key)) {
-      set.remove(key);
-
-      if (set.isEmpty) {
-        blogVendorServices.remove(blogId);
-      }
-    } else {
-      set.add(key);
-    }
-
-    notifyListeners();
-  }
-
-  Set<String> getBlogVendorServices(int blogId) {
-    return blogVendorServices[blogId] ?? <String>{};
   }
 
   // ───────────────── VENDOR MANAGEMENT ─────────────────

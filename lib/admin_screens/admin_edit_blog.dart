@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../blogs.dart';
-import 'admin_store.dart';
 
 const Color kPrimary = Color(0xffB4245D);
 
@@ -31,12 +30,22 @@ class _AdminEditBlogPageState extends State<AdminEditBlogPage> {
   ];
 
   late Set<String> _selectedEvents;
+  late Set<String> _attachedVendorKeys;
+  late TextEditingController _descriptionController;
   String _vendorSearch = '';
 
   @override
   void initState() {
     super.initState();
-    _selectedEvents = {...adminStore.getBlogEvents(widget.blog.id)};
+    _selectedEvents = {...widget.blog.eventTypes};
+    _attachedVendorKeys = {...widget.blog.vendorServiceKeys};
+    _descriptionController = TextEditingController(text: widget.blog.description);
+  }
+
+  @override
+  void dispose() {
+    _descriptionController.dispose();
+    super.dispose();
   }
 
   @override
@@ -44,8 +53,6 @@ class _AdminEditBlogPageState extends State<AdminEditBlogPage> {
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
     final Color bg = isDark ? const Color(0xff0F0F14) : const Color(0xffF4F7FA);
     final Color card = isDark ? const Color(0xff1A1A24) : Colors.white;
-    final attachedVendorServices =
-        adminStore.getBlogVendorServices(widget.blog.id);
 
     return Scaffold(
       backgroundColor: bg,
@@ -55,15 +62,37 @@ class _AdminEditBlogPageState extends State<AdminEditBlogPage> {
         iconTheme: const IconThemeData(color: Colors.white),
         actions: [
           TextButton(
-            onPressed: () {
-              // persist events selection to store (replace)
-              final id = widget.blog.id;
-              adminStore.blogEvents[id] = {..._selectedEvents};
-              if (adminStore.blogEvents[id]!.isEmpty) {
-                adminStore.blogEvents.remove(id);
+            onPressed: () async {
+              try {
+                await FirebaseFirestore.instance
+                    .collection('blogs')
+                    .doc(widget.blog.id)
+                    .update({
+                  'events': _selectedEvents.toList(),
+                  'vendorServices': _attachedVendorKeys.toList(),
+                  'description': _descriptionController.text.trim(),
+                });
+                if (!context.mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Blog updated successfully'),
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+                Navigator.pop(
+                  context,
+                  const AdminBlogEditResult(assignedEvent: null),
+                );
+              } catch (e) {
+                if (!context.mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Save failed: $e'),
+                    backgroundColor: Colors.red,
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
               }
-              adminStore.notifyListenersPublic();
-              Navigator.pop(context, const AdminBlogEditResult(assignedEvent: null));
             },
             child: const Text(
               'Save',
@@ -99,6 +128,42 @@ class _AdminEditBlogPageState extends State<AdminEditBlogPage> {
                   Text(
                     'Admin decision: select all events for this blog, and attach vendor services to show in this blog.',
                     style: TextStyle(fontSize: 12, height: 1.3, color: isDark ? Colors.white70 : Colors.black87),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 14),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: card,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Blog Description',
+                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 10),
+                  TextField(
+                    controller: _descriptionController,
+                    maxLines: 4,
+                    decoration: InputDecoration(
+                      hintText: 'Add a brief description for this blog that will be shown to users...',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: kPrimary, width: 1.6),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'This description helps users understand what the blog is about.',
+                    style: TextStyle(fontSize: 11, color: isDark ? Colors.white38 : Colors.black54),
                   ),
                 ],
               ),
@@ -179,9 +244,9 @@ class _AdminEditBlogPageState extends State<AdminEditBlogPage> {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  if (attachedVendorServices.isNotEmpty) ...[
+                  if (_attachedVendorKeys.isNotEmpty) ...[
                     Text(
-                      'Attached (${attachedVendorServices.length})',
+                      'Attached (${_attachedVendorKeys.length})',
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w800,
@@ -192,14 +257,14 @@ class _AdminEditBlogPageState extends State<AdminEditBlogPage> {
                     Wrap(
                       spacing: 8,
                       runSpacing: 8,
-                      children: attachedVendorServices.map((k) {
+                      children: _attachedVendorKeys.map((k) {
                         final parts = k.split('|');
                         final vendorName = parts.isNotEmpty ? parts.first : k;
                         final service = parts.length > 1 ? parts[1] : '';
                         return InputChip(
                           label: Text(service.isEmpty ? vendorName : '$vendorName · $service'),
                           onDeleted: () {
-                            adminStore.toggleBlogVendorService(widget.blog.id, vendorName, service);
+                            setState(() => _attachedVendorKeys.remove(k));
                           },
                         );
                       }).toList(),
@@ -283,14 +348,14 @@ class _AdminEditBlogPageState extends State<AdminEditBlogPage> {
             (data['location'] ?? 'Unknown').toString();
 
         final isAttached =
-            attachedVendorServices.contains('$vendorName|$primary');
+            _attachedVendorKeys.contains('$vendorName|$primary');
 
         return ListTile(
           contentPadding: EdgeInsets.zero,
           leading: CircleAvatar(
             backgroundColor: kPrimary.withValues(alpha: 0.12),
             child: Text(
-              vendorName.substring(0, 1).toUpperCase(),
+              (vendorName.isNotEmpty ? vendorName[0] : '?').toUpperCase(),
               style: const TextStyle(
                 color: kPrimary,
                 fontWeight: FontWeight.bold,
@@ -316,13 +381,14 @@ class _AdminEditBlogPageState extends State<AdminEditBlogPage> {
               elevation: 0,
             ),
             onPressed: () {
-              adminStore.toggleBlogVendorService(
-                widget.blog.id,
-                vendorName,
-                primary,
-              );
-
-              setState(() {});
+              final key = '$vendorName|$primary';
+              setState(() {
+                if (_attachedVendorKeys.contains(key)) {
+                  _attachedVendorKeys.remove(key);
+                } else {
+                  _attachedVendorKeys.add(key);
+                }
+              });
             },
             child: Text(isAttached ? 'Added' : 'Add'),
           ),

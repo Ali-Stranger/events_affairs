@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../blogs.dart';
 import 'admin_edit_blog.dart';
-import 'admin_store.dart';
 
 const Color kPrimary = Color(0xffB4245D);
 
@@ -19,50 +18,63 @@ class _AdminBlogsPageState extends State<AdminBlogsPage> {
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
     final Color bg = isDark ? const Color(0xff0F0F14) : const Color(0xffF4F7FA);
 
-    return AnimatedBuilder(
-      animation: adminStore,
-      builder: (context, _) => Scaffold(
-        backgroundColor: bg,
-        appBar: AppBar(
-          backgroundColor: kPrimary,
-          title: const Text(
-            'Blog Posts',
-            style: TextStyle(color: Colors.white, fontSize: 16),
-          ),
-          iconTheme: const IconThemeData(color: Colors.white),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.add, color: Colors.white),
-              onPressed: () => _showAddBlogDialog(context),
-              tooltip: 'Add Blog',
-            ),
-          ],
+    return Scaffold(
+      backgroundColor: bg,
+      appBar: AppBar(
+        backgroundColor: kPrimary,
+        title: const Text(
+          'Blog Posts',
+          style: TextStyle(color: Colors.white, fontSize: 16),
         ),
-        body: allBlogs.isEmpty
-            ? const Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.article_outlined, size: 64, color: Colors.grey),
-                    SizedBox(height: 12),
-                    Text(
-                      'No blogs yet',
-                      style: TextStyle(fontSize: 16, color: Colors.grey),
-                    ),
-                  ],
-                ),
-              )
-            : ListView.separated(
-                padding: const EdgeInsets.all(16),
-                itemCount: allBlogs.length,
-                separatorBuilder: (context, index) =>
-                    const SizedBox(height: 10),
-                itemBuilder: (context, i) {
-                  final blog = allBlogs[i];
-                  final events = adminStore.getBlogEvents(blog.id);
-                  final attachedVendorServices = adminStore
-                      .getBlogVendorServices(blog.id);
-                  final needsAssign = events.isEmpty;
+        iconTheme: const IconThemeData(color: Colors.white),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.add, color: Colors.white),
+            onPressed: () => _showAddBlogDialog(context),
+            tooltip: 'Add Blog',
+          ),
+        ],
+      ),
+      body: StreamBuilder<List<Blog>>(
+        stream: watchBlogList(publishedOnly: false),
+        builder: (context, snap) {
+          if (snap.connectionState == ConnectionState.waiting &&
+              !snap.hasData) {
+            return const Center(child: CircularProgressIndicator(color: kPrimary));
+          }
+          if (snap.hasError) {
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Text('Could not load blogs: ${snap.error}'),
+              ),
+            );
+          }
+          final blogs = snap.data ?? [];
+          if (blogs.isEmpty) {
+            return const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.article_outlined, size: 64, color: Colors.grey),
+                  SizedBox(height: 12),
+                  Text(
+                    'No blogs yet',
+                    style: TextStyle(fontSize: 16, color: Colors.grey),
+                  ),
+                ],
+              ),
+            );
+          }
+          return ListView.separated(
+            padding: const EdgeInsets.all(16),
+            itemCount: blogs.length,
+            separatorBuilder: (context, index) => const SizedBox(height: 10),
+            itemBuilder: (context, i) {
+              final blog = blogs[i];
+              final events = blog.eventTypes;
+              final attachedVendorServices = blog.vendorServiceKeys;
+              final needsAssign = events.isEmpty;
 
                   return Container(
                     padding: const EdgeInsets.all(14),
@@ -204,38 +216,46 @@ class _AdminBlogsPageState extends State<AdminBlogsPage> {
                           ),
                         ),
                         const SizedBox(width: 8),
-                        TextButton.icon(
-                          style: TextButton.styleFrom(
-                            foregroundColor: kPrimary,
-                          ),
-                          onPressed: () async {
-                            final result =
-                                await Navigator.push<AdminBlogEditResult>(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => AdminEditBlogPage(
-                                      blog: blog,
-                                      currentAssignedEvent: null,
-                                    ),
-                                  ),
-                                );
-                            if (result == null) return;
-                            // Edit screen updates store; keep compatibility if it returns a value.
-                            if (result.assignedEvent != null) {
-                              adminStore.setBlogEvent(
-                                blog.id,
-                                result.assignedEvent,
-                              );
-                            }
-                          },
-                          icon: const Icon(Icons.edit_outlined, size: 18),
-                          label: const Text('Edit'),
+                        Column(
+                          children: [
+                            TextButton.icon(
+                              style: TextButton.styleFrom(
+                                foregroundColor: kPrimary,
+                              ),
+                              onPressed: () async {
+                                final result =
+                                    await Navigator.push<AdminBlogEditResult>(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => AdminEditBlogPage(
+                                          blog: blog,
+                                          currentAssignedEvent: null,
+                                        ),
+                                      ),
+                                    );
+                                if (result == null) return;
+                              },
+                              icon: const Icon(Icons.edit_outlined, size: 18),
+                              label: const Text('Edit'),
+                            ),
+                            TextButton.icon(
+                              style: TextButton.styleFrom(
+                                foregroundColor: Colors.red,
+                              ),
+                              onPressed: () {
+                                _showDeleteBlogDialog(context, blog.id, blog.title);
+                              },
+                              icon: const Icon(Icons.delete_outline, size: 18),
+                              label: const Text('Delete'),
+                            ),
+                          ],
                         ),
                       ],
                     ),
                   );
                 },
-              ),
+          );
+        },
       ),
     );
   }
@@ -479,6 +499,61 @@ class _AdminBlogsPageState extends State<AdminBlogsPage> {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  void _showDeleteBlogDialog(BuildContext context, String blogId, String blogTitle) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Delete Blog?'),
+        content: Text(
+          'Are you sure you want to delete "$blogTitle"? This action cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            onPressed: () async {
+              try {
+                await FirebaseFirestore.instance
+                    .collection('blogs')
+                    .doc(blogId)
+                    .delete();
+                if (!context.mounted) return;
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Blog "$blogTitle" deleted successfully'),
+                    backgroundColor: Colors.green,
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              } catch (e) {
+                if (!context.mounted) return;
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Failed to delete blog: $e'),
+                    backgroundColor: Colors.red,
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              }
+            },
+            child: const Text('Delete', style: TextStyle(color: Colors.white)),
+          ),
+        ],
       ),
     );
   }

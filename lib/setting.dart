@@ -755,6 +755,7 @@ import 'theme_notifier.dart';
 import 'login.dart';
 import 'my_bookings.dart';
 import 'saved_vendors.dart';
+import 'saved_blogs.dart';
 import 'couple_profile_edit.dart';
 import 'account_deletion.dart';
 
@@ -1417,6 +1418,20 @@ String getInitials(String? name, String? email) {
                     context,
                     MaterialPageRoute<void>(
                       builder: (_) => const SavedVendorsPage(),
+                    ),
+                  );
+                },
+              ),
+              _settingsTile(
+                icon: Icons.bookmark_border,
+                iconBg: Colors.amber.withOpacity(0.13),
+                title: 'Saved Blogs',
+                subtitle: 'Articles saved for reading',
+                onTap: () {
+                  Navigator.push<void>(
+                    context,
+                    MaterialPageRoute<void>(
+                      builder: (_) => const SavedBlogsPage(),
                     ),
                   );
                 },
