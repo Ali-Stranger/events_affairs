@@ -272,7 +272,7 @@ class _CoupleProfileEditPageState extends State<CoupleProfileEditPage> {
                     ),
                     const SizedBox(height: 14),
                     DropdownButtonFormField<String>(
-                      value: _city,
+                      initialValue: _city,
                       decoration: _fieldDecoration(
                         context,
                         label: 'City',
