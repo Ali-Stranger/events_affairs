@@ -18,73 +18,112 @@ class AdminUsersPage extends StatelessWidget {
         backgroundColor: bg,
         appBar: AppBar(
           backgroundColor: kPrimary,
-          title: const Text('Users', style: TextStyle(color: Colors.white, fontSize: 16)),
+          title: const Text(
+            'Users',
+            style: TextStyle(color: Colors.white, fontSize: 16),
+          ),
           iconTheme: const IconThemeData(color: Colors.white),
         ),
-        body: ListView.separated(
-          padding: const EdgeInsets.all(16),
-          itemCount: adminStore.users.length,
-          separatorBuilder: (context, index) => const SizedBox(height: 10),
-          itemBuilder: (context, i) {
-            final u = adminStore.users[i];
-            return Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: isDark ? const Color(0xff1A1A24) : Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05),
-                ),
-              ),
-              child: Row(
-                children: [
-                  CircleAvatar(
-                    radius: 20,
-                    backgroundColor: kPrimary.withValues(alpha: 0.12),
-                    child: Text(
-                      u.name.substring(0, 1),
-                      style: const TextStyle(color: kPrimary, fontWeight: FontWeight.bold),
+        body: adminStore.users.isEmpty
+            ? const Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.people_outline, size: 64, color: Colors.grey),
+                    SizedBox(height: 12),
+                    Text(
+                      'No users yet',
+                      style: TextStyle(fontSize: 16, color: Colors.grey),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    SizedBox(height: 6),
+                    Text(
+                      'Registered couples will appear here',
+                      style: TextStyle(fontSize: 12, color: Colors.grey),
+                    ),
+                  ],
+                ),
+              )
+            : ListView.separated(
+                padding: const EdgeInsets.all(16),
+                itemCount: adminStore.users.length,
+                separatorBuilder: (context, index) =>
+                    const SizedBox(height: 10),
+                itemBuilder: (context, i) {
+                  final u = adminStore.users[i];
+                  return Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xff1A1A24) : Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: isDark
+                            ? Colors.white10
+                            : Colors.black.withValues(alpha: 0.05),
+                      ),
+                    ),
+                    child: Row(
                       children: [
-                        Text(
-                          u.name,
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
-                            color: isDark ? Colors.white : Colors.black87,
+                        CircleAvatar(
+                          radius: 20,
+                          backgroundColor: kPrimary.withValues(alpha: 0.12),
+                          child: Text(
+                            u.name.substring(0, 1),
+                            style: const TextStyle(
+                              color: kPrimary,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
-                        const SizedBox(height: 2),
-                        Text(
-                          '${u.city} · ${u.phone}',
-                          style: TextStyle(fontSize: 11, color: isDark ? Colors.white38 : Colors.black54),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                u.name,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                  color: isDark ? Colors.white : Colors.black87,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                '${u.city} · ${u.phone}',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: isDark
+                                      ? Colors.white38
+                                      : Colors.black54,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 5,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.green.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(30),
+                          ),
+                          child: const Text(
+                            'Active',
+                            style: TextStyle(
+                              color: Colors.green,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 11,
+                            ),
+                          ),
                         ),
                       ],
                     ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                    decoration: BoxDecoration(
-                      color: Colors.green.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(30),
-                    ),
-                    child: const Text(
-                      'Active',
-                      style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 11),
-                    ),
-                  ),
-                ],
+                  );
+                },
               ),
-            );
-          },
-        ),
       ),
     );
   }
 }
-

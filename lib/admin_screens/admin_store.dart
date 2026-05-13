@@ -230,12 +230,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-
-enum VendorStatus {
-  pending,
-  approved,
-  suspended,
-}
+enum VendorStatus { pending, approved, suspended }
 
 class FirestoreVendor {
   final String id;
@@ -317,7 +312,9 @@ class AdminStore extends ChangeNotifier {
   bool isLoading = false;
   String? errorMessage;
 
-  AdminStore();
+  AdminStore() {
+    initialize();
+  }
 
   // ───────────────── INITIALIZE ─────────────────
 
@@ -383,11 +380,8 @@ class AdminStore extends ChangeNotifier {
           service: d['category']?.toString() ?? '',
           city: d['city']?.toString() ?? '',
           eventDate: d['eventDate']?.toString() ?? '',
-          createdAt:
-              (d['createdAt'] as Timestamp?)?.toDate() ??
-                  DateTime.now(),
-          note:
-              'Lead only — vendor should call user directly.',
+          createdAt: (d['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+          note: 'Lead only — vendor should call user directly.',
         );
       }).toList();
 
@@ -405,9 +399,7 @@ class AdminStore extends ChangeNotifier {
           name: d['name']?.toString() ?? 'Unknown',
           phone: d['phone']?.toString() ?? 'N/A',
           city: d['city']?.toString() ?? 'N/A',
-          createdAt:
-              (d['createdAt'] as Timestamp?)?.toDate() ??
-                  DateTime.now(),
+          createdAt: (d['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
         );
       }).toList();
 
@@ -425,10 +417,8 @@ class AdminStore extends ChangeNotifier {
           name: d['name']?.toString() ?? 'Unknown',
           email: d['email']?.toString() ?? '',
           phone: d['phone']?.toString() ?? 'N/A',
-          businessName:
-              d['businessName']?.toString() ?? 'N/A',
-          category:
-              d['businessCategory']?.toString() ?? 'N/A',
+          businessName: d['businessName']?.toString() ?? 'N/A',
+          category: d['businessCategory']?.toString() ?? 'N/A',
           city: d['city']?.toString() ?? 'N/A',
           approved: d['approved'] == true,
         );
@@ -443,10 +433,7 @@ class AdminStore extends ChangeNotifier {
 
   // ───────────────── BLOG EVENTS ─────────────────
 
-  void setBlogEvent(
-    int blogId,
-    String? eventType,
-  ) {
+  void setBlogEvent(int blogId, String? eventType) {
     final value = (eventType ?? '').trim();
 
     if (value.isEmpty) {
@@ -458,16 +445,12 @@ class AdminStore extends ChangeNotifier {
     notifyListeners();
   }
 
-  void toggleBlogEvent(
-    int blogId,
-    String eventType,
-  ) {
+  void toggleBlogEvent(int blogId, String eventType) {
     final value = eventType.trim();
 
     if (value.isEmpty) return;
 
-    final set =
-        blogEvents.putIfAbsent(blogId, () => <String>{});
+    final set = blogEvents.putIfAbsent(blogId, () => <String>{});
 
     if (set.contains(value)) {
       set.remove(value);
@@ -488,11 +471,7 @@ class AdminStore extends ChangeNotifier {
 
   // ───────────────── BLOG VENDOR SERVICES ─────────────────
 
-  void toggleBlogVendorService(
-    int blogId,
-    String vendorName,
-    String service,
-  ) {
+  void toggleBlogVendorService(int blogId, String vendorName, String service) {
     final cleanVendor = vendorName.trim();
     final cleanService = service.trim();
 
@@ -502,10 +481,7 @@ class AdminStore extends ChangeNotifier {
 
     final key = '$cleanVendor|$cleanService';
 
-    final set = blogVendorServices.putIfAbsent(
-      blogId,
-      () => <String>{},
-    );
+    final set = blogVendorServices.putIfAbsent(blogId, () => <String>{});
 
     if (set.contains(key)) {
       set.remove(key);
@@ -526,18 +502,12 @@ class AdminStore extends ChangeNotifier {
 
   // ───────────────── VENDOR MANAGEMENT ─────────────────
 
-  void setVendorStatus(
-    String vendorId,
-    VendorStatus status,
-  ) {
+  void setVendorStatus(String vendorId, VendorStatus status) {
     vendorStatus[vendorId] = status;
     notifyListeners();
   }
 
-  void setVendorPrimaryService(
-    String vendorId,
-    String service,
-  ) {
+  void setVendorPrimaryService(String vendorId, String service) {
     vendorPrimaryService[vendorId] = service;
     notifyListeners();
   }
@@ -549,9 +519,8 @@ class AdminStore extends ChangeNotifier {
   // ───────────────── COUNTS ─────────────────
 
   int get pendingVendorsCount {
-    return vendorStatus.values
-        .where((s) => s == VendorStatus.pending)
-        .length;
+    // Count from Firestore vendors where approved is false
+    return firestoreVendors.where((v) => !v.approved).length;
   }
 
   int get totalUsers => users.length;

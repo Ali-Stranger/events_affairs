@@ -14,7 +14,8 @@ class AdminDashboardOverviewPage extends StatefulWidget {
       _AdminDashboardOverviewPageState();
 }
 
-class _AdminDashboardOverviewPageState extends State<AdminDashboardOverviewPage> {
+class _AdminDashboardOverviewPageState
+    extends State<AdminDashboardOverviewPage> {
   int _unreadNotifs = 3;
 
   Future<void> _openNotifications() async {
@@ -37,7 +38,9 @@ class _AdminDashboardOverviewPageState extends State<AdminDashboardOverviewPage>
       animation: adminStore,
       builder: (context, _) {
         final unassignedBlogs = allBlogs
-            .where((b) => (adminStore.blogEvents[b.id] ?? const <String>{}).isEmpty)
+            .where(
+              (b) => (adminStore.blogEvents[b.id] ?? const <String>{}).isEmpty,
+            )
             .length;
 
         final pendingVendors = adminStore.pendingVendorsCount;
@@ -68,8 +71,10 @@ class _AdminDashboardOverviewPageState extends State<AdminDashboardOverviewPage>
                 alignment: Alignment.center,
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.notifications_outlined,
-                        color: Colors.white),
+                    icon: const Icon(
+                      Icons.notifications_outlined,
+                      color: Colors.white,
+                    ),
                     onPressed: _openNotifications,
                   ),
                   if (_unreadNotifs > 0)
@@ -118,34 +123,33 @@ class _AdminDashboardOverviewPageState extends State<AdminDashboardOverviewPage>
                       //   accent: kPrimary,
                       // ),
                       FutureBuilder<QuerySnapshot>(
-  future: FirebaseFirestore.instance
-      .collection('users')
-      .where('role', isEqualTo: 'vendor')
-      .get(),
-  builder: (context, snapshot) {
-    if (snapshot.connectionState == ConnectionState.waiting) {
-      return const Expanded(
-        child: Center(
-          child: CircularProgressIndicator(),
-        ),
-      );
-    }
+                        future: FirebaseFirestore.instance
+                            .collection('users')
+                            .where('role', isEqualTo: 'vendor')
+                            .get(),
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState ==
+                              ConnectionState.waiting) {
+                            return const Expanded(
+                              child: Center(child: CircularProgressIndicator()),
+                            );
+                          }
 
-    final vendorCount = snapshot.data?.docs.length ?? 0;
+                          final vendorCount = snapshot.data?.docs.length ?? 0;
 
-    return _MetricCard(
-      surface: surface,
-      isDark: isDark,
-      icon: Icons.storefront_outlined,
-      title: 'Vendors',
-      value: '$vendorCount',
-      subtitle: pendingVendors > 0
-          ? '$pendingVendors pending approval'
-          : 'All approved',
-      accent: kPrimary,
-    );
-  },
-),
+                          return _MetricCard(
+                            surface: surface,
+                            isDark: isDark,
+                            icon: Icons.storefront_outlined,
+                            title: 'Vendors',
+                            value: '$vendorCount',
+                            subtitle: pendingVendors > 0
+                                ? '$pendingVendors pending approval'
+                                : 'All approved',
+                            accent: kPrimary,
+                          );
+                        },
+                      ),
                       const SizedBox(width: 10),
                       _MetricCard(
                         surface: surface,
@@ -210,8 +214,9 @@ class _AdminDashboardOverviewPageState extends State<AdminDashboardOverviewPage>
                         subtitle: pendingVendors > 0
                             ? '$pendingVendors vendors pending'
                             : 'No pending approvals',
-                        badgeText:
-                            pendingVendors > 0 ? '$pendingVendors' : null,
+                        badgeText: pendingVendors > 0
+                            ? '$pendingVendors'
+                            : null,
                         onTap: () {
                           // bottom-nav already has vendors tab; keep this as a hint
                           ScaffoldMessenger.of(context).showSnackBar(
@@ -232,7 +237,9 @@ class _AdminDashboardOverviewPageState extends State<AdminDashboardOverviewPage>
                         subtitle: unassignedBlogs > 0
                             ? '$unassignedBlogs blogs not assigned'
                             : 'All blogs assigned',
-                        badgeText: unassignedBlogs > 0 ? '$unassignedBlogs' : null,
+                        badgeText: unassignedBlogs > 0
+                            ? '$unassignedBlogs'
+                            : null,
                         onTap: () {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
@@ -261,17 +268,19 @@ class _AdminDashboardOverviewPageState extends State<AdminDashboardOverviewPage>
                   child: Column(
                     children: adminStore.leads
                         .take(3)
-                        .map((l) => Padding(
-                              padding: const EdgeInsets.only(bottom: 10),
-                              child: _LeadPreviewTile(
-                                surface: surface,
-                                isDark: isDark,
-                                name: l.name,
-                                subtitle:
-                                    '${l.service} · ${l.city} · ${l.eventDate}',
-                                phone: l.phone,
-                              ),
-                            ))
+                        .map(
+                          (l) => Padding(
+                            padding: const EdgeInsets.only(bottom: 10),
+                            child: _LeadPreviewTile(
+                              surface: surface,
+                              isDark: isDark,
+                              name: l.name,
+                              subtitle:
+                                  '${l.service} · ${l.city} · ${l.eventDate}',
+                              phone: l.phone,
+                            ),
+                          ),
+                        )
                         .toList(),
                   ),
                 ),
@@ -303,11 +312,7 @@ class _HeroHeader extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 18),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [
-            const Color(0xff8B1A3E),
-            kPrimary,
-            const Color(0xffD4456E),
-          ],
+          colors: [const Color(0xff8B1A3E), kPrimary, const Color(0xffD4456E)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -323,8 +328,10 @@ class _HeroHeader extends StatelessWidget {
               borderRadius: BorderRadius.circular(16),
               border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
             ),
-            child: const Icon(Icons.admin_panel_settings_outlined,
-                color: Colors.white),
+            child: const Icon(
+              Icons.admin_panel_settings_outlined,
+              color: Colors.white,
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -437,14 +444,16 @@ class _MetricCard extends StatelessWidget {
           color: surface,
           borderRadius: BorderRadius.circular(18),
           border: Border.all(
-            color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05),
+            color: isDark
+                ? Colors.white10
+                : Colors.black.withValues(alpha: 0.05),
           ),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: isDark ? 0.22 : 0.04),
               blurRadius: 14,
               offset: const Offset(0, 6),
-            )
+            ),
           ],
         ),
         child: Column(
@@ -567,7 +576,9 @@ class _ActionRow extends StatelessWidget {
           color: surface,
           borderRadius: BorderRadius.circular(18),
           border: Border.all(
-            color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.05),
+            color: isDark
+                ? Colors.white10
+                : Colors.black.withValues(alpha: 0.05),
           ),
         ),
         child: Row(
@@ -607,8 +618,10 @@ class _ActionRow extends StatelessWidget {
             ),
             if (badgeText != null)
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.amber.withValues(alpha: 0.18),
                   borderRadius: BorderRadius.circular(30),
@@ -623,8 +636,10 @@ class _ActionRow extends StatelessWidget {
                 ),
               ),
             const SizedBox(width: 8),
-            Icon(Icons.chevron_right,
-                color: isDark ? Colors.white38 : Colors.black26),
+            Icon(
+              Icons.chevron_right,
+              color: isDark ? Colors.white38 : Colors.black26,
+            ),
           ],
         ),
       ),
@@ -827,4 +842,3 @@ class _NotifTile extends StatelessWidget {
     );
   }
 }
-

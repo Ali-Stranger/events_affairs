@@ -38,174 +38,204 @@ class _AdminBlogsPageState extends State<AdminBlogsPage> {
             ),
           ],
         ),
-        body: ListView.separated(
-          padding: const EdgeInsets.all(16),
-          itemCount: allBlogs.length,
-          separatorBuilder: (context, index) => const SizedBox(height: 10),
-          itemBuilder: (context, i) {
-            final blog = allBlogs[i];
-            final events = adminStore.getBlogEvents(blog.id);
-            final attachedVendorServices = adminStore.getBlogVendorServices(
-              blog.id,
-            );
-            final needsAssign = events.isEmpty;
-
-            return Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: isDark ? const Color(0xff1A1A24) : Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: needsAssign
-                      ? Colors.amber.withValues(alpha: 0.35)
-                      : (isDark
-                            ? Colors.white10
-                            : Colors.black.withValues(alpha: 0.05)),
+        body: allBlogs.isEmpty
+            ? const Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.article_outlined, size: 64, color: Colors.grey),
+                    SizedBox(height: 12),
+                    Text(
+                      'No blogs yet',
+                      style: TextStyle(fontSize: 16, color: Colors.grey),
+                    ),
+                  ],
                 ),
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    width: 52,
-                    height: 52,
+              )
+            : ListView.separated(
+                padding: const EdgeInsets.all(16),
+                itemCount: allBlogs.length,
+                separatorBuilder: (context, index) =>
+                    const SizedBox(height: 10),
+                itemBuilder: (context, i) {
+                  final blog = allBlogs[i];
+                  final events = adminStore.getBlogEvents(blog.id);
+                  final attachedVendorServices = adminStore
+                      .getBlogVendorServices(blog.id);
+                  final needsAssign = events.isEmpty;
+
+                  return Container(
+                    padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
-                      color: categoryColor(
-                        blog.category,
-                      ).withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(14),
+                      color: isDark ? const Color(0xff1A1A24) : Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: needsAssign
+                            ? Colors.amber.withValues(alpha: 0.35)
+                            : (isDark
+                                  ? Colors.white10
+                                  : Colors.black.withValues(alpha: 0.05)),
+                      ),
                     ),
-                    child: Icon(
-                      Icons.article_outlined,
-                      color: categoryColor(blog.category),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
+                    child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                blog.title,
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
-                                  color: isDark ? Colors.white : Colors.black87,
-                                ),
-                              ),
-                            ),
-                            if (needsAssign)
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                  vertical: 4,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.amber.withValues(alpha: 0.18),
-                                  borderRadius: BorderRadius.circular(30),
-                                ),
-                                child: const Text(
-                                  'Needs event',
-                                  style: TextStyle(
-                                    color: Colors.amber,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 11,
-                                  ),
-                                ),
-                              ),
-                          ],
+                        Container(
+                          width: 52,
+                          height: 52,
+                          decoration: BoxDecoration(
+                            color: categoryColor(
+                              blog.category,
+                            ).withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          child: Icon(
+                            Icons.article_outlined,
+                            color: categoryColor(blog.category),
+                          ),
                         ),
-                        const SizedBox(height: 3),
-                        const SizedBox(height: 8),
-                        if (events.isNotEmpty)
-                          Wrap(
-                            spacing: 6,
-                            runSpacing: 6,
-                            children: events
-                                .map(
-                                  (e) => Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 10,
-                                      vertical: 4,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: kPrimary.withValues(alpha: 0.10),
-                                      borderRadius: BorderRadius.circular(20),
-                                    ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Expanded(
                                     child: Text(
-                                      e,
-                                      style: const TextStyle(
-                                        color: kPrimary,
-                                        fontSize: 11,
+                                      blog.title,
+                                      style: TextStyle(
+                                        fontSize: 14,
                                         fontWeight: FontWeight.bold,
+                                        color: isDark
+                                            ? Colors.white
+                                            : Colors.black87,
                                       ),
                                     ),
                                   ),
-                                )
-                                .toList(),
-                          )
-                        else
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: kPrimary.withValues(alpha: 0.10),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: const Text(
-                              'No events',
-                              style: TextStyle(
-                                color: kPrimary,
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold,
+                                  if (needsAssign)
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 10,
+                                        vertical: 4,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: Colors.amber.withValues(
+                                          alpha: 0.18,
+                                        ),
+                                        borderRadius: BorderRadius.circular(30),
+                                      ),
+                                      child: const Text(
+                                        'Needs event',
+                                        style: TextStyle(
+                                          color: Colors.amber,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 11,
+                                        ),
+                                      ),
+                                    ),
+                                ],
                               ),
-                            ),
-                          ),
-                        if (attachedVendorServices.isNotEmpty) ...[
-                          const SizedBox(height: 10),
-                          Text(
-                            '${attachedVendorServices.length} vendor services attached',
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: isDark ? Colors.white38 : Colors.black54,
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  TextButton.icon(
-                    style: TextButton.styleFrom(foregroundColor: kPrimary),
-                    onPressed: () async {
-                      final result = await Navigator.push<AdminBlogEditResult>(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => AdminEditBlogPage(
-                            blog: blog,
-                            currentAssignedEvent: null,
+                              const SizedBox(height: 3),
+                              const SizedBox(height: 8),
+                              if (events.isNotEmpty)
+                                Wrap(
+                                  spacing: 6,
+                                  runSpacing: 6,
+                                  children: events
+                                      .map(
+                                        (e) => Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 10,
+                                            vertical: 4,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: kPrimary.withValues(
+                                              alpha: 0.10,
+                                            ),
+                                            borderRadius: BorderRadius.circular(
+                                              20,
+                                            ),
+                                          ),
+                                          child: Text(
+                                            e,
+                                            style: const TextStyle(
+                                              color: kPrimary,
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
+                                      )
+                                      .toList(),
+                                )
+                              else
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: kPrimary.withValues(alpha: 0.10),
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: const Text(
+                                    'No events',
+                                    style: TextStyle(
+                                      color: kPrimary,
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              if (attachedVendorServices.isNotEmpty) ...[
+                                const SizedBox(height: 10),
+                                Text(
+                                  '${attachedVendorServices.length} vendor services attached',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: isDark
+                                        ? Colors.white38
+                                        : Colors.black54,
+                                  ),
+                                ),
+                              ],
+                            ],
                           ),
                         ),
-                      );
-                      if (result == null) return;
-                      // Edit screen updates store; keep compatibility if it returns a value.
-                      if (result.assignedEvent != null) {
-                        adminStore.setBlogEvent(blog.id, result.assignedEvent);
-                      }
-                    },
-                    icon: const Icon(Icons.edit_outlined, size: 18),
-                    label: const Text('Edit'),
-                  ),
-                ],
+                        const SizedBox(width: 8),
+                        TextButton.icon(
+                          style: TextButton.styleFrom(
+                            foregroundColor: kPrimary,
+                          ),
+                          onPressed: () async {
+                            final result =
+                                await Navigator.push<AdminBlogEditResult>(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => AdminEditBlogPage(
+                                      blog: blog,
+                                      currentAssignedEvent: null,
+                                    ),
+                                  ),
+                                );
+                            if (result == null) return;
+                            // Edit screen updates store; keep compatibility if it returns a value.
+                            if (result.assignedEvent != null) {
+                              adminStore.setBlogEvent(
+                                blog.id,
+                                result.assignedEvent,
+                              );
+                            }
+                          },
+                          icon: const Icon(Icons.edit_outlined, size: 18),
+                          label: const Text('Edit'),
+                        ),
+                      ],
+                    ),
+                  );
+                },
               ),
-            );
-          },
-        ),
       ),
     );
   }

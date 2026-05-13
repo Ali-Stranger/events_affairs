@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 import 'admin_store.dart';
@@ -24,166 +25,216 @@ class AdminVendorsPage extends StatelessWidget {
           ),
           iconTheme: const IconThemeData(color: Colors.white),
         ),
-        body: ListView.separated(
-          padding: const EdgeInsets.all(16),
-          itemCount: adminStore.firestoreVendors.length,
-          separatorBuilder: (context, index) => const SizedBox(height: 10),
-          itemBuilder: (context, i) {
-            final v = adminStore.firestoreVendors[i];
-            final status =
-                adminStore.vendorStatus[v.id] ??
-                (v.approved ? VendorStatus.approved : VendorStatus.pending);
-            final primaryService =
-                adminStore.vendorPrimaryService[v.id] ?? v.category;
-            final bool isPending = status == VendorStatus.pending;
-
-            return Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: isDark ? const Color(0xff1A1A24) : Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: isPending
-                      ? Colors.amber.withValues(alpha: 0.35)
-                      : (isDark
-                            ? Colors.white10
-                            : Colors.black.withValues(alpha: 0.05)),
+        body: adminStore.firestoreVendors.isEmpty
+            ? const Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.storefront_outlined,
+                      size: 64,
+                      color: Colors.grey,
+                    ),
+                    SizedBox(height: 12),
+                    Text(
+                      'No vendors yet',
+                      style: TextStyle(fontSize: 16, color: Colors.grey),
+                    ),
+                    SizedBox(height: 6),
+                    Text(
+                      'Registered vendors will appear here',
+                      style: TextStyle(fontSize: 12, color: Colors.grey),
+                    ),
+                  ],
                 ),
-              ),
-              child: Row(
-                children: [
-                  CircleAvatar(
-                    radius: 20,
-                    backgroundColor: kPrimary.withValues(alpha: 0.1),
-                    child: Text(
-                      v.name.substring(0, 1),
-                      style: const TextStyle(
-                        color: kPrimary,
-                        fontWeight: FontWeight.bold,
+              )
+            : ListView.separated(
+                padding: const EdgeInsets.all(16),
+                itemCount: adminStore.firestoreVendors.length,
+                separatorBuilder: (context, index) =>
+                    const SizedBox(height: 10),
+                itemBuilder: (context, i) {
+                  final v = adminStore.firestoreVendors[i];
+                  final status =
+                      adminStore.vendorStatus[v.id] ??
+                      (v.approved
+                          ? VendorStatus.approved
+                          : VendorStatus.pending);
+                  final primaryService =
+                      adminStore.vendorPrimaryService[v.id] ?? v.category;
+                  final bool isPending = status == VendorStatus.pending;
+
+                  return Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xff1A1A24) : Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: isPending
+                            ? Colors.amber.withValues(alpha: 0.35)
+                            : (isDark
+                                  ? Colors.white10
+                                  : Colors.black.withValues(alpha: 0.05)),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    child: Row(
                       children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                v.name,
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 14,
-                                  color: isDark ? Colors.white : Colors.black87,
-                                ),
-                              ),
+                        CircleAvatar(
+                          radius: 20,
+                          backgroundColor: kPrimary.withValues(alpha: 0.1),
+                          child: Text(
+                            v.name.substring(0, 1),
+                            style: const TextStyle(
+                              color: kPrimary,
+                              fontWeight: FontWeight.bold,
                             ),
-                            _StatusChip(status: status),
-                          ],
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          '${v.city} · ${v.phone}',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: isDark ? Colors.white38 : Colors.black54,
                           ),
                         ),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                                vertical: 4,
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      v.name,
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 14,
+                                        color: isDark
+                                            ? Colors.white
+                                            : Colors.black87,
+                                      ),
+                                    ),
+                                  ),
+                                  _StatusChip(status: status),
+                                ],
                               ),
-                              decoration: BoxDecoration(
-                                color: kPrimary.withValues(alpha: 0.10),
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: Text(
-                                'Service: $primaryService',
-                                style: const TextStyle(
-                                  color: kPrimary,
+                              const SizedBox(height: 2),
+                              Text(
+                                '${v.city} · ${v.phone}',
+                                style: TextStyle(
                                   fontSize: 11,
-                                  fontWeight: FontWeight.bold,
+                                  color: isDark
+                                      ? Colors.white38
+                                      : Colors.black54,
                                 ),
                               ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 10),
-                        Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: [
-                            _SmallActionButton(
-                              label: 'Set service',
-                              icon: Icons.tune,
-                              onTap: () async {
-                                final picked =
-                                    await showModalBottomSheet<String>(
-                                      context: context,
-                                      shape: const RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.vertical(
-                                          top: Radius.circular(20),
-                                        ),
+                              const SizedBox(height: 8),
+                              Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 10,
+                                      vertical: 4,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: kPrimary.withValues(alpha: 0.10),
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
+                                    child: Text(
+                                      'Service: $primaryService',
+                                      style: const TextStyle(
+                                        color: kPrimary,
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.bold,
                                       ),
-                                      builder: (ctx) => _ServicePickerSheet(
-                                        vendorName: v.businessName,
-                                        services: [v.category],
-                                        selected: primaryService,
-                                      ),
-                                    );
-                                if (picked == null) return;
-                                adminStore.setVendorPrimaryService(
-                                  v.id,
-                                  picked,
-                                );
-                              },
-                            ),
-                            if (status == VendorStatus.pending)
-                              _SmallActionButton(
-                                label: 'Approve',
-                                icon: Icons.verified,
-                                tone: _ButtonTone.success,
-                                onTap: () => adminStore.setVendorStatus(
-                                  v.id,
-                                  VendorStatus.approved,
-                                ),
+                                    ),
+                                  ),
+                                ],
                               ),
-                            if (status == VendorStatus.approved)
-                              _SmallActionButton(
-                                label: 'Suspend',
-                                icon: Icons.block,
-                                tone: _ButtonTone.danger,
-                                onTap: () => adminStore.setVendorStatus(
-                                  v.id,
-                                  VendorStatus.suspended,
-                                ),
+                              const SizedBox(height: 10),
+                              Wrap(
+                                spacing: 8,
+                                runSpacing: 8,
+                                children: [
+                                  _SmallActionButton(
+                                    label: 'Set service',
+                                    icon: Icons.tune,
+                                    onTap: () async {
+                                      final picked =
+                                          await showModalBottomSheet<String>(
+                                            context: context,
+                                            shape: const RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.vertical(
+                                                    top: Radius.circular(20),
+                                                  ),
+                                            ),
+                                            builder: (ctx) =>
+                                                _ServicePickerSheet(
+                                                  vendorName: v.businessName,
+                                                  services: [v.category],
+                                                  selected: primaryService,
+                                                ),
+                                          );
+                                      if (picked == null) return;
+                                      adminStore.setVendorPrimaryService(
+                                        v.id,
+                                        picked,
+                                      );
+                                    },
+                                  ),
+                                  if (status == VendorStatus.pending)
+                                    _SmallActionButton(
+                                      label: 'Approve',
+                                      icon: Icons.verified,
+                                      tone: _ButtonTone.success,
+                                      onTap: () async {
+                                        adminStore.setVendorStatus(
+                                          v.id,
+                                          VendorStatus.approved,
+                                        );
+                                        await FirebaseFirestore.instance
+                                            .collection('users')
+                                            .doc(v.id)
+                                            .update({'approved': true});
+                                      },
+                                    ),
+                                  if (status == VendorStatus.approved)
+                                    _SmallActionButton(
+                                      label: 'Suspend',
+                                      icon: Icons.block,
+                                      tone: _ButtonTone.danger,
+                                      onTap: () async {
+                                        adminStore.setVendorStatus(
+                                          v.id,
+                                          VendorStatus.suspended,
+                                        );
+                                        await FirebaseFirestore.instance
+                                            .collection('users')
+                                            .doc(v.id)
+                                            .update({'approved': false});
+                                      },
+                                    ),
+                                  if (status == VendorStatus.suspended)
+                                    _SmallActionButton(
+                                      label: 'Re-approve',
+                                      icon: Icons.restart_alt,
+                                      tone: _ButtonTone.success,
+                                      onTap: () async {
+                                        adminStore.setVendorStatus(
+                                          v.id,
+                                          VendorStatus.approved,
+                                        );
+                                        await FirebaseFirestore.instance
+                                            .collection('users')
+                                            .doc(v.id)
+                                            .update({'approved': true});
+                                      },
+                                    ),
+                                ],
                               ),
-                            if (status == VendorStatus.suspended)
-                              _SmallActionButton(
-                                label: 'Re-approve',
-                                icon: Icons.restart_alt,
-                                tone: _ButtonTone.success,
-                                onTap: () => adminStore.setVendorStatus(
-                                  v.id,
-                                  VendorStatus.approved,
-                                ),
-                              ),
-                          ],
+                            ],
+                          ),
                         ),
                       ],
                     ),
-                  ),
-                ],
+                  );
+                },
               ),
-            );
-          },
-        ),
       ),
     );
   }
