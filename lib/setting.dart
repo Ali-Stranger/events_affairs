@@ -752,6 +752,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'drawer.dart';
 import 'theme_notifier.dart';
+import 'app_localizations.dart';
 import 'login.dart';
 import 'my_bookings.dart';
 import 'saved_vendors.dart';
@@ -770,11 +771,12 @@ class _SettingsPageState extends State<SettingsPage> {
   bool notificationsEnabled = true;
   bool twoFactorEnabled = false;
   String selectedCity = 'Lahore';
-  String selectedLanguage = 'English';
+  String selectedLanguage = AppLocalizations.languageNameFromCode(localeNotifier.value.languageCode);
   /// Display name from Firestore `users.name` when set.
   String? _profileNameFromFirestore;
 
   final Color primaryColor = const Color(0xffB4245D);
+  late final List<String> _languageOptions = AppLocalizations.languageNames.values.toList();
 
   @override
   void initState() {
@@ -858,18 +860,17 @@ String getInitials(String? name, String? email) {
   return 'U';
 }
   void _showLogoutDialog() {
+    final t = AppLocalizations.of(context);
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Log out?'),
-        content: const Text(
-          'You\'ll need to sign in again to access your account and bookings.',
-        ),
+        title: Text(t.translate('logout')), 
+        content: Text(t.translate('logoutDialogMessage')),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+            child: Text(t.translate('cancel'), style: const TextStyle(color: Colors.grey)),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -888,7 +889,7 @@ String getInitials(String? name, String? email) {
                 (route) => false,
               );
             },
-            child: const Text('Log Out', style: TextStyle(color: Colors.white)),
+            child: Text(t.translate('logout'), style: const TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -1090,7 +1091,47 @@ String getInitials(String? name, String? email) {
     );
   }
 
+  void _showLanguagePicker() {
+    final t = AppLocalizations.of(context);
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Text(
+              t.translate('selectLanguage'),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            ),
+          ),
+          ..._languageOptions.map(
+            (language) => ListTile(
+              title: Text(language),
+              trailing: selectedLanguage == language
+                  ? Icon(Icons.check, color: primaryColor)
+                  : null,
+              onTap: () {
+                final code = AppLocalizations.languageCodeFromName(language);
+                setState(() {
+                  selectedLanguage = language;
+                });
+                localeNotifier.value = AppLocalizations.localeFromLanguageCode(code);
+                Navigator.pop(context);
+              },
+            ),
+          ),
+          const SizedBox(height: 16),
+        ],
+      ),
+    );
+  }
+
   void _showCityPicker() {
+    final t = AppLocalizations.of(context);
     final cities = ['Lahore', 'Karachi', 'Islamabad', 'Multan', 'Peshawar'];
     showModalBottomSheet(
       context: context,
@@ -1100,11 +1141,11 @@ String getInitials(String? name, String? email) {
       builder: (context) => Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Padding(
-            padding: EdgeInsets.all(16),
+          Padding(
+            padding: const EdgeInsets.all(16),
             child: Text(
-              'Select Default City',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+              t.translate('selectDefaultCity'),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
             ),
           ),
           ...cities.map(
@@ -1226,9 +1267,9 @@ String getInitials(String? name, String? email) {
                     ),
                   ),
                   const SizedBox(width: 10),
-                  const Text(
-                    'Back',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                  Text(
+                    AppLocalizations.of(context).translate('back'),
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
                   ),
                 ],
               ),
@@ -1322,20 +1363,20 @@ String getInitials(String? name, String? email) {
                       ),
                     ),
                     onPressed: _openCoupleProfileEdit,
-                    child: const Text('Edit', style: TextStyle(fontSize: 13)),
+                    child: Text(AppLocalizations.of(context).translate('edit'), style: const TextStyle(fontSize: 13)),
                   ),
                 ],
               ),
             ),
 
             // ─── Preferences ──────────────────────────────────────────
-            _sectionLabel('Preferences'),
+            _sectionLabel(AppLocalizations.of(context).translate('preferences')),
             _settingsCard([
               _settingsTile(
                 icon: Icons.dark_mode_outlined,
                 iconBg: primaryColor.withOpacity(0.13),
-                title: 'Dark Mode',
-                subtitle: 'Switch app appearance',
+                title: AppLocalizations.of(context).translate('darkMode'),
+                subtitle: AppLocalizations.of(context).translate('switchAppAppearance'),
                 trailing: ValueListenableBuilder<ThemeMode>(
                   valueListenable: themeNotifier,
                   builder: (context, mode, _) => Switch(
@@ -1351,8 +1392,8 @@ String getInitials(String? name, String? email) {
               _settingsTile(
                 icon: Icons.notifications_outlined,
                 iconBg: Colors.blue.withOpacity(0.13),
-                title: 'Notifications',
-                subtitle: 'Quotes, updates & offers',
+                title: AppLocalizations.of(context).translate('notifications'),
+                subtitle: AppLocalizations.of(context).translate('notificationsSubtitle'),
                 trailing: Switch(
                   value: notificationsEnabled,
                   activeThumbColor: primaryColor,
@@ -1363,42 +1404,42 @@ String getInitials(String? name, String? email) {
               _settingsTile(
                 icon: Icons.location_on_outlined,
                 iconBg: Colors.green.withOpacity(0.13),
-                title: 'Default City',
+                title: AppLocalizations.of(context).translate('defaultCity'),
                 subtitle: selectedCity,
                 onTap: _showCityPicker,
               ),
               _settingsTile(
                 icon: Icons.language_outlined,
                 iconBg: Colors.teal.withOpacity(0.13),
-                title: 'Language',
+                title: AppLocalizations.of(context).translate('language'),
                 subtitle: selectedLanguage,
                 showDivider: false,
-                onTap: () {},
+                onTap: _showLanguagePicker,
               ),
             ]),
 
             // ─── Account ──────────────────────────────────────────────
-            _sectionLabel('Account'),
+            _sectionLabel(AppLocalizations.of(context).translate('account')),
             _settingsCard([
               _settingsTile(
                 icon: Icons.person_outline,
                 iconBg: primaryColor.withOpacity(0.13),
-                title: 'Personal Information',
-                subtitle: 'Name, phone, email',
+                title: AppLocalizations.of(context).translate('personalInformation'),
+                subtitle: AppLocalizations.of(context).translate('namePhoneEmail'),
                 onTap: _openCoupleProfileEdit,
               ),
               _settingsTile(
                 icon: Icons.lock_outline,
                 iconBg: Colors.orange.withOpacity(0.13),
-                title: 'Change Password',
-                subtitle: 'Update your password',
+                title: AppLocalizations.of(context).translate('changePassword'),
+                subtitle: AppLocalizations.of(context).translate('updateYourPassword'),
                 onTap: _showChangePasswordDialog,
               ),
               _settingsTile(
                 icon: Icons.bookmark_border,
                 iconBg: Colors.purple.withOpacity(0.13),
-                title: 'My Bookings',
-                subtitle: 'Vendors you contacted',
+                title: AppLocalizations.of(context).translate('myBookings'),
+                subtitle: AppLocalizations.of(context).translate('viewVendorBookings'),
                 onTap: () {
                   Navigator.push<void>(
                     context,
@@ -1411,8 +1452,8 @@ String getInitials(String? name, String? email) {
               _settingsTile(
                 icon: Icons.favorite_border,
                 iconBg: Colors.red.withOpacity(0.13),
-                title: 'Saved Vendors',
-                subtitle: 'Hearts & bookmarks from listings',
+                title: AppLocalizations.of(context).translate('savedVendors'),
+                subtitle: AppLocalizations.of(context).translate('savedVendorsSubtitle'),
                 onTap: () {
                   Navigator.push<void>(
                     context,
@@ -1425,8 +1466,8 @@ String getInitials(String? name, String? email) {
               _settingsTile(
                 icon: Icons.bookmark_border,
                 iconBg: Colors.amber.withOpacity(0.13),
-                title: 'Saved Blogs',
-                subtitle: 'Articles saved for reading',
+                title: AppLocalizations.of(context).translate('savedBlogs'),
+                subtitle: AppLocalizations.of(context).translate('articlesSavedForReading'),
                 onTap: () {
                   Navigator.push<void>(
                     context,
@@ -1492,41 +1533,41 @@ String getInitials(String? name, String? email) {
               _settingsTile(
                 icon: Icons.visibility_outlined,
                 iconBg: Colors.green.withOpacity(0.13),
-                title: 'Profile Visibility',
-                subtitle: 'Public',
+                title: AppLocalizations.of(context).translate('profileVisibility'),
+                subtitle: AppLocalizations.of(context).translate('public'),
                 onTap: () {},
               ),
               _settingsTile(
                 icon: Icons.shield_outlined,
                 iconBg: Colors.purple.withOpacity(0.13),
-                title: 'Data & Privacy',
-                subtitle: 'Manage your data',
+                title: AppLocalizations.of(context).translate('dataPrivacy'),
+                subtitle: AppLocalizations.of(context).translate('manageYourData'),
                 showDivider: false,
                 onTap: () {},
               ),
             ]),
 
             // ─── Support ──────────────────────────────────────────────
-            _sectionLabel('Support'),
+            _sectionLabel(AppLocalizations.of(context).translate('support')),
             _settingsCard([
               _settingsTile(
                 icon: Icons.help_outline,
                 iconBg: Colors.blue.withOpacity(0.13),
-                title: 'Help & FAQ',
-                subtitle: 'Common questions',
+                title: AppLocalizations.of(context).translate('helpFaq'),
+                subtitle: AppLocalizations.of(context).translate('commonQuestions'),
                 onTap: () {},
               ),
               _settingsTile(
                 icon: Icons.support_agent,
                 iconBg: Colors.green.withOpacity(0.13),
-                title: 'Contact Support',
-                subtitle: 'Report an issue',
+                title: AppLocalizations.of(context).translate('contactSupport'),
+                subtitle: AppLocalizations.of(context).translate('reportAnIssue'),
                 onTap: () {},
               ),
               _settingsTile(
                 icon: Icons.star_outline,
                 iconBg: Colors.amber.withOpacity(0.13),
-                title: 'Rate the App',
+                title: AppLocalizations.of(context).translate('rateApp'),
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -1568,13 +1609,13 @@ String getInitials(String? name, String? email) {
             ]),
 
             // ─── Danger Zone ──────────────────────────────────────────
-            _sectionLabel('Danger Zone'),
+            _sectionLabel(AppLocalizations.of(context).translate('dangerZone')),
             _settingsCard([
               _settingsTile(
                 icon: Icons.delete_outline,
                 iconBg: Colors.red.withOpacity(0.13),
-                title: 'Delete Account',
-                subtitle: 'Permanently remove your data',
+                title: AppLocalizations.of(context).translate('deleteAccount'),
+                subtitle: AppLocalizations.of(context).translate('deleteAccountSubtitle'),
                 titleColor: Colors.red,
                 trailing: const Icon(
                   Icons.chevron_right,
@@ -1602,9 +1643,9 @@ String getInitials(String? name, String? email) {
                   ),
                   onPressed: _showLogoutDialog,
                   icon: const Icon(Icons.logout),
-                  label: const Text(
-                    'Log Out',
-                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                  label: Text(
+                    AppLocalizations.of(context).translate('logout'),
+                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
                   ),
                 ),
               ),

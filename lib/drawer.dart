@@ -1,5 +1,6 @@
 // common_widgets.dart
 import 'package:flutter/material.dart';
+import 'app_localizations.dart';
 import 'blogs.dart';
 import 'venues.dart';
 import 'contactus.dart';
@@ -14,14 +15,15 @@ class CommonAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = AppLocalizations.of(context);
     return AppBar(
       centerTitle: true,
       automaticallyImplyLeading: false,
-      title: const Padding(
-        padding: EdgeInsets.only(top: 15),
+      title: Padding(
+        padding: const EdgeInsets.only(top: 15),
         child: Text(
-          'Pakistan #1 Event Planning Market Place',
-          style: TextStyle(fontSize: 16, color: Colors.white),
+          t.translate('appDescription'),
+          style: const TextStyle(fontSize: 16, color: Colors.white),
         ),
       ),
       backgroundColor: const Color(0xffB4245D),
@@ -69,6 +71,7 @@ class _CommonDrawerState extends State<CommonDrawer> {
 
   @override
   Widget build(BuildContext context) {
+    final t = AppLocalizations.of(context);
     return Drawer(
       child: ListView(
         padding: EdgeInsets.zero,
@@ -76,11 +79,11 @@ class _CommonDrawerState extends State<CommonDrawer> {
           // ===== NORMAL MENU HEADER =====
           SizedBox(
             height: 88,
-            child: const DrawerHeader(
-              decoration: BoxDecoration(color: Color(0xffB4245D)),
+            child: DrawerHeader(
+              decoration: const BoxDecoration(color: Color(0xffB4245D)),
               child: Text(
-                "Events Affairs Menu",
-                style: TextStyle(
+                t.translate('eventsAffairsMenu'),
+                style: const TextStyle(
                   color: Colors.white,
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
@@ -89,7 +92,7 @@ class _CommonDrawerState extends State<CommonDrawer> {
             ),
           ),
           ListTile(
-            title: const Text("Home", style: headingStyle),
+            title: Text(t.translate('home'), style: headingStyle),
             onTap: () => Navigator.pushAndRemoveUntil(
               context,
               MaterialPageRoute(builder: (_) => const CreateHomePage()),
@@ -97,14 +100,14 @@ class _CommonDrawerState extends State<CommonDrawer> {
             ),
           ),
           ListTile(
-            title: const Text("Venues", style: headingStyle),
+            title: Text(t.translate('venues'), style: headingStyle),
             onTap: () => Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => const VenuesPage()),
             ),
           ),
           ListTile(
-            title: const Text("Blogs", style: headingStyle),
+            title: Text(t.translate('blogs'), style: headingStyle),
             onTap: () => Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => const BlogsPage()),
@@ -112,14 +115,14 @@ class _CommonDrawerState extends State<CommonDrawer> {
           ),
 
           ListTile(
-            title: const Text("Contact Us", style: headingStyle),
+            title: Text(t.translate('contactUs'), style: headingStyle),
             onTap: () => Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => const ContactUs()),
             ),
           ),
           ListTile(
-            title: const Text("Settings", style: headingStyle),
+            title: Text(t.translate('settings'), style: headingStyle),
             onTap: () => Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => const SettingsPage()),

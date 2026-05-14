@@ -61,7 +61,7 @@ class _SavedBlogsPageState extends State<SavedBlogsPage> {
 
       final blogs = snaps
           .where((s) => s.exists)
-          .map((s) => Blog.fromFirestore(s as DocumentSnapshot<Map<String, dynamic>>))
+          .map((s) => Blog.fromFirestore(s))
           .toList();
 
       if (!mounted) return;

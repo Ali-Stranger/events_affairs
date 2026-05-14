@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'app_localizations.dart';
 import 'homepage.dart';
 import 'signup.dart';
 import 'vendor_screens/vendor_dashboard.dart';
@@ -248,18 +249,18 @@ class _LoginPageState extends State<LoginPage>
                         ),
                       ),
                       const SizedBox(height: 8),
-                      const Text(
-                        'Events Affairs',
-                        style: TextStyle(
+                      Text(
+                        AppLocalizations.of(context).translate('Events Affairs'),
+                        style: const TextStyle(
                           color: Colors.white,
                           fontSize: 22,
                           fontWeight: FontWeight.bold,
                           letterSpacing: 0.5,
                         ),
                       ),
-                      const Text(
-                        'Pakistan\'s #1 Event Planning Platform',
-                        style: TextStyle(color: Colors.white70, fontSize: 12),
+                      Text(
+                        AppLocalizations.of(context).translate('appDescription'),
+                        style: const TextStyle(color: Colors.white70, fontSize: 12),
                       ),
                     ],
                   ),
@@ -289,16 +290,16 @@ class _LoginPageState extends State<LoginPage>
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'Welcome Back 👋',
-                        style: TextStyle(
+                      Text(
+                        AppLocalizations.of(context).translate('welcomeBack'),
+                        style: const TextStyle(
                           fontSize: 22,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'Sign in to manage your events',
+                        AppLocalizations.of(context).translate('signInManageEvents'),
                         style: TextStyle(
                           fontSize: 13,
                           color: Colors.grey.shade500,
@@ -325,15 +326,15 @@ class _LoginPageState extends State<LoginPage>
                           keyboardType: TextInputType.emailAddress,
                           textInputAction: TextInputAction.next,
                           decoration: _inputDeco(
-                            label: 'Email Address',
+                            label: AppLocalizations.of(context).translate('emailAddress'),
                             icon: Icons.email_outlined,
                           ),
                           validator: (v) {
                             if (v == null || v.trim().isEmpty) {
-                              return 'Please enter your email';
+                              return AppLocalizations.of(context).translate('pleaseEnterYourEmail');
                             }
                             if (!v.contains('@') || !v.contains('.')) {
-                              return 'Enter a valid email address';
+                              return AppLocalizations.of(context).translate('enterValidEmail');
                             }
                             return null;
                           },
@@ -361,7 +362,7 @@ class _LoginPageState extends State<LoginPage>
                           textInputAction: TextInputAction.done,
                           onFieldSubmitted: (_) => _login(),
                           decoration: _inputDeco(
-                            label: 'Password',
+                            label: AppLocalizations.of(context).translate('passwordLabel'),
                             icon: Icons.lock_outline,
                             suffix: IconButton(
                               icon: Icon(
@@ -378,10 +379,10 @@ class _LoginPageState extends State<LoginPage>
                           ),
                           validator: (v) {
                             if (v == null || v.isEmpty) {
-                              return 'Please enter your password';
+                              return AppLocalizations.of(context).translate('pleaseEnterYourPassword');
                             }
                             if (v.length < 6) {
-                              return 'Password must be at least 6 characters';
+                              return AppLocalizations.of(context).translate('passwordAtLeast6');
                             }
                             return null;
                           },
@@ -446,24 +447,24 @@ class _LoginPageState extends State<LoginPage>
                             elevation: 2,
                           ),
                           onPressed: _isLoading ? null : _login,
-                          child: _isLoading
-                              ? const SizedBox(
-                                  height: 22,
-                                  width: 22,
-                                  child: CircularProgressIndicator(
-                                    color: Colors.white,
-                                    strokeWidth: 2.5,
-                                  ),
-                                )
-                              : const Text(
-                                  'Login',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    letterSpacing: 0.5,
-                                  ),
-                                ),
+child: _isLoading
+    ? const SizedBox(
+        height: 22,
+        width: 22,
+        child: CircularProgressIndicator(
+          color: Colors.white,
+          strokeWidth: 2.5,
+        ),
+      )
+    : Text(                          // ← add  ':'  here (ternary false branch)
+        AppLocalizations.of(context).translate('login'),
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 16,
+          fontWeight: FontWeight.bold,
+          letterSpacing: 0.5,
+        ),
+      ),
                         ),
                       ),
 
@@ -507,9 +508,9 @@ class _LoginPageState extends State<LoginPage>
                               builder: (_) => const CreateAccountPage(),
                             ),
                           ),
-                          child: const Text(
-                            'Create an Account',
-                            style: TextStyle(
+                            child: Text(
+                            AppLocalizations.of(context).translate('createAccount'),
+                            style: const TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w600,
                             ),

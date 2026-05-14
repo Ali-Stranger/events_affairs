@@ -1,6 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'footer.dart';
 import 'drawer.dart';
 import 'eventplanner.dart';
@@ -98,7 +97,7 @@ class Blog {
     return Blog(
       id: doc.id,
       title: title.isEmpty ? 'Untitled' : title,
-      shortDesc: effectiveShort.isEmpty ? 'No description yet.' : effectiveShort,
+      shortDesc: description.isEmpty ? 'Description ' : description,
       fullContent: rawContent,
       description: description,
       image: image,
