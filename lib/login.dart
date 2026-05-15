@@ -78,6 +78,35 @@ class _LoginPageState extends State<LoginPage>
           .get();
 
       final role = doc.data()?['role'] ?? 'couple';
+      final isSuspended = doc.data()?['suspended'] ?? false;
+
+      if (isSuspended) {
+        setState(() => _isLoading = false);
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Row(
+              children: [
+                Icon(Icons.block, color: Colors.white, size: 18),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Your account has been suspended. Please contact support.',
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: Colors.red.shade700,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+            duration: const Duration(seconds: 4),
+          ),
+        );
+        await FirebaseAuth.instance.signOut();
+        return;
+      }
 
       setState(() => _isLoading = false);
 

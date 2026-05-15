@@ -206,7 +206,10 @@ class AdminVendorsPage extends StatelessWidget {
                                         await FirebaseFirestore.instance
                                             .collection('users')
                                             .doc(v.id)
-                                            .update({'approved': false});
+                                            .update({
+                                              'approved': false,
+                                              'suspended': true,
+                                            });
                                       },
                                     ),
                                   if (status == VendorStatus.suspended)
@@ -222,7 +225,10 @@ class AdminVendorsPage extends StatelessWidget {
                                         await FirebaseFirestore.instance
                                             .collection('users')
                                             .doc(v.id)
-                                            .update({'approved': true});
+                                            .update({
+                                              'approved': true,
+                                              'suspended': false,
+                                            });
                                       },
                                     ),
                                 ],
