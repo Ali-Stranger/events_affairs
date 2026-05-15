@@ -42,14 +42,14 @@ const List<String> kLocations = [
 // ═══════════════════════════════════════════════════════════════
 
 class _CategoryItem {
-  final String title;
-  final String subtitle;
+  final String titleKey;
+  final String subtitleKey;
   final Color color;
   final IconData icon;
 
   const _CategoryItem({
-    required this.title,
-    required this.subtitle,
+    required this.titleKey,
+    required this.subtitleKey,
     required this.color,
     required this.icon,
   });
@@ -57,38 +57,38 @@ class _CategoryItem {
 
 const List<_CategoryItem> kCategoryItems = [
   _CategoryItem(
-    title: 'Event Planners',
-    subtitle: 'Find the best Event Planners',
+    titleKey: 'categoryWeddingPlanners',
+    subtitleKey: 'categoryWeddingPlannersDesc',
     color: Color(0xFFF4D5C2),
     icon: Icons.event_outlined,
   ),
   _CategoryItem(
-    title: 'Florist / Decoration',
-    subtitle: 'Search best florists & decorators',
+    titleKey: 'categoryFloristDecoration',
+    subtitleKey: 'categoryFloristDecorationDesc',
     color: Color(0xFFCFCDB8),
     icon: Icons.local_florist_outlined,
   ),
   _CategoryItem(
-    title: 'Banquet Halls',
-    subtitle: 'Find the perfect banquet halls',
+    titleKey: 'categoryBanquetHalls',
+    subtitleKey: 'categoryBanquetHallsDesc',
     color: Color(0xFFDFB2AD),
     icon: Icons.business_outlined,
   ),
   _CategoryItem(
-    title: 'Marquees',
-    subtitle: 'Find the best marquees',
+    titleKey: 'categoryMarquees',
+    subtitleKey: 'categoryMarqueesDesc',
     color: Color(0xFFD8DFFC),
     icon: Icons.celebration_outlined,
   ),
   _CategoryItem(
-    title: 'Farm Houses',
-    subtitle: 'Search beautiful farm houses',
+    titleKey: 'categoryFarmHouses',
+    subtitleKey: 'categoryFarmHousesDesc',
     color: Color(0xFFE5D3BD),
     icon: Icons.villa_outlined,
   ),
   _CategoryItem(
-    title: 'Photographers',
-    subtitle: 'Search best photographers',
+    titleKey: 'categoryPhotographers',
+    subtitleKey: 'categoryPhotographersDesc',
     color: Color(0xFFDCF7F7),
     icon: Icons.camera_alt_outlined,
   ),
@@ -1130,6 +1130,7 @@ class _CategoryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = AppLocalizations.of(context);
     return Container(
       padding: const EdgeInsets.all(12),
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
@@ -1171,7 +1172,7 @@ class _CategoryCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    item.title,
+                    t.translate(item.titleKey),
                     style: const TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.bold,
@@ -1180,7 +1181,7 @@ class _CategoryCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 3),
                   Text(
-                    item.subtitle,
+                    t.translate(item.subtitleKey),
                     style: const TextStyle(fontSize: 12, color: Colors.black54),
                   ),
                 ],
