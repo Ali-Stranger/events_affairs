@@ -683,8 +683,7 @@ class _VendorProfileCompletion {
 
   _VendorProfileCompletion({required this.percent, required this.missingHints});
 
-  static bool _nonEmpty(dynamic v) =>
-      (v?.toString().trim() ?? '').isNotEmpty;
+  static bool _nonEmpty(dynamic v) => (v?.toString().trim() ?? '').isNotEmpty;
 
   static bool _hasServicesList(dynamic v) {
     if (v is! List) return false;
@@ -718,8 +717,10 @@ class _VendorProfileCompletion {
 String _vendorNameInitials(String fullName) {
   final trimmed = fullName.trim();
   if (trimmed.isEmpty) return 'V';
-  final parts =
-      trimmed.split(RegExp(r'\s+')).where((p) => p.isNotEmpty).toList();
+  final parts = trimmed
+      .split(RegExp(r'\s+'))
+      .where((p) => p.isNotEmpty)
+      .toList();
   if (parts.length >= 2) {
     final first = parts.first;
     final last = parts.last;
@@ -777,8 +778,10 @@ class _VendorDashboardPageState extends State<VendorDashboardPage> {
       final inquiries = quotesSnap.docs.length;
       var leads = 0;
       for (final q in quotesSnap.docs) {
-        final status =
-            (q.data()['status'] ?? 'pending').toString().toLowerCase().trim();
+        final status = (q.data()['status'] ?? 'pending')
+            .toString()
+            .toLowerCase()
+            .trim();
         if (status == 'pending' || status == 'new') {
           leads++;
         }
@@ -1378,10 +1381,21 @@ class _InquiryTile extends StatelessWidget {
 class _NotificationsSheet extends StatelessWidget {
   const _NotificationsSheet();
 
+  String _formatTime(Timestamp? ts) {
+    if (ts == null) return '';
+    final diff = DateTime.now().difference(ts.toDate());
+    if (diff.inMinutes < 1) return 'Just now';
+    if (diff.inMinutes < 60) return '${diff.inMinutes} min ago';
+    if (diff.inHours < 24) return '${diff.inHours} hr ago';
+    if (diff.inDays == 1) return 'Yesterday';
+    return '${diff.inDays} days ago';
+  }
+
   @override
   Widget build(BuildContext context) {
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
     final Color sheetBg = isDark ? const Color(0xff1C1C26) : Colors.white;
+    final uid = FirebaseAuth.instance.currentUser?.uid;
 
     return Container(
       decoration: BoxDecoration(
@@ -1414,26 +1428,81 @@ class _NotificationsSheet extends StatelessWidget {
             ],
           ),
           const Divider(height: 30),
-          const _NotifTile(
-            text: 'New inquiry from Ali Khan',
-            time: 'Just now',
-            unread: true,
-          ),
-          const _NotifTile(
-            text: 'Sara Raza connected with you',
-            time: '1 hr ago',
-            unread: true,
-          ),
-          const _NotifTile(
-            text: 'Profile visible in Karachi',
-            time: 'Yesterday',
-            unread: false,
-          ),
-          const _NotifTile(
-            text: 'Profile completeness reached 92% — almost there!',
-            time: '2 days ago',
-            unread: false,
-          ),
+          if (uid == null)
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(
+                'Not signed in',
+                style: TextStyle(
+                  color: isDark ? Colors.white54 : Colors.black45,
+                ),
+              ),
+            )
+          else
+            FutureBuilder<QuerySnapshot<Map<String, dynamic>>>(
+              future: FirebaseFirestore.instance
+                  .collection('users')
+                  .doc(uid)
+                  .collection('notifications')
+                  .orderBy('createdAt', descending: true)
+                  .limit(5)
+                  .get(),
+              builder: (ctx, snap) {
+                if (snap.connectionState == ConnectionState.waiting) {
+                  return const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 20),
+                    child: CircularProgressIndicator(
+                      color: kPrimary,
+                      strokeWidth: 2,
+                    ),
+                  );
+                }
+                if (snap.hasError) {
+                  return Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Text(
+                      'Failed to load notifications.',
+                      style: TextStyle(
+                        color: isDark ? Colors.white54 : Colors.black45,
+                      ),
+                    ),
+                  );
+                }
+                final docs = snap.data?.docs ?? [];
+                if (docs.isEmpty) {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 20),
+                    child: Column(
+                      children: [
+                        Icon(
+                          Icons.notifications_none,
+                          size: 40,
+                          color: isDark ? Colors.white30 : Colors.black26,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'No notifications yet',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: isDark ? Colors.white54 : Colors.black45,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+                return Column(
+                  children: docs.map((doc) {
+                    final d = doc.data();
+                    return _NotifTile(
+                      text: (d['title'] ?? '').toString(),
+                      time: _formatTime(d['createdAt'] as Timestamp?),
+                      unread: !(d['read'] ?? false),
+                    );
+                  }).toList(),
+                );
+              },
+            ),
           const SizedBox(height: 20),
         ],
       ),
@@ -1529,10 +1598,7 @@ class _ProfileCompleteness extends StatelessWidget {
               _SectionHeading('Profile Completeness', isDark: isDark),
               Text(
                 '$p%',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: accent,
-                ),
+                style: TextStyle(fontWeight: FontWeight.bold, color: accent),
               ),
             ],
           ),
@@ -1558,26 +1624,17 @@ class _ProfileCompleteness extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           if (p >= 100)
-            const _TodoItem(
-              text: 'All tracked fields are filled',
-              done: true,
-            )
+            const _TodoItem(text: 'All tracked fields are filled', done: true)
           else ...[
-            ...missingHints.take(6).map(
-                  (hint) => _TodoItem(
-                    text: 'Add: $hint',
-                    done: false,
-                  ),
-                ),
+            ...missingHints
+                .take(6)
+                .map((hint) => _TodoItem(text: 'Add: $hint', done: false)),
             if (missingHints.length > 6)
               Padding(
                 padding: const EdgeInsets.only(top: 4),
                 child: Text(
                   '+ ${missingHints.length - 6} more in Edit Profile',
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: Colors.grey.shade600,
-                  ),
+                  style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
                 ),
               ),
           ],

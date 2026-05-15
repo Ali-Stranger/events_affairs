@@ -2343,8 +2343,6 @@
 //   }
 // }
 
-
-
 // ═══════════════════════════════════════════════════════════════
 // vendor_gallery.dart
 // ═══════════════════════════════════════════════════════════════
@@ -2679,11 +2677,7 @@ class _CityAgg {
   final int count;
   final double fraction;
 
-  _CityAgg({
-    required this.city,
-    required this.count,
-    required this.fraction,
-  });
+  _CityAgg({required this.city, required this.count, required this.fraction});
 }
 
 class VendorAnalyticsPage extends StatefulWidget {
@@ -3003,9 +2997,7 @@ class _VendorAnalyticsPageState extends State<VendorAnalyticsPage> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          i < _last7DayLabels.length
-                              ? _last7DayLabels[i]
-                              : '',
+                          i < _last7DayLabels.length ? _last7DayLabels[i] : '',
                           style: TextStyle(fontSize: 11, color: mutedTextColor),
                         ),
                       ],
@@ -3052,8 +3044,7 @@ class _VendorAnalyticsPageState extends State<VendorAnalyticsPage> {
                   : Column(
                       children: [
                         for (var i = 0; i < _cityAggs.length; i++) ...[
-                          if (i > 0)
-                            Divider(color: dividerColor, height: 24),
+                          if (i > 0) Divider(color: dividerColor, height: 24),
                           _CityRow(
                             city: _cityAggs[i].city,
                             count: _cityAggs[i].count,
@@ -4048,6 +4039,7 @@ class _VendorProfileEditPageState extends State<VendorProfileEditPage> {
   final _facebookCtrl = TextEditingController();
   final _yearsCtrl = TextEditingController();
   bool _isLoading = true;
+
   /// Persisted in Firestore as `services` (list of strings). Starts empty until _loadProfile runs.
   final List<String> _selectedServices = [];
   final _allServices = [
@@ -4441,56 +4433,86 @@ class _VendorProfileEditPageState extends State<VendorProfileEditPage> {
   );
 }
 
-
-
 // ═══════════════════════════════════════════════════════════════
 // vendor_notifications.dart
 // ═══════════════════════════════════════════════════════════════
 
-class VendorNotificationsPage extends StatelessWidget {
+class VendorNotificationsPage extends StatefulWidget {
   const VendorNotificationsPage({super.key});
 
-  final _notifs = const [
-    {
-      'title': 'New inquiry from Ali Khan',
-      'sub': 'Wedding Décor request · Just now',
-      'read': false,
-      'icon': '📩',
-    },
-    {
-      'title': 'New 5-star review received!',
-      'sub': 'Sara Raza rated you ★★★★★ · 1h ago',
-      'read': false,
-      'icon': '⭐',
-    },
-    {
-      'title': 'Quote accepted by M. Bilal',
-      'sub': 'PKR 25,000 booking confirmed · 3h ago',
-      'read': false,
-      'icon': '✅',
-    },
-    {
-      'title': 'Weekly analytics report ready',
-      'sub': 'View your performance · Yesterday',
-      'read': true,
-      'icon': '📊',
-    },
-    {
-      'title': 'Profile approved by admin',
-      'sub': 'You are now visible in search · 2 days ago',
-      'read': true,
-      'icon': '🎉',
-    },
-    {
-      'title': 'Tip: Add more photos to boost visibility',
-      'sub': 'Platform tip · 3 days ago',
-      'read': true,
-      'icon': '💡',
-    },
-  ];
+  @override
+  State<VendorNotificationsPage> createState() =>
+      _VendorNotificationsPageState();
+}
+
+class _VendorNotificationsPageState extends State<VendorNotificationsPage> {
+  List<Map<String, dynamic>> _notifs = [];
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchNotifications();
+  }
+
+  Future<void> _fetchNotifications() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) {
+      setState(() => _loading = false);
+      return;
+    }
+    try {
+      final snap = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .collection('notifications')
+          .orderBy('createdAt', descending: true)
+          .get();
+
+      setState(() {
+        _notifs = snap.docs.map((doc) {
+          final d = doc.data();
+          return {
+            'id': doc.id,
+            'title': d['title'] ?? '',
+            'sub': d['sub'] ?? '',
+            'read': d['read'] ?? false,
+            'icon': d['icon'] ?? '🔔',
+          };
+        }).toList();
+        _loading = false;
+      });
+    } catch (_) {
+      setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _markAllRead() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+    final batch = FirebaseFirestore.instance.batch();
+    for (final n in _notifs) {
+      if (!(n['read'] as bool)) {
+        final ref = FirebaseFirestore.instance
+            .collection('users')
+            .doc(uid)
+            .collection('notifications')
+            .doc(n['id']);
+        batch.update(ref, {'read': true});
+      }
+    }
+    await batch.commit();
+    setState(() {
+      for (final n in _notifs) {
+        n['read'] = true;
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: kPrimary,
@@ -4501,7 +4523,7 @@ class VendorNotificationsPage extends StatelessWidget {
         iconTheme: const IconThemeData(color: Colors.white),
         actions: [
           TextButton(
-            onPressed: () {},
+            onPressed: _markAllRead,
             child: const Text(
               'Mark all read',
               style: TextStyle(color: Colors.white, fontSize: 12),
@@ -4509,70 +4531,91 @@ class VendorNotificationsPage extends StatelessWidget {
           ),
         ],
       ),
-      body: ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: _notifs.length,
-        itemBuilder: (ctx, i) {
-          final n = _notifs[i];
-          final isUnread = !(n['read'] as bool);
-          return Container(
-            margin: const EdgeInsets.only(bottom: 8),
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: isUnread ? kPrimary.withOpacity(0.05) : Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: isUnread
-                    ? kPrimary.withOpacity(0.2)
-                    : Colors.grey.shade100,
-              ),
-            ),
-            child: Row(
-              children: [
-                Text(n['icon'] as String, style: const TextStyle(fontSize: 24)),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        n['title'] as String,
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: isUnread
-                              ? FontWeight.bold
-                              : FontWeight.normal,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        n['sub'] as String,
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: Colors.grey.shade500,
-                        ),
-                      ),
-                    ],
+      body: _loading
+          ? const Center(child: CircularProgressIndicator(color: kPrimary))
+          : _notifs.isEmpty
+          ? const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.notifications_none, size: 60, color: Colors.grey),
+                  SizedBox(height: 12),
+                  Text(
+                    'No notifications yet',
+                    style: TextStyle(color: Colors.grey),
                   ),
-                ),
-                if (isUnread)
-                  Container(
-                    width: 8,
-                    height: 8,
-                    decoration: const BoxDecoration(
-                      color: kPrimary,
-                      shape: BoxShape.circle,
+                ],
+              ),
+            )
+          : ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: _notifs.length,
+              itemBuilder: (ctx, i) {
+                final n = _notifs[i];
+                final isUnread = !(n['read'] as bool);
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: isUnread
+                        ? kPrimary.withOpacity(0.05)
+                        : (isDark ? const Color(0xff1C1C26) : Colors.white),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: isUnread
+                          ? kPrimary.withOpacity(0.2)
+                          : Colors.grey.shade200,
                     ),
                   ),
-              ],
+                  child: Row(
+                    children: [
+                      Text(
+                        n['icon'] as String,
+                        style: const TextStyle(fontSize: 24),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              n['title'] as String,
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: isUnread
+                                    ? FontWeight.bold
+                                    : FontWeight.normal,
+                                color: isDark ? Colors.white : Colors.black87,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              n['sub'] as String,
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Colors.grey.shade500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (isUnread)
+                        Container(
+                          width: 8,
+                          height: 8,
+                          decoration: const BoxDecoration(
+                            color: kPrimary,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                    ],
+                  ),
+                );
+              },
             ),
-          );
-        },
-      ),
     );
   }
 }
-
 // ═══════════════════════════════════════════════════════════════
 // vendor_settings.dart
 // ═══════════════════════════════════════════════════════════════
@@ -5065,8 +5108,10 @@ class VendorNotificationsPage extends StatelessWidget {
 String _vendorProfileInitials(String fullName) {
   final trimmed = fullName.trim();
   if (trimmed.isEmpty) return 'V';
-  final parts =
-      trimmed.split(RegExp(r'\s+')).where((p) => p.isNotEmpty).toList();
+  final parts = trimmed
+      .split(RegExp(r'\s+'))
+      .where((p) => p.isNotEmpty)
+      .toList();
   if (parts.length >= 2) {
     final first = parts.first;
     final last = parts.last;
@@ -5113,17 +5158,14 @@ class _VendorSettingsPageState extends State<VendorSettingsPage> {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) return;
     try {
-      final doc =
-          await FirebaseFirestore.instance.collection('users').doc(uid).get();
+      final doc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .get();
       if (!mounted) return;
-      if (!doc.exists) {
-        setState(() {
-          _vendorPersonName = 'Vendor';
-          _businessName = 'My Business';
-        });
-        return;
-      }
+      if (!doc.exists) return;
       final data = doc.data()!;
+      final notifs = (data['notifications'] as Map<String, dynamic>?) ?? {};
       final city = (data['city'] ?? '').toString();
       setState(() {
         _vendorPersonName = (data['name'] ?? 'Vendor').toString();
@@ -5131,6 +5173,9 @@ class _VendorSettingsPageState extends State<VendorSettingsPage> {
         _category = (data['businessCategory'] ?? '').toString();
         _city = city;
         if (city.isNotEmpty) _selectedCity = city;
+        _newInquiryAlerts = notifs['inquiryAlerts'] ?? true;
+        _weeklyReport = notifs['weeklyReports'] ?? true;
+        _bookingReminders = notifs['bookingReminders'] ?? false;
       });
     } catch (_) {
       if (!mounted) return;
@@ -5140,6 +5185,15 @@ class _VendorSettingsPageState extends State<VendorSettingsPage> {
       });
     }
   }
+
+  Future<void> _saveNotifPref(String key, bool value) async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+    await FirebaseFirestore.instance.collection('users').doc(uid).update({
+      'notifications.$key': value,
+    });
+  }
+
   void _showCityPicker() {
     final cities = ['Karachi', 'Lahore', 'Islamabad', 'Multan', 'Peshawar'];
     showModalBottomSheet(
@@ -5343,7 +5397,8 @@ class _VendorSettingsPageState extends State<VendorSettingsPage> {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
                                 content: Text(
-                                    'Password must be at least 6 characters'),
+                                  'Password must be at least 6 characters',
+                                ),
                                 backgroundColor: Colors.red,
                               ),
                             );
@@ -5523,8 +5578,9 @@ class _VendorSettingsPageState extends State<VendorSettingsPage> {
                   builder: (context, mode, _) => Switch(
                     value: mode == ThemeMode.dark,
                     activeThumbColor: kPrimary,
-                    onChanged: (val) => themeNotifier.value =
-                        val ? ThemeMode.dark : ThemeMode.light,
+                    onChanged: (val) => themeNotifier.value = val
+                        ? ThemeMode.dark
+                        : ThemeMode.light,
                   ),
                 ),
               ),
@@ -5548,7 +5604,10 @@ class _VendorSettingsPageState extends State<VendorSettingsPage> {
                 trailing: Switch(
                   value: _newInquiryAlerts,
                   activeThumbColor: kPrimary,
-                  onChanged: (v) => setState(() => _newInquiryAlerts = v),
+                  onChanged: (v) {
+                    setState(() => _newInquiryAlerts = v);
+                    _saveNotifPref('inquiryAlerts', v);
+                  },
                 ),
               ),
               _SettingsTile(
@@ -5558,7 +5617,10 @@ class _VendorSettingsPageState extends State<VendorSettingsPage> {
                 trailing: Switch(
                   value: _weeklyReport,
                   activeThumbColor: kPrimary,
-                  onChanged: (v) => setState(() => _weeklyReport = v),
+                  onChanged: (v) {
+                    setState(() => _weeklyReport = v);
+                    _saveNotifPref('weeklyReports', v);
+                  },
                 ),
               ),
               _SettingsTile(
@@ -5568,7 +5630,10 @@ class _VendorSettingsPageState extends State<VendorSettingsPage> {
                 trailing: Switch(
                   value: _bookingReminders,
                   activeThumbColor: kPrimary,
-                  onChanged: (v) => setState(() => _bookingReminders = v),
+                  onChanged: (v) {
+                    setState(() => _bookingReminders = v);
+                    _saveNotifPref('bookingReminders', v);
+                  },
                 ),
                 showDivider: false,
               ),
@@ -5629,8 +5694,7 @@ class _VendorSettingsPageState extends State<VendorSettingsPage> {
                     : Icons.pause_circle_outline,
                 iconBg: (_isListingPaused ? Colors.green : Colors.orange)
                     .withOpacity(0.13),
-                title:
-                    _isListingPaused ? 'Activate Listing' : 'Pause Listing',
+                title: _isListingPaused ? 'Activate Listing' : 'Pause Listing',
                 titleColor: _isListingPaused ? Colors.green : Colors.orange,
                 onTap: () =>
                     setState(() => _isListingPaused = !_isListingPaused),
@@ -5767,7 +5831,8 @@ class _SettingsTile extends StatelessWidget {
                   style: const TextStyle(fontSize: 12, color: Colors.grey),
                 )
               : null,
-          trailing: trailing ??
+          trailing:
+              trailing ??
               (onTap != null
                   ? const Icon(
                       Icons.chevron_right,
