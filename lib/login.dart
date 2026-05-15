@@ -1,3 +1,4 @@
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -41,6 +42,7 @@ class _LoginPageState extends State<LoginPage>
   @override
   void initState() {
     super.initState();
+    _loadSavedCredentials();
     _shakeCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 400),
@@ -59,6 +61,31 @@ class _LoginPageState extends State<LoginPage>
     super.dispose();
   }
 
+  Future<void> _loadSavedCredentials() async {
+    final prefs = await SharedPreferences.getInstance();
+    final rememberMe = prefs.getBool('remember_me') ?? false;
+    if (rememberMe) {
+      setState(() {
+        _rememberMe = true;
+        _emailCtrl.text = prefs.getString('saved_email') ?? '';
+        _passwordCtrl.text = prefs.getString('saved_password') ?? '';
+      });
+    }
+  }
+
+  Future<void> _saveCredentials() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (_rememberMe) {
+      await prefs.setBool('remember_me', true);
+      await prefs.setString('saved_email', _emailCtrl.text.trim());
+      await prefs.setString('saved_password', _passwordCtrl.text);
+    } else {
+      await prefs.setBool('remember_me', false);
+      await prefs.remove('saved_email');
+      await prefs.remove('saved_password');
+    }
+  }
+
   // ── Login logic ─────────────────────────────────────────────
   Future<void> _login() async {
     if (!_formKey.currentState!.validate()) return;
@@ -72,51 +99,54 @@ class _LoginPageState extends State<LoginPage>
         password: _passwordCtrl.text,
       );
 
-        // Step 2: Read role from Firestore (force server to avoid stale cache)
-        final doc = await FirebaseFirestore.instance
+      // Step 2: Read role from Firestore (force server to avoid stale cache)
+      final doc = await FirebaseFirestore.instance
           .collection('users')
           .doc(credential.user!.uid)
           .get(const GetOptions(source: Source.server));
 
-        final data = doc.data() ?? <String, dynamic>{};
-        final role = data['role'] ?? 'couple';
+      final data = doc.data() ?? <String, dynamic>{};
+      final role = data['role'] ?? 'couple';
+      await _saveCredentials(); // ← ADD THIS
 
-        // Normalize suspended and approved flags (handle bool or string values)
-        final suspendedValue = data['suspended'];
-        final bool isSuspended = suspendedValue == true ||
-            (suspendedValue is String && suspendedValue.toLowerCase() == 'true');
+      // Normalize suspended and approved flags (handle bool or string values)
+      final suspendedValue = data['suspended'];
+      final bool isSuspended =
+          suspendedValue == true ||
+          (suspendedValue is String && suspendedValue.toLowerCase() == 'true');
 
-        final approvedValue = data['approved'];
-        final bool isApproved = approvedValue == true ||
-            (approvedValue is String && approvedValue.toLowerCase() == 'true');
+      final approvedValue = data['approved'];
+      final bool isApproved =
+          approvedValue == true ||
+          (approvedValue is String && approvedValue.toLowerCase() == 'true');
 
-        // If vendor is suspended or not approved, block login
-        if (role == 'vendor' && (!isApproved || isSuspended)) {
-          setState(() => _isLoading = false);
-          if (!mounted) return;
-          final msg = isSuspended
-              ? 'Your account has been suspended. Please contact support.'
-              : 'Your account is not approved yet. Please wait for admin approval.';
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Row(
-                children: [
-                  const Icon(Icons.block, color: Colors.white, size: 18),
-                  const SizedBox(width: 8),
-                  Expanded(child: Text(msg)),
-                ],
-              ),
-              backgroundColor: Colors.red.shade700,
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-              duration: const Duration(seconds: 4),
+      // If vendor is suspended or not approved, block login
+      if (role == 'vendor' && (!isApproved || isSuspended)) {
+        setState(() => _isLoading = false);
+        if (!mounted) return;
+        final msg = isSuspended
+            ? 'Your account has been suspended. Please contact support.'
+            : 'Your account is not approved yet. Please wait for admin approval.';
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.block, color: Colors.white, size: 18),
+                const SizedBox(width: 8),
+                Expanded(child: Text(msg)),
+              ],
             ),
-          );
-          await FirebaseAuth.instance.signOut();
-          return;
-        }
+            backgroundColor: Colors.red.shade700,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+            duration: const Duration(seconds: 4),
+          ),
+        );
+        await FirebaseAuth.instance.signOut();
+        return;
+      }
 
       if (isSuspended) {
         setState(() => _isLoading = false);
@@ -316,7 +346,9 @@ class _LoginPageState extends State<LoginPage>
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        AppLocalizations.of(context).translate('Events Affairs'),
+                        AppLocalizations.of(
+                          context,
+                        ).translate('Events Affairs'),
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 22,
@@ -325,8 +357,13 @@ class _LoginPageState extends State<LoginPage>
                         ),
                       ),
                       Text(
-                        AppLocalizations.of(context).translate('appDescription'),
-                        style: const TextStyle(color: Colors.white70, fontSize: 12),
+                        AppLocalizations.of(
+                          context,
+                        ).translate('appDescription'),
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 12,
+                        ),
                       ),
                     ],
                   ),
@@ -365,7 +402,9 @@ class _LoginPageState extends State<LoginPage>
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        AppLocalizations.of(context).translate('signInManageEvents'),
+                        AppLocalizations.of(
+                          context,
+                        ).translate('signInManageEvents'),
                         style: TextStyle(
                           fontSize: 13,
                           color: Colors.grey.shade500,
@@ -392,15 +431,21 @@ class _LoginPageState extends State<LoginPage>
                           keyboardType: TextInputType.emailAddress,
                           textInputAction: TextInputAction.next,
                           decoration: _inputDeco(
-                            label: AppLocalizations.of(context).translate('emailAddress'),
+                            label: AppLocalizations.of(
+                              context,
+                            ).translate('emailAddress'),
                             icon: Icons.email_outlined,
                           ),
                           validator: (v) {
                             if (v == null || v.trim().isEmpty) {
-                              return AppLocalizations.of(context).translate('pleaseEnterYourEmail');
+                              return AppLocalizations.of(
+                                context,
+                              ).translate('pleaseEnterYourEmail');
                             }
                             if (!v.contains('@') || !v.contains('.')) {
-                              return AppLocalizations.of(context).translate('enterValidEmail');
+                              return AppLocalizations.of(
+                                context,
+                              ).translate('enterValidEmail');
                             }
                             return null;
                           },
@@ -428,7 +473,9 @@ class _LoginPageState extends State<LoginPage>
                           textInputAction: TextInputAction.done,
                           onFieldSubmitted: (_) => _login(),
                           decoration: _inputDeco(
-                            label: AppLocalizations.of(context).translate('passwordLabel'),
+                            label: AppLocalizations.of(
+                              context,
+                            ).translate('passwordLabel'),
                             icon: Icons.lock_outline,
                             suffix: IconButton(
                               icon: Icon(
@@ -445,10 +492,14 @@ class _LoginPageState extends State<LoginPage>
                           ),
                           validator: (v) {
                             if (v == null || v.isEmpty) {
-                              return AppLocalizations.of(context).translate('pleaseEnterYourPassword');
+                              return AppLocalizations.of(
+                                context,
+                              ).translate('pleaseEnterYourPassword');
                             }
                             if (v.length < 6) {
-                              return AppLocalizations.of(context).translate('passwordAtLeast6');
+                              return AppLocalizations.of(
+                                context,
+                              ).translate('passwordAtLeast6');
                             }
                             return null;
                           },
@@ -513,24 +564,27 @@ class _LoginPageState extends State<LoginPage>
                             elevation: 2,
                           ),
                           onPressed: _isLoading ? null : _login,
-child: _isLoading
-    ? const SizedBox(
-        height: 22,
-        width: 22,
-        child: CircularProgressIndicator(
-          color: Colors.white,
-          strokeWidth: 2.5,
-        ),
-      )
-    : Text(                          // ← add  ':'  here (ternary false branch)
-        AppLocalizations.of(context).translate('login'),
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 16,
-          fontWeight: FontWeight.bold,
-          letterSpacing: 0.5,
-        ),
-      ),
+                          child: _isLoading
+                              ? const SizedBox(
+                                  height: 22,
+                                  width: 22,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2.5,
+                                  ),
+                                )
+                              : Text(
+                                  // ← add  ':'  here (ternary false branch)
+                                  AppLocalizations.of(
+                                    context,
+                                  ).translate('login'),
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
                         ),
                       ),
 
@@ -574,8 +628,10 @@ child: _isLoading
                               builder: (_) => const CreateAccountPage(),
                             ),
                           ),
-                            child: Text(
-                            AppLocalizations.of(context).translate('createAccount'),
+                          child: Text(
+                            AppLocalizations.of(
+                              context,
+                            ).translate('createAccount'),
                             style: const TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w600,
