@@ -72,14 +72,51 @@ class _LoginPageState extends State<LoginPage>
         password: _passwordCtrl.text,
       );
 
-      // Step 2: Read role from Firestore
-      final doc = await FirebaseFirestore.instance
+        // Step 2: Read role from Firestore (force server to avoid stale cache)
+        final doc = await FirebaseFirestore.instance
           .collection('users')
           .doc(credential.user!.uid)
-          .get();
+          .get(const GetOptions(source: Source.server));
 
-      final role = doc.data()?['role'] ?? 'couple';
-      final isSuspended = doc.data()?['suspended'] ?? false;
+        final data = doc.data() ?? <String, dynamic>{};
+        final role = data['role'] ?? 'couple';
+
+        // Normalize suspended and approved flags (handle bool or string values)
+        final suspendedValue = data['suspended'];
+        final bool isSuspended = suspendedValue == true ||
+            (suspendedValue is String && suspendedValue.toLowerCase() == 'true');
+
+        final approvedValue = data['approved'];
+        final bool isApproved = approvedValue == true ||
+            (approvedValue is String && approvedValue.toLowerCase() == 'true');
+
+        // If vendor is suspended or not approved, block login
+        if (role == 'vendor' && (!isApproved || isSuspended)) {
+          setState(() => _isLoading = false);
+          if (!mounted) return;
+          final msg = isSuspended
+              ? 'Your account has been suspended. Please contact support.'
+              : 'Your account is not approved yet. Please wait for admin approval.';
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  const Icon(Icons.block, color: Colors.white, size: 18),
+                  const SizedBox(width: 8),
+                  Expanded(child: Text(msg)),
+                ],
+              ),
+              backgroundColor: Colors.red.shade700,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+              duration: const Duration(seconds: 4),
+            ),
+          );
+          await FirebaseAuth.instance.signOut();
+          return;
+        }
 
       if (isSuspended) {
         setState(() => _isLoading = false);
