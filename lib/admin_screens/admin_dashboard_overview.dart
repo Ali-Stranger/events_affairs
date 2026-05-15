@@ -34,15 +34,16 @@ class _AdminDashboardOverviewPageState
     final Color bg = isDark ? const Color(0xff0F0F14) : const Color(0xffF4F7FA);
     final Color surface = isDark ? const Color(0xff1A1A24) : Colors.white;
 
-    return AnimatedBuilder(
-      animation: adminStore,
-      builder: (context, _) {
-        final unassignedBlogs = allBlogs
-            .where(
-              (b) => (adminStore.blogEvents[b.id] ?? const <String>{}).isEmpty,
-            )
-            .length;
+    return StreamBuilder<List<Blog>>(
+      stream: watchBlogList(publishedOnly: false),
+      builder: (context, blogSnap) {
+        final blogs = blogSnap.data ?? [];
+        final unassignedBlogs =
+            blogs.where((b) => b.eventTypes.isEmpty).length;
 
+        return AnimatedBuilder(
+          animation: adminStore,
+          builder: (context, _) {
         final pendingVendors = adminStore.pendingVendorsCount;
         final totalLeads = adminStore.leads.length;
 
@@ -173,7 +174,7 @@ class _AdminDashboardOverviewPageState
                         isDark: isDark,
                         icon: Icons.article_outlined,
                         title: 'Blogs',
-                        value: '${allBlogs.length}',
+                        value: '${blogs.length}',
                         subtitle: unassignedBlogs > 0
                             ? '$unassignedBlogs need event assignment'
                             : 'All assigned',
@@ -289,6 +290,8 @@ class _AdminDashboardOverviewPageState
             ),
           ),
         );
+      },
+    );
       },
     );
   }

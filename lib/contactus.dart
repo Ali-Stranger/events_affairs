@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 // import 'package:webview_flutter/webview_flutter.dart';
+import 'app_localizations.dart';
 import 'drawer.dart';
 
 class ContactUs extends StatefulWidget {
@@ -71,6 +72,7 @@ class _ContactUsState extends State<ContactUs> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final t = AppLocalizations.of(context);
 
     return Scaffold(
       drawer: const CommonDrawer(),
@@ -107,9 +109,9 @@ class _ContactUsState extends State<ContactUs> {
                 borderRadius: BorderRadius.circular(10),
                 border: Border.all(color: primary.withOpacity(0.3)),
               ),
-              child: const Text(
-                'Contact Us',
-                style: TextStyle(
+              child: Text(
+                t.translate('contactUs'),
+                style: const TextStyle(
                   color: primary,
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
@@ -120,7 +122,7 @@ class _ContactUsState extends State<ContactUs> {
             const SizedBox(height: 24),
 
             // ─── Location heading ─────────────────────────────────────
-            _sectionHeading('📍  Location'),
+            _sectionHeading('📍  ${t.translate('location')}'),
 
             const SizedBox(height: 10),
 
@@ -179,16 +181,16 @@ class _ContactUsState extends State<ContactUs> {
                 children: [
                   const Icon(Icons.location_on, color: primary, size: 20),
                   const SizedBox(width: 6),
-                  const Expanded(
+                  Expanded(
                     child: Text(
-                      'Forman Christian College (A Chartered University)\nFerozepur Road, Lahore, Punjab, Pakistan',
-                      style: TextStyle(fontSize: 13, height: 1.5),
+                      t.translate('contactAddress'),
+                      style: const TextStyle(fontSize: 13, height: 1.5),
                     ),
                   ),
                   TextButton.icon(
                     onPressed: _openInMaps,
                     icon: const Icon(Icons.open_in_new, size: 14),
-                    label: const Text('Open', style: TextStyle(fontSize: 12)),
+                    label: Text(t.translate('open'), style: const TextStyle(fontSize: 12)),
                     style: TextButton.styleFrom(foregroundColor: primary),
                   ),
                 ],
@@ -199,31 +201,31 @@ class _ContactUsState extends State<ContactUs> {
             const SizedBox(height: 8),
 
             // ─── Contact details ──────────────────────────────────────
-            _sectionHeading('📞  Get In Touch'),
+            _sectionHeading('📞  ${t.translate('getInTouch')}'),
             const SizedBox(height: 12),
 
             _contactTile(
               icon: Icons.phone_outlined,
-              label: 'Call Us',
+              label: t.translate('callUs'),
               value: '+92 42 1234 1234',
               onTap: () => _dial('+924212341234'),
             ),
             _contactTile(
               icon: Icons.email_outlined,
-              label: 'Email Us',
+              label: t.translate('emailUs'),
               value: 'info@eventaffairs.pk',
               onTap: () => _email('info@eventaffairs.pk'),
             ),
             _contactTile(
               icon: Icons.language_outlined,
-              label: 'Website',
+              label: t.translate('website'),
               value: 'www.eventaffairs.pk',
               onTap: () => _openUrl('https://www.eventaffairs.pk'),
             ),
             _contactTile(
               icon: Icons.access_time_outlined,
-              label: 'Working Hours',
-              value: 'Mon – Sat: 9 AM – 6 PM',
+              label: t.translate('workingHours'),
+              value: t.translate('workingHoursValue'),
               onTap: null,
             ),
 
@@ -231,25 +233,21 @@ class _ContactUsState extends State<ContactUs> {
             const SizedBox(height: 8),
 
             // ─── About ───────────────────────────────────────────────
-            _sectionHeading('ℹ️  About'),
+            _sectionHeading('ℹ️  ${t.translate('about')}'),
             const SizedBox(height: 10),
 
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Text(
-                'Eventaffairs.pk is Pakistan\'s #1 Event Planning Portal and Mobile Application '
-                'where you can find venues of your choice, the best wedding vendors, and much more '
-                'with prices and reviews at the click of a button. Whether you are looking to hire '
-                'Event Planners, top Photographers, Caterers or just need inspiration for your '
-                'events — we have you covered.',
-                style: TextStyle(fontSize: 14, height: 1.6),
+                t.translate('contactAboutDescription'),
+                style: const TextStyle(fontSize: 14, height: 1.6),
               ),
             ),
 
             const SizedBox(height: 24),
 
             // ─── Social links ─────────────────────────────────────────
-            _sectionHeading('🌐  Follow Us'),
+            _sectionHeading('🌐  ${t.translate('followUs')}'),
             const SizedBox(height: 14),
 
             Padding(
@@ -292,7 +290,7 @@ class _ContactUsState extends State<ContactUs> {
             // ─── Footer note ──────────────────────────────────────────
             Center(
               child: Text(
-                '© 2025 EventAffairs.pk · Made with ❤️ in Pakistan',
+                t.translate('contactFooterNote'),
                 style: TextStyle(
                   fontSize: 12,
                   color: Colors.grey.shade500,

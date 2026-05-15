@@ -1,274 +1,147 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'footer.dart';
-import 'drawer.dart'; 
+import 'drawer.dart';
+import 'eventplanner.dart';
+import 'venuecontact.dart';
+import 'saved_blogs_repository.dart';
 
 // ═══════════════════════════════════════════════════════════════
-//  DATA MODEL
+//  DATA MODEL (Firestore `blogs` collection)
 // ═══════════════════════════════════════════════════════════════
 
 class Blog {
-  final int id;
+  /// Firestore document id.
+  final String id;
   final String title;
   final String shortDesc;
   final String fullContent;
+  final String description;
   final String image;
   final String category;
   final String author;
   final String date;
   final String readTime;
+  /// Event tags (admin multi-select + optional `event` on create).
+  final List<String> eventTypes;
+  /// `VendorBusinessName|Service` keys attached by admin.
+  final List<String> vendorServiceKeys;
+  final DateTime? createdAt;
 
   const Blog({
     required this.id,
     required this.title,
     required this.shortDesc,
     required this.fullContent,
+    this.description = '',
     required this.image,
     required this.category,
     required this.author,
     required this.date,
     required this.readTime,
+    this.eventTypes = const [],
+    this.vendorServiceKeys = const [],
+    this.createdAt,
   });
+
+  factory Blog.fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
+    final d = doc.data() ?? {};
+    final title = (d['title'] ?? '').toString().trim();
+    final author = (d['author'] ?? '').toString().trim();
+    final category = (d['category'] ?? 'Wedding').toString().trim();
+    final description = (d['description'] ?? '').toString().trim();
+    final rawContent = (d['fullContent'] ?? d['content'] ?? '').toString();
+    final shortDesc = (d['shortDesc'] ?? d['summary'] ?? '').toString().trim();
+    final effectiveShort = shortDesc.isNotEmpty
+        ? shortDesc
+        : (rawContent.length > 160
+            ? '${rawContent.substring(0, 157)}...'
+            : rawContent);
+    final image = (d['image'] ?? 'assets/images/download.jpg').toString();
+    final readTime = (d['readTime'] ?? '5 min read').toString();
+    final ts = d['createdAt'];
+    DateTime? created;
+    if (ts is Timestamp) created = ts.toDate();
+
+    final events = <String>[];
+    final rawEvents = d['events'];
+    if (rawEvents is List) {
+      for (final e in rawEvents) {
+        final s = e.toString().trim();
+        if (s.isNotEmpty) events.add(s);
+      }
+    }
+    final single = (d['event'] ?? '').toString().trim();
+    if (single.isNotEmpty && !events.contains(single)) {
+      events.insert(0, single);
+    }
+
+    final vendorKeys = <String>[];
+    final rawVendors = d['vendorServices'];
+    if (rawVendors is List) {
+      for (final e in rawVendors) {
+        final s = e.toString().trim();
+        if (s.isNotEmpty) vendorKeys.add(s);
+      }
+    }
+
+    String dateStr = '';
+    if (created != null) {
+      const months = [
+        '', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+      ];
+      dateStr = '${months[created.month]} ${created.day}, ${created.year}';
+    }
+
+    return Blog(
+      id: doc.id,
+      title: title.isEmpty ? 'Untitled' : title,
+      shortDesc: description.isEmpty ? 'Description ' : description,
+      fullContent: rawContent,
+      description: description,
+      image: image,
+      category: category,
+      author: author.isEmpty ? 'Events Affairs' : author,
+      date: dateStr.isEmpty ? 'Recently' : dateStr,
+      readTime: readTime,
+      eventTypes: events,
+      vendorServiceKeys: vendorKeys,
+      createdAt: created,
+    );
+  }
+  }
+
+
+Widget blogCoverImage(
+  String image, {
+  double? height,
+  double? width,
+  BoxFit fit = BoxFit.cover,
+  Widget? placeholder,
+}) {
+  final ph = placeholder ??
+      Container(
+        color: Colors.grey.shade200,
+        child: const Icon(Icons.image_outlined, size: 48, color: Colors.grey),
+      );
+  if (image.startsWith('http://') || image.startsWith('https://')) {
+    return Image.network(
+      image,
+      height: height,
+      width: width,
+      fit: fit,
+      errorBuilder: (_, __, ___) => ph,
+    );
+  }
+  return Image.asset(
+    image,
+    height: height,
+    width: width,
+    fit: fit,
+    errorBuilder: (_, __, ___) => ph,
+  );
 }
-
-// ═══════════════════════════════════════════════════════════════
-//  BLOG DATA
-// ═══════════════════════════════════════════════════════════════
-
-const List<Blog> allBlogs = [
-  Blog(
-    id: 1,
-    title: "Top Wedding Trends 2026",
-    shortDesc: "Discover the hottest wedding décor and planning trends taking Pakistan by storm this year.",
-    fullContent: """
-Wedding trends in Pakistan for 2026 are all about blending tradition with modern elegance. Here's what's trending this year:
-
-🌸 Floral Ceiling Installations
-Gone are the days of simple bouquets. Couples are now investing in dramatic ceiling installations with fresh flowers, creating a magical canopy effect in wedding halls.
-
-🕯️ Candlelit Intimate Weddings
-Smaller, more intimate weddings with atmospheric candle lighting are replacing grand, crowded events. Quality over quantity is the new mantra.
-
-🎨 Earthy & Jewel Tones
-Deep emeralds, burnt oranges, terracotta, and dusty rose palettes are replacing the classic reds and pinks. These tones photograph beautifully and look stunning in person.
-
-📸 Cinematic Wedding Films
-Short film-style wedding videos with storytelling are now more popular than traditional photography. Couples invest in creative directors and cinematographers.
-
-🍽️ Live Food Stations
-Interactive food stations — from live chaat counters to custom dessert bars — are replacing traditional buffets, adding an element of fun and engagement.
-
-💌 Personalized Details
-Custom monograms, handwritten menus, and bespoke wedding favors are a big trend. Couples are making every detail uniquely theirs.
-
-Whether you're planning a grand shaadi or an intimate nikkah, these trends will inspire your perfect wedding day!
-    """,
-    image: "assets/images/download.jpg",
-    category: "Weddings",
-    author: "Ayesha Malik",
-    date: "March 15, 2026",
-    readTime: "5 min read",
-  ),
-  Blog(
-    id: 2,
-    title: "Best Event Venues in Lahore",
-    shortDesc: "A curated guide to Lahore's most stunning and affordable banquet halls and marquees.",
-    fullContent: """
-Lahore is home to some of Pakistan's most spectacular event venues. Whether you're planning a wedding, corporate event, or birthday celebration, here are the top picks:
-
-🏛️ Gulberg Marquees
-The Gulberg area is packed with premium marquees offering state-of-the-art facilities. Expect top-tier catering, elegant décor packages, and professional staff.
-
-🌿 Canal-Side Farmhouses
-For a more relaxed, open-air experience, farmhouses along the Canal Road offer lush green settings perfect for daytime events and smaller gatherings.
-
-🌆 DHA Banquet Halls
-DHA offers a range of venues from budget-friendly to luxury. Many include in-house catering, decoration services, and valet parking.
-
-🏨 5-Star Hotel Ballrooms
-Hotels like PC Lahore and Avari offer world-class ballrooms with unmatched service. Perfect for high-profile corporate events and grand weddings.
-
-🌸 Garden Venues
-Outdoor garden venues in Model Town and Garden Town are perfect for spring events. The natural backdrop reduces decoration costs significantly.
-
-💡 Tips for Choosing:
-• Book at least 6 months in advance for peak season
-• Always visit the venue in person before booking
-• Confirm if outside catering is allowed
-• Ask about parking capacity for your guest count
-    """,
-    image: "assets/images/download.jpg",
-    category: "Venues",
-    author: "Bilal Ahmed",
-    date: "March 22, 2026",
-    readTime: "4 min read",
-  ),
-  Blog(
-    id: 3,
-    title: "Budget Planning Tips for Events",
-    shortDesc: "Smart, practical strategies to host an unforgettable event without breaking the bank.",
-    fullContent: """
-Planning a memorable event on a budget is an art. Here are the most effective strategies our experts recommend:
-
-📋 Start with a Master Budget Sheet
-List every single expense category: venue, catering, décor, photography, entertainment, invitations, and miscellaneous. Assign a maximum amount to each and track spending weekly.
-
-🤝 Negotiate Everything
-Most vendors in Pakistan expect negotiation. Don't accept the first price — ask for package deals, off-season discounts, or bundled services (e.g., photography + videography from one vendor).
-
-📅 Choose Off-Peak Dates
-Weddings and events in January-February and July-August are significantly cheaper than the October-December peak season. Weekday events are also more affordable.
-
-🌿 DIY Décor Elements
-Simple DIY items like table centerpieces, balloon arches, and photo walls can save tens of thousands of rupees. YouTube tutorials make this easier than ever.
-
-🍴 Smart Catering Choices
-• Opt for a smaller menu with higher quality
-• Choose a seasonal menu (ingredients cost less)
-• Consider food stations over full buffets
-• Negotiate a per-head rate rather than a flat fee
-
-📸 Hire Emerging Talent
-New photographers and videographers often offer competitive rates while delivering excellent quality. Review portfolios carefully on social media.
-
-💌 Digital Invitations
-WhatsApp and email invitations for informal guests save significantly on printing costs while being more eco-friendly.
-
-Remember: a well-planned modest event always beats a poorly executed grand one!
-    """,
-    image: "assets/images/download.jpg",
-    category: "Tips",
-    author: "Sara Khan",
-    date: "April 1, 2026",
-    readTime: "6 min read",
-  ),
-  Blog(
-    id: 4,
-    title: "Photography Guide for Weddings",
-    shortDesc: "Everything you need to know to get the most stunning wedding photos in Pakistan.",
-    fullContent: """
-Your wedding photos will last a lifetime — here's how to make sure they're extraordinary.
-
-🎯 Hire the Right Photographer
-Look for a photographer whose style matches your vision. Browse their full galleries (not just highlights), check reviews, and meet them in person before booking.
-
-⏰ Create a Shot List
-Work with your photographer to create a comprehensive shot list including:
-• Family formal portraits
-• Candid moments
-• Detail shots (rings, mehndi, décor)
-• Venue shots
-• Getting ready moments
-
-🌅 Golden Hour Magic
-The hour after sunrise and before sunset offers the most flattering, beautiful natural light. Schedule outdoor portraits during this time for magical results.
-
-👗 Coordinate Outfits
-Ensure bridal party outfits complement each other and photograph well together. Avoid overly busy patterns that clash.
-
-📍 Scout Locations
-Visit your venue with your photographer beforehand to identify the best photo spots and plan the day's timeline accordingly.
-
-💡 Technical Tips:
-• Ensure the venue has adequate lighting or discuss additional lighting equipment
-• Have a backup plan for outdoor shoots in case of bad weather
-• Book your photographer for the full day to capture all moments
-• Request RAW files or high-resolution JPEGs for future reprints
-    """,
-    image: "assets/images/download.jpg",
-    category: "Photography",
-    author: "Zara Hussain",
-    date: "April 5, 2026",
-    readTime: "7 min read",
-  ),
-  Blog(
-    id: 5,
-    title: "Catering Secrets from Top Chefs",
-    shortDesc: "Professional catering tips and the most popular menu choices for Pakistani events.",
-    fullContent: """
-Great food is the soul of any Pakistani event. Here's what the top catering professionals recommend:
-
-🍖 The Classic Pakistani Menu
-No event is complete without:
-• Biryani (always the star dish)
-• Karahi — Chicken or Mutton
-• Dal Makhni or Dal Tadka
-• Naan & Roti from tandoor
-• Raita, salads, and chutneys
-• Desserts: Kheer, Gulab Jamun, Zarda
-
-🌟 Trending Additions for 2026
-• Live Chaat Counter (Pani Puri, Dahi Bhalla, Aloo Tikki)
-• BBQ Station with freshly grilled kebabs
-• Continental options (pasta, grilled chicken) for diverse guests
-• Dessert Bar with multiple sweet options
-• Fresh juice and mocktail station
-
-📏 Portion Planning
-• For a standard event: 1.5 servings per person
-• Always add 10% buffer for unexpected guests
-• Plan more for evening events (guests eat more at dinner)
-
-🧑‍🍳 Questions to Ask Your Caterer:
-• Do you provide all crockery and serving staff?
-• What is your policy for leftover food?
-• Can you accommodate dietary restrictions?
-• Do you have a tasting session before the event?
-
-❄️ Food Safety
-Ensure your caterer follows proper food safety protocols, especially for outdoor events in warm weather. Ask about refrigeration and how long food will be kept before serving.
-    """,
-    image: "assets/images/download.jpg",
-    category: "Catering",
-    author: "Chef Imran Ali",
-    date: "April 8, 2026",
-    readTime: "5 min read",
-  ),
-  Blog(
-    id: 6,
-    title: "Decoration Ideas on a Budget",
-    shortDesc: "Creative, beautiful decoration ideas that won't drain your event budget.",
-    fullContent: """
-You don't need a massive budget to create a stunning event space. Here are our top decoration ideas:
-
-🌸 Floral Alternatives
-Fresh flowers are beautiful but expensive. Consider:
-• Dried pampas grass (lasts forever, very trendy)
-• Silk flowers that photograph almost identically to real ones
-• Tropical leaves as table centerpieces
-• Mix real and artificial flowers to reduce costs
-
-🕯️ Candles & Fairy Lights
-Nothing transforms a space like warm lighting. Use:
-• Pillar candles in varying heights
-• Fairy lights draped over fabric
-• Lanterns scattered on tables and pathways
-• LED candles for safety at indoor venues
-
-🎨 Backdrop Ideas
-• Balloon garlands (easy DIY, huge impact)
-• Fabric draping with fairy lights
-• Floral wall using mix of real and fake flowers
-• Photo walls with personalized elements
-
-🌿 Greenery as Décor
-Rent large indoor plants from nurseries for the event. They're affordable, beautiful, and create a lush atmosphere without a big spend.
-
-🪴 DIY Projects:
-• Mason jar centerpieces with candles and flowers
-• Painted glass bottles as vases
-• Geometric cardboard frames with flower inserts
-• Paper flower installations for photo walls
-
-📸 Focus Your Budget
-Identify the 2-3 areas that will be most photographed (main stage, entrance, dining area) and spend most of your budget there. Simpler décor in other areas won't be noticed.
-    """,
-    image: "assets/images/download.jpg",
-    category: "Decoration",
-    author: "Hina Butt",
-    date: "April 10, 2026",
-    readTime: "5 min read",
-  ),
-];
 
 // ═══════════════════════════════════════════════════════════════
 //  CATEGORY COLORS
@@ -276,15 +149,72 @@ Identify the 2-3 areas that will be most photographed (main stage, entrance, din
 
 const Map<String, Color> categoryColors = {
   'Weddings': Color(0xffB4245D),
+  'Wedding': Color(0xffB4245D),
   'Venues': Color(0xff1565C0),
+  'Venue': Color(0xff1565C0),
   'Tips': Color(0xff2E7D32),
   'Photography': Color(0xff6A1B9A),
   'Catering': Color(0xffE65100),
   'Decoration': Color(0xff00695C),
+  'Birthday': Color(0xffAD1457),
+  'Corporate': Color(0xff37474F),
 };
 
-Color categoryColor(String cat) =>
-    categoryColors[cat] ?? const Color(0xffB4245D);
+Color categoryColor(String cat) {
+  final t = cat.trim();
+  if (categoryColors.containsKey(t)) return categoryColors[t]!;
+  return const Color(0xffB4245D);
+}
+
+/// Firestore `blogs` collection. When [publishedOnly] is true, only documents
+/// with `status` missing or `'published'` are returned (user-facing list).
+Stream<List<Blog>> watchBlogList({bool publishedOnly = false}) {
+  return FirebaseFirestore.instance
+      .collection('blogs')
+      .snapshots()
+      .map((snap) {
+    var docs = snap.docs;
+    if (publishedOnly) {
+      docs = docs
+          .where((d) {
+            final st = (d.data()['status'] ?? 'published').toString();
+            return st == 'published';
+          })
+          .toList();
+    }
+    final list = docs.map(Blog.fromFirestore).toList();
+    list.sort((a, b) {
+      final ta = a.createdAt;
+      final tb = b.createdAt;
+      if (ta == null && tb == null) return 0;
+      if (ta == null) return 1;
+      if (tb == null) return -1;
+      return tb.compareTo(ta);
+    });
+    return list;
+  });
+}
+
+void openVenueContactFromVendor(
+    BuildContext context, EventPlannerVendor v) {
+  Navigator.push<void>(
+    context,
+    MaterialPageRoute<void>(
+      builder: (_) => VenueContactPage(
+        name: v.name,
+        location: v.location,
+        price: v.price,
+        image: v.image,
+        category: v.category,
+        rating: v.rating,
+        reviews: v.reviews,
+        capacity: v.capacity,
+        amenities: v.services,
+        description: v.description,
+      ),
+    ),
+  );
+}
 
 // ═══════════════════════════════════════════════════════════════
 //  BLOGS LIST PAGE
@@ -304,18 +234,17 @@ class _BlogsPageState extends State<BlogsPage> {
   String _searchQuery = '';
   final TextEditingController _searchCtrl = TextEditingController();
 
-  final List<String> categories = [
-    'All',
-    'Weddings',
-    'Venues',
-    'Tips',
-    'Photography',
-    'Catering',
-    'Decoration',
-  ];
+  List<String> _categoriesFromBlogs(List<Blog> blogs) {
+    final set = <String>{};
+    for (final b in blogs) {
+      if (b.category.isNotEmpty) set.add(b.category);
+    }
+    final sorted = set.toList()..sort();
+    return ['All', ...sorted];
+  }
 
-  List<Blog> get filteredBlogs {
-    return allBlogs.where((b) {
+  List<Blog> _filterBlogs(List<Blog> blogs) {
+    return blogs.where((b) {
       final matchCat =
           _selectedCategory == 'All' || b.category == _selectedCategory;
       final matchSearch = _searchQuery.isEmpty ||
@@ -326,6 +255,9 @@ class _BlogsPageState extends State<BlogsPage> {
     }).toList();
   }
 
+  Stream<List<Blog>> _publishedBlogsStream() =>
+      watchBlogList(publishedOnly: true);
+
   @override
   void dispose() {
     _searchCtrl.dispose();
@@ -334,204 +266,276 @@ class _BlogsPageState extends State<BlogsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final blogs = filteredBlogs;
-
     return Scaffold(
       drawer: const CommonDrawer(),
       appBar: const CommonAppBar(),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-
-            // ── Header ──────────────────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              child: Row(
-                children: [
-                  Builder(
-                    builder: (ctx) => IconButton(
-                      icon: const Icon(Icons.menu),
-                      onPressed: () => Scaffold.of(ctx).openDrawer(),
-                    ),
-                  ),
-                  Image.asset('assets/images/logo.png', width: 80, height: 80),
-                ],
-              ),
-            ),
-
-            // ── Title banner ─────────────────────────────────────────
-            Container(
-              width: double.infinity,
-              margin: const EdgeInsets.symmetric(horizontal: 16),
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: primary.withOpacity(0.12),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: primary.withOpacity(0.3)),
-              ),
-              child: Column(
-                children: [
-                  const Text(
-                    'Event Blogs',
-                    style: TextStyle(
-                      color: primary,
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    '${allBlogs.length} articles on weddings, venues & more',
-                    style: TextStyle(
-                      color: primary.withOpacity(0.7),
-                      fontSize: 13,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 16),
-
-            // ── Search bar ───────────────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: TextField(
-                controller: _searchCtrl,
-                onChanged: (v) => setState(() => _searchQuery = v),
-                decoration: InputDecoration(
-                  hintText: 'Search blogs...',
-                  prefixIcon: const Icon(Icons.search, color: primary),
-                  suffixIcon: _searchQuery.isNotEmpty
-                      ? IconButton(
-                          icon: const Icon(Icons.clear, size: 18),
-                          onPressed: () {
-                            _searchCtrl.clear();
-                            setState(() => _searchQuery = '');
-                          },
-                        )
-                      : null,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: primary.withOpacity(0.3)),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: primary, width: 1.5),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide:
-                        BorderSide(color: primary.withOpacity(0.25)),
-                  ),
-                  filled: true,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 0),
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 14),
-
-            // ── Category chips ───────────────────────────────────────
-            SizedBox(
-              height: 40,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                itemCount: categories.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 8),
-                itemBuilder: (context, i) {
-                  final cat = categories[i];
-                  final isSelected = _selectedCategory == cat;
-                  final color = cat == 'All' ? primary : categoryColor(cat);
-                  return GestureDetector(
-                    onTap: () => setState(() => _selectedCategory = cat),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: isSelected ? color : color.withOpacity(0.08),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: isSelected
-                              ? color
-                              : color.withOpacity(0.3),
-                        ),
-                      ),
-                      child: Text(
-                        cat,
-                        style: TextStyle(
-                          color: isSelected ? Colors.white : color,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-
-            const SizedBox(height: 16),
-
-            // ── Featured blog (first in list) ────────────────────────
-            if (blogs.isNotEmpty) ...[
-              _FeaturedBlogCard(blog: blogs.first),
-              const SizedBox(height: 16),
-            ],
-
-            // ── Results count ────────────────────────────────────────
-            if (blogs.length > 1)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+      body: StreamBuilder<List<Blog>>(
+        stream: _publishedBlogsStream(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting &&
+              !snapshot.hasData) {
+            return const Center(
+              child: CircularProgressIndicator(color: primary),
+            );
+          }
+          if (snapshot.hasError) {
+            return Padding(
+              padding: const EdgeInsets.all(24),
+              child: Center(
                 child: Text(
-                  blogs.length > 1
-                      ? 'More Articles (${blogs.length - 1})'
-                      : '',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  'Could not load blogs. Check connection or Firestore rules.\n${snapshot.error}',
+                  textAlign: TextAlign.center,
                 ),
               ),
+            );
+          }
 
-            // ── Blog list ────────────────────────────────────────────
-            if (blogs.isEmpty)
-              Padding(
-                padding: const EdgeInsets.all(40),
-                child: Center(
-                  child: Column(
+          final allPublished = snapshot.data ?? [];
+          final blogs = _filterBlogs(allPublished);
+          final categories = _categoriesFromBlogs(allPublished);
+
+          if (_selectedCategory != 'All' &&
+              !categories.contains(_selectedCategory)) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) setState(() => _selectedCategory = 'All');
+            });
+          }
+
+          return SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  child: Row(
                     children: [
-                      Icon(Icons.search_off,
-                          size: 60, color: Colors.grey.shade300),
-                      const SizedBox(height: 12),
-                      const Text(
-                        'No blogs found',
-                        style: TextStyle(
-                            fontSize: 16, color: Colors.grey),
+                      Builder(
+                        builder: (ctx) => IconButton(
+                          icon: const Icon(Icons.menu),
+                          onPressed: () => Scaffold.of(ctx).openDrawer(),
+                        ),
+                      ),
+                      Image.asset(
+                        'assets/images/logo.png',
+                        width: 80,
+                        height: 80,
                       ),
                     ],
                   ),
                 ),
-              )
-            else
-              ListView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                // skip first (shown as featured)
-                itemCount: blogs.length > 1 ? blogs.length - 1 : 0,
-                itemBuilder: (context, index) {
-                  return _BlogListCard(blog: blogs[index + 1]);
-                },
-              ),
 
-            const SizedBox(height: 20),
-            const AppFooter(),
-          ],
-        ),
+                Container(
+                  width: double.infinity,
+                  margin: const EdgeInsets.symmetric(horizontal: 16),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: primary.withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: primary.withOpacity(0.3)),
+                  ),
+                  child: Column(
+                    children: [
+                      const Text(
+                        'Event Blogs',
+                        style: TextStyle(
+                          color: primary,
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        allPublished.isEmpty
+                            ? 'New articles from our team will appear here'
+                            : '${allPublished.length} article${allPublished.length == 1 ? '' : 's'} on weddings, venues & more',
+                        style: TextStyle(
+                          color: primary.withOpacity(0.7),
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: TextField(
+                    controller: _searchCtrl,
+                    onChanged: (v) => setState(() => _searchQuery = v),
+                    decoration: InputDecoration(
+                      hintText: 'Search blogs...',
+                      prefixIcon: const Icon(Icons.search, color: primary),
+                      suffixIcon: _searchQuery.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.clear, size: 18),
+                              onPressed: () {
+                                _searchCtrl.clear();
+                                setState(() => _searchQuery = '');
+                              },
+                            )
+                          : null,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide:
+                            BorderSide(color: primary.withOpacity(0.3)),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide:
+                            const BorderSide(color: primary, width: 1.5),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide:
+                            BorderSide(color: primary.withOpacity(0.25)),
+                      ),
+                      filled: true,
+                      contentPadding:
+                          const EdgeInsets.symmetric(vertical: 0),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 14),
+
+                SizedBox(
+                  height: 40,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    itemCount: categories.length,
+                    separatorBuilder: (_, __) => const SizedBox(width: 8),
+                    itemBuilder: (context, i) {
+                      final cat = categories[i];
+                      final isSelected = _selectedCategory == cat;
+                      final color =
+                          cat == 'All' ? primary : categoryColor(cat);
+                      return GestureDetector(
+                        onTap: () =>
+                            setState(() => _selectedCategory = cat),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 8,
+                          ),
+                          decoration: BoxDecoration(
+                            color: isSelected
+                                ? color
+                                : color.withOpacity(0.08),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: isSelected
+                                  ? color
+                                  : color.withOpacity(0.3),
+                            ),
+                          ),
+                          child: Text(
+                            cat,
+                            style: TextStyle(
+                              color: isSelected ? Colors.white : color,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                if (allPublished.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.all(40),
+                    child: Center(
+                      child: Column(
+                        children: [
+                          Icon(
+                            Icons.article_outlined,
+                            size: 60,
+                            color: Colors.grey.shade300,
+                          ),
+                          const SizedBox(height: 12),
+                          const Text(
+                            'No blog posts yet',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Colors.grey,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Check back soon for wedding tips and venue guides.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.grey.shade600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
+                else if (blogs.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.all(40),
+                    child: Center(
+                      child: Column(
+                        children: [
+                          Icon(
+                            Icons.search_off,
+                            size: 60,
+                            color: Colors.grey.shade300,
+                          ),
+                          const SizedBox(height: 12),
+                          const Text(
+                            'No blogs match your search',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Colors.grey,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
+                else ...[
+                  if (blogs.isNotEmpty) ...[
+                    _FeaturedBlogCard(blog: blogs.first),
+                    const SizedBox(height: 16),
+                  ],
+                  if (blogs.length > 1)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Text(
+                        'More Articles (${blogs.length - 1})',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ListView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: blogs.length > 1 ? blogs.length - 1 : 0,
+                    itemBuilder: (context, index) {
+                      return _BlogListCard(blog: blogs[index + 1]);
+                    },
+                  ),
+                ],
+
+                const SizedBox(height: 20),
+                const AppFooter(),
+              ],
+            ),
+          );
+        },
       ),
     );
   }
@@ -750,12 +754,12 @@ class _BlogListCard extends StatelessWidget {
                 topLeft: Radius.circular(2),
                 bottomLeft: Radius.circular(2),
               ),
-              child: Image.asset(
+              child: blogCoverImage(
                 blog.image,
                 width: 88,
                 height: 100,
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => Container(
+                placeholder: Container(
                   width: 88,
                   height: 100,
                   color: color.withOpacity(0.12),
@@ -850,8 +854,63 @@ class _BlogDetailPageState extends State<BlogDetailPage> {
   bool _isBookmarked = false;
   bool _isLiked = false;
   int _likes = 0;
+  bool _isLoadingBookmark = false;
 
   static const Color primary = Color(0xffB4245D);
+
+  @override
+  void initState() {
+    super.initState();
+    _checkIfBookmarked();
+  }
+
+  Future<void> _checkIfBookmarked() async {
+    try {
+      final saved = await SavedBlogsRepository.loadIdSet();
+      if (mounted) {
+        setState(() => _isBookmarked = saved.contains(widget.blog.id));
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _toggleBookmark() async {
+    if (_isLoadingBookmark) return;
+    setState(() => _isLoadingBookmark = true);
+
+    try {
+      if (_isBookmarked) {
+        await SavedBlogsRepository.removeBlog(widget.blog.id);
+      } else {
+        await SavedBlogsRepository.addBlog(widget.blog.id);
+      }
+      if (mounted) {
+        setState(() {
+          _isBookmarked = !_isBookmarked;
+          _isLoadingBookmark = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              _isBookmarked ? 'Blog saved' : 'Blog removed from saved',
+            ),
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 1),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoadingBookmark = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -880,7 +939,7 @@ class _BlogDetailPageState extends State<BlogDetailPage> {
             actions: [
               // Bookmark button
               GestureDetector(
-                onTap: () => setState(() => _isBookmarked = !_isBookmarked),
+                onTap: _isLoadingBookmark ? null : _toggleBookmark,
                 child: Container(
                   margin: const EdgeInsets.all(8),
                   padding: const EdgeInsets.all(6),
@@ -888,11 +947,20 @@ class _BlogDetailPageState extends State<BlogDetailPage> {
                     color: Colors.black.withOpacity(0.35),
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(
-                    _isBookmarked ? Icons.bookmark : Icons.bookmark_border,
-                    color: Colors.white,
-                    size: 20,
-                  ),
+                  child: _isLoadingBookmark
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        )
+                      : Icon(
+                          _isBookmarked ? Icons.bookmark : Icons.bookmark_border,
+                          color: Colors.white,
+                          size: 20,
+                        ),
                 ),
               ),
             ],
@@ -900,10 +968,15 @@ class _BlogDetailPageState extends State<BlogDetailPage> {
               background: Stack(
                 fit: StackFit.expand,
                 children: [
-                  Image.asset(
-                    blog.image,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => Container(color: color.withOpacity(0.2)),
+                  SizedBox.expand(
+                    child: blogCoverImage(
+                      blog.image,
+                      width: double.infinity,
+                      height: double.infinity,
+                      fit: BoxFit.cover,
+                      placeholder:
+                          Container(color: color.withOpacity(0.2)),
+                    ),
                   ),
                   Container(
                     decoration: BoxDecoration(
@@ -1014,14 +1087,175 @@ class _BlogDetailPageState extends State<BlogDetailPage> {
                   Divider(color: Colors.grey.shade200),
                   const SizedBox(height: 20),
 
-                  // Full article content
+                  // Full article content or admin description fallback
                   Text(
-                    blog.fullContent.trim(),
+                    blog.fullContent.trim().isNotEmpty
+                        ? blog.fullContent.trim()
+                        : (blog.description.trim().isNotEmpty
+                            ? blog.description.trim()
+                            : 'Content will appear here once the admin publishes the full article.'),
                     style: const TextStyle(
                       fontSize: 15,
                       height: 1.8,
                     ),
                   ),
+
+                  if (blog.eventTypes.isNotEmpty) ...[
+                    const SizedBox(height: 24),
+                    const Text(
+                      'Related event types',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: blog.eventTypes
+                          .map(
+                            (e) => Chip(
+                              label: Text(e),
+                              backgroundColor:
+                                  categoryColor(e).withOpacity(0.12),
+                              side: BorderSide(
+                                  color: categoryColor(e).withOpacity(0.35)),
+                            ),
+                          )
+                          .toList(),
+                    ),
+                  ],
+
+                  if (blog.vendorServiceKeys.isNotEmpty) ...[
+                    const SizedBox(height: 28),
+                    const Text(
+                      'Vendors featured in this article',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Tap a vendor to view details and send an inquiry.',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    FutureBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                      future: FirebaseFirestore.instance
+                          .collection('users')
+                          .where('role', isEqualTo: 'vendor')
+                          .get(),
+                      builder: (context, vSnap) {
+                        if (vSnap.connectionState == ConnectionState.waiting) {
+                          return const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 16),
+                            child: Center(
+                              child: CircularProgressIndicator(
+                                color: primary,
+                                strokeWidth: 2,
+                              ),
+                            ),
+                          );
+                        }
+                        if (vSnap.hasError || !vSnap.hasData) {
+                          return Text(
+                            'Could not load vendors.',
+                            style: TextStyle(color: Colors.grey.shade600),
+                          );
+                        }
+                        final vendorDocs = vSnap.data!.docs;
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: blog.vendorServiceKeys.map((key) {
+                            final parts = key.split('|');
+                            final bn = parts.isNotEmpty
+                                ? parts[0].trim()
+                                : key.trim();
+                            final svc = parts.length > 1
+                                ? parts[1].trim()
+                                : '';
+                            QueryDocumentSnapshot<Map<String, dynamic>>?
+                                match;
+                            for (final doc in vendorDocs) {
+                              final data = doc.data();
+                              final name = (data['businessName'] ??
+                                      data['name'] ??
+                                      '')
+                                  .toString()
+                                  .trim();
+                              if (name.toLowerCase() == bn.toLowerCase()) {
+                                match = doc;
+                                break;
+                              }
+                            }
+                            if (match == null) {
+                              return ListTile(
+                                contentPadding: EdgeInsets.zero,
+                                leading: Icon(Icons.store_outlined,
+                                    color: Colors.grey.shade400),
+                                title: Text(bn),
+                                subtitle: Text(
+                                  svc.isEmpty
+                                      ? 'Not found on the platform'
+                                      : '$svc · not found on the platform',
+                                  style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey.shade600),
+                                ),
+                              );
+                            }
+                            final v =
+                                EventPlannerVendor.fromFirestore(match.data());
+                            return Card(
+                              margin: const EdgeInsets.only(bottom: 8),
+                              elevation: 0,
+                              color: Colors.grey.shade50,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                side: BorderSide(color: Colors.grey.shade200),
+                              ),
+                              child: ListTile(
+                                leading: CircleAvatar(
+                                  backgroundColor:
+                                      color.withOpacity(0.15),
+                                  child: Text(
+                                    v.name.isNotEmpty
+                                        ? v.name[0].toUpperCase()
+                                        : '?',
+                                    style: TextStyle(
+                                      color: color,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                                title: Text(
+                                  v.name,
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.w600),
+                                ),
+                                subtitle: Text(
+                                  svc.isNotEmpty
+                                      ? '$svc · ${v.location}'
+                                      : v.location,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                trailing:
+                                    Icon(Icons.chevron_right, color: color),
+                                onTap: () => openVenueContactFromVendor(
+                                    context, v),
+                              ),
+                            );
+                          }).toList(),
+                        );
+                      },
+                    ),
+                  ],
 
                   const SizedBox(height: 30),
                   Divider(color: Colors.grey.shade200),
@@ -1112,7 +1346,7 @@ class _BlogDetailPageState extends State<BlogDetailPage> {
 
                   const SizedBox(height: 30),
 
-                  // ── Related blogs ──────────────────────────────────
+                  // ── Related blogs (from Firestore) ─────────────────
                   const Text(
                     'Related Articles',
                     style: TextStyle(
@@ -1122,22 +1356,50 @@ class _BlogDetailPageState extends State<BlogDetailPage> {
                   ),
                   const SizedBox(height: 12),
 
-                  ...allBlogs
-                      .where((b) =>
-                          b.id != blog.id && b.category == blog.category)
-                      .take(2)
-                      .map((related) => _BlogListCard(blog: related)),
-
-                  // If no same-category, show any 2
-                  if (allBlogs
+                  StreamBuilder<List<Blog>>(
+                    stream: watchBlogList(publishedOnly: true),
+                    builder: (context, snap) {
+                      if (!snap.hasData) {
+                        return const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 12),
+                          child: Center(
+                            child: SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: primary,
+                              ),
+                            ),
+                          ),
+                        );
+                      }
+                      final all = snap.data!;
+                      var related = all
                           .where((b) =>
                               b.id != blog.id &&
                               b.category == blog.category)
-                          .isEmpty)
-                    ...allBlogs
-                        .where((b) => b.id != blog.id)
-                        .take(2)
-                        .map((related) => _BlogListCard(blog: related)),
+                          .take(2)
+                          .toList();
+                      if (related.isEmpty) {
+                        related = all
+                            .where((b) => b.id != blog.id)
+                            .take(2)
+                            .toList();
+                      }
+                      if (related.isEmpty) {
+                        return Text(
+                          'No other articles yet.',
+                          style: TextStyle(color: Colors.grey.shade600),
+                        );
+                      }
+                      return Column(
+                        children: related
+                            .map((r) => _BlogListCard(blog: r))
+                            .toList(),
+                      );
+                    },
+                  ),
 
                   const SizedBox(height: 30),
                 ],

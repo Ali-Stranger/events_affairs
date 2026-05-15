@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/services.dart';
+import 'app_localizations.dart';
 import 'eventplanner.dart';
 import 'venues.dart';
 import 'venuecontact.dart';
@@ -172,13 +173,14 @@ class _CreateHomePageState extends State<CreateHomePage> {
   }
 
   Future<void> _findVendor() async {
+    final t = AppLocalizations.of(context);
     final nameQuery = _vendorSearchCtrl.text.trim();
     if (nameQuery.isEmpty &&
         _selectedCategory == null &&
         _selectedLocation == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter a vendor name, category, or location.'),
+        SnackBar(
+          content: Text(t.translate('pleaseEnterVendorInfo')),
           backgroundColor: kPrimary,
           behavior: SnackBarBehavior.floating,
         ),
@@ -191,16 +193,16 @@ class _CreateHomePageState extends State<CreateHomePage> {
     showDialog<void>(
       context: context,
       barrierDismissible: false,
-      builder: (_) => const Center(
+      builder: (_) => Center(
         child: Card(
           child: Padding(
-            padding: EdgeInsets.all(24),
+            padding: const EdgeInsets.all(24),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                CircularProgressIndicator(color: kPrimary),
-                SizedBox(height: 16),
-                Text('Searching vendors…'),
+                const CircularProgressIndicator(color: kPrimary),
+                const SizedBox(height: 16),
+                Text(t.translate('searchingVendors')),
               ],
             ),
           ),
@@ -232,10 +234,8 @@ class _CreateHomePageState extends State<CreateHomePage> {
 
       if (matches.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'No vendors match your search. Opening the full vendor list.',
-            ),
+          SnackBar(
+            content: Text(t.translate('noVendorsMatchSearch')),
             backgroundColor: kPrimary,
             behavior: SnackBarBehavior.floating,
           ),
@@ -299,7 +299,7 @@ class _CreateHomePageState extends State<CreateHomePage> {
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
                   child: Text(
-                    '${matches.length} vendors found — tap to view profile',
+                    '${matches.length} ${t.translate('vendorsFoundTapProfile')}',
                     textAlign: TextAlign.center,
                     style: const TextStyle(
                       fontSize: 16,
@@ -362,8 +362,8 @@ class _CreateHomePageState extends State<CreateHomePage> {
           SnackBar(
             content: Text(
               kDebugMode
-                  ? 'Search failed: $e'
-                  : 'Could not search vendors. Check connection and try again.',
+                  ? '${t.translate('searchFailed')}: $e'
+                  : t.translate('searchFailedConnection'),
             ),
             backgroundColor: Colors.red.shade700,
             behavior: SnackBarBehavior.floating,
@@ -414,10 +414,11 @@ class _CreateHomePageState extends State<CreateHomePage> {
   Future<void> _submitQuote() async {
     if (!_quoteFormKey.currentState!.validate()) return;
 
+    final t = AppLocalizations.of(context);
     if (_formCategory == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select a category.'),
+        SnackBar(
+          content: Text(t.translate('selectCategoryError')),
           backgroundColor: Colors.orange,
           behavior: SnackBarBehavior.floating,
         ),
@@ -426,8 +427,8 @@ class _CreateHomePageState extends State<CreateHomePage> {
     }
     if (_formLocation == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select a city.'),
+        SnackBar(
+          content: Text(t.translate('selectCityError')),
           backgroundColor: Colors.orange,
           behavior: SnackBarBehavior.floating,
         ),
@@ -436,8 +437,8 @@ class _CreateHomePageState extends State<CreateHomePage> {
     }
     if (_eventDate == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select an event date.'),
+        SnackBar(
+          content: Text(t.translate('selectDateError')),
           backgroundColor: Colors.orange,
           behavior: SnackBarBehavior.floating,
         ),
@@ -466,8 +467,8 @@ class _CreateHomePageState extends State<CreateHomePage> {
       setState(() => _quoteSubmitting = false);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Failed to submit. Please try again.'),
+        SnackBar(
+          content: Text(t.translate('submitQuoteFailed')),
           backgroundColor: Colors.red,
           behavior: SnackBarBehavior.floating,
         ),
@@ -489,6 +490,8 @@ class _CreateHomePageState extends State<CreateHomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final t = AppLocalizations.of(context);
+
     return Scaffold(
       resizeToAvoidBottomInset: true,
       drawer: const CommonDrawer(),
@@ -558,31 +561,31 @@ class _CreateHomePageState extends State<CreateHomePage> {
                           ],
                         ),
                       ),
-                      child: const Padding(
-                        padding: EdgeInsets.only(left: 20, top: 30),
+                      child: Padding(
+                        padding: const EdgeInsets.only(left: 20, top: 30),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Find Your Perfect',
-                              style: TextStyle(
+                              t.translate('homepageHeroTitle1'),
+                              style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 22,
                                 fontWeight: FontWeight.w400,
                               ),
                             ),
                             Text(
-                              'Event Vendor',
-                              style: TextStyle(
+                              t.translate('homepageHeroTitle2'),
+                              style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 30,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
-                            SizedBox(height: 6),
+                            const SizedBox(height: 6),
                             Text(
-                              'Pakistan\'s #1 Event Planning Platform',
-                              style: TextStyle(
+                              t.translate('homepageHeroSubtitle'),
+                              style: const TextStyle(
                                   color: Colors.white70, fontSize: 14),
                             ),
                           ],
@@ -616,7 +619,7 @@ class _CreateHomePageState extends State<CreateHomePage> {
                           controller: _vendorSearchCtrl,
                           style: const TextStyle(color: Colors.white),
                           decoration: InputDecoration(
-                            hintText: 'Type vendor name...',
+                            hintText: t.translate('vendorSearchHint'),
                             hintStyle: const TextStyle(color: Colors.white54),
                             prefixIcon: const Icon(
                               Icons.search,
@@ -652,7 +655,7 @@ class _CreateHomePageState extends State<CreateHomePage> {
                             Expanded(
                               child: _darkDropdown<String>(
                                 value: _selectedCategory,
-                                hint: 'Category',
+                                hint: t.translate('categoryHint'),
                                 icon: Icons.category_outlined,
                                 items: kCategories,
                                 onChanged: (v) =>
@@ -664,7 +667,7 @@ class _CreateHomePageState extends State<CreateHomePage> {
                             Expanded(
                               child: _darkDropdown<String>(
                                 value: _selectedLocation,
-                                hint: 'City',
+                                hint: t.translate('cityHint'),
                                 icon: Icons.location_on_outlined,
                                 items: kLocations,
                                 onChanged: (v) =>
@@ -693,9 +696,9 @@ class _CreateHomePageState extends State<CreateHomePage> {
                               color: Colors.white,
                               size: 18,
                             ),
-                            label: const Text(
-                              'Find Vendor',
-                              style: TextStyle(
+                            label: Text(
+                              t.translate('findVendor'),
+                              style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 15,
                                 fontWeight: FontWeight.w600,
@@ -719,11 +722,11 @@ class _CreateHomePageState extends State<CreateHomePage> {
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Row(
                 children: [
-                  _statChip('500+', 'Vendors'),
+                  _statChip('500+', t.translate('statVendors')),
                   const SizedBox(width: 10),
-                  _statChip('4 Cities', 'Covered'),
+                  _statChip('4 Cities', t.translate('statCovered')),
                   const SizedBox(width: 10),
-                  _statChip('10K+', 'Happy Clients'),
+                  _statChip('10K+', t.translate('statHappyClients')),
                 ],
               ),
             ),
@@ -731,19 +734,19 @@ class _CreateHomePageState extends State<CreateHomePage> {
             const SizedBox(height: 20),
 
             // ── Section heading ──────────────────────────────────────
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Explore Wedding Categories',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    t.translate('categoriesHeading'),
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
-                  SizedBox(height: 4),
+                  const SizedBox(height: 4),
                   Text(
-                    'Browse vendors by type — caterers, florists, planners & more.',
-                    style: TextStyle(fontSize: 13, color: Colors.grey),
+                    t.translate('categoriesSubtitle'),
+                    style: const TextStyle(fontSize: 13, color: Colors.grey),
                   ),
                 ],
               ),
@@ -771,17 +774,17 @@ class _CreateHomePageState extends State<CreateHomePage> {
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: kPrimary.withOpacity(0.2)),
               ),
-              child: const Column(
+              child: Column(
                 children: [
                   Text(
-                    'Get Best Quote For Your Event',
-                    style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+                    t.translate('quoteSectionTitle'),
+                    style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
                     textAlign: TextAlign.center,
                   ),
-                  SizedBox(height: 4),
+                  const SizedBox(height: 4),
                   Text(
-                    'Fill the form and get instant quotes from multiple vendors.',
-                    style: TextStyle(fontSize: 13, color: Colors.grey),
+                    t.translate('quoteSectionSubtitle'),
+                    style: const TextStyle(fontSize: 13, color: Colors.grey),
                     textAlign: TextAlign.center,
                   ),
                 ],
@@ -806,12 +809,12 @@ class _CreateHomePageState extends State<CreateHomePage> {
                                 child: TextFormField(
                                   controller: _quoteNameCtrl,
                                   decoration: _inputDecoration(
-                                    'Your Name',
+                                    t.translate('yourName'),
                                     Icons.person_outline,
                                   ),
                                   validator: (v) =>
                                       v == null || v.trim().isEmpty
-                                      ? 'Enter your name'
+                                      ? t.translate('enterYourName')
                                       : null,
                                 ),
                               ),
@@ -819,7 +822,7 @@ class _CreateHomePageState extends State<CreateHomePage> {
                               Expanded(
                                 child: _lightDropdown<String>(
                                   value: _formCategory,
-                                  hint: 'Category',
+                                  hint: t.translate('categoryHint'),
                                   icon: Icons.category_outlined,
                                   items: kCategories,
                                   onChanged: (v) =>
@@ -834,7 +837,7 @@ class _CreateHomePageState extends State<CreateHomePage> {
                           // Row 2: City
                           _lightDropdown<String>(
                             value: _formLocation,
-                            hint: 'Select City',
+                            hint: t.translate('selectCityHint'),
                             icon: Icons.location_on_outlined,
                             items: kLocations,
                             onChanged: (v) => setState(() => _formLocation = v),
@@ -851,14 +854,14 @@ class _CreateHomePageState extends State<CreateHomePage> {
                               LengthLimitingTextInputFormatter(11),
                             ],
                             decoration: _inputDecoration(
-                              'Contact Number',
+                              t.translate('contactNumber'),
                               Icons.phone_outlined,
                             ),
                             validator: (v) {
                               if (v == null || v.trim().isEmpty) {
-                                return 'Enter your phone number';
+                                return t.translate('enterYourPhoneNumber');
                               }
-                              if (v.length < 10) return 'Enter a valid number';
+                              if (v.length < 10) return t.translate('enterValidNumber');
                               return null;
                             },
                           ),
@@ -888,8 +891,8 @@ class _CreateHomePageState extends State<CreateHomePage> {
                                   const SizedBox(width: 10),
                                   Text(
                                     _eventDate == null
-                                        ? 'Select Event Date'
-                                        : 'Event: ${_formatDate(_eventDate!)}',
+                                        ? t.translate('selectEventDate')
+                                        : '${t.translate('eventLabel')} ${_formatDate(_eventDate!)}',
                                     style: TextStyle(
                                       fontSize: 14,
                                       color: _eventDate == null
@@ -930,9 +933,9 @@ class _CreateHomePageState extends State<CreateHomePage> {
                                         strokeWidth: 2,
                                       ),
                                     )
-                                  : const Text(
-                                      'Get a Quote',
-                                      style: TextStyle(
+                                  : Text(
+                                      t.translate('getAQuote'),
+                                      style: const TextStyle(
                                         fontSize: 16,
                                         color: Colors.white,
                                         fontWeight: FontWeight.w600,
@@ -966,9 +969,9 @@ class _CreateHomePageState extends State<CreateHomePage> {
                     MaterialPageRoute(builder: (_) => const VenuesPage()),
                   ),
                   icon: const Icon(Icons.location_city_outlined, size: 18),
-                  label: const Text(
-                    'Browse Top Venues',
-                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                  label: Text(
+                    t.translate('browseTopVenues'),
+                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
                   ),
                 ),
               ),
@@ -1214,6 +1217,7 @@ class _QuoteSuccessCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = AppLocalizations.of(context);
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(24),
@@ -1238,19 +1242,19 @@ class _QuoteSuccessCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 14),
-          const Text(
-            'Quote Request Sent!',
-            style: TextStyle(
+          Text(
+            t.translate('quoteRequestSent'),
+            style: const TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
               color: Colors.green,
             ),
           ),
           const SizedBox(height: 8),
-          const Text(
-            'We\'ve received your request. Multiple vendors will contact you with their best quotes shortly.',
+          Text(
+            t.translate('quoteRequestReceived'),
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 13, color: Colors.grey, height: 1.5),
+            style: const TextStyle(fontSize: 13, color: Colors.grey, height: 1.5),
           ),
           const SizedBox(height: 18),
           OutlinedButton.icon(
@@ -1263,7 +1267,7 @@ class _QuoteSuccessCard extends StatelessWidget {
               ),
             ),
             icon: const Icon(Icons.refresh, size: 16),
-            label: const Text('Submit Another Request'),
+            label: Text(t.translate('submitAnotherRequest')),
           ),
         ],
       ),
