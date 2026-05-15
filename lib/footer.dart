@@ -1,10 +1,18 @@
 import 'package:flutter/material.dart';
 
+import 'app_localizations.dart';
+import 'blogs.dart';
+import 'contactus.dart';
+import 'eventplanner.dart';
+import 'venues.dart';
+
 class AppFooter extends StatelessWidget {
   const AppFooter({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final t = AppLocalizations.of(context);
+
     return Container(
       width: double.infinity,
       color: const Color(0xffB4245D),
@@ -13,9 +21,9 @@ class AppFooter extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
 
-          const Text(
-            "Events Affairs",
-            style: TextStyle(
+          Text(
+            t.translate('eventsAffairsTitle'),
+            style: const TextStyle(
               color: Colors.white,
               fontSize: 18,
               fontWeight: FontWeight.bold,
@@ -24,9 +32,9 @@ class AppFooter extends StatelessWidget {
 
           const SizedBox(height: 10),
 
-          const Text(
-            "Pakistan's #1 Event Planning Marketplace",
-            style: TextStyle(
+          Text(
+            t.translate('footerDescription'),
+            style: const TextStyle(
               color: Colors.white70,
               fontSize: 14,
             ),
@@ -34,9 +42,9 @@ class AppFooter extends StatelessWidget {
 
           const SizedBox(height: 20),
 
-          const Text(
-            "Quick Links",
-            style: TextStyle(
+          Text(
+            t.translate('quickLinks'),
+            style: const TextStyle(
               color: Colors.white,
               fontSize: 16,
               fontWeight: FontWeight.bold,
@@ -45,16 +53,16 @@ class AppFooter extends StatelessWidget {
 
           const SizedBox(height: 8),
 
-          const Text("• Venues", style: TextStyle(color: Colors.white70)),
-          const Text("• Vendors", style: TextStyle(color: Colors.white70)),
-          const Text("• Blogs", style: TextStyle(color: Colors.white70)),
-          const Text("• Contact Us", style: TextStyle(color: Colors.white70)),
+          _footerLink(context, t.translate('venues'), const VenuesPage()),
+          _footerLink(context, t.translate('vendors'), const Eventplanner()),
+          _footerLink(context, t.translate('blogs'), const BlogsPage()),
+          _footerLink(context, t.translate('contactUs'), const ContactUs()),
 
           const SizedBox(height: 20),
 
-          const Text(
-            "Contact",
-            style: TextStyle(
+          Text(
+            t.translate('contact'),
+            style: const TextStyle(
               color: Colors.white,
               fontSize: 16,
               fontWeight: FontWeight.bold,
@@ -63,8 +71,8 @@ class AppFooter extends StatelessWidget {
 
           const SizedBox(height: 8),
 
-          const Text("📞 +92 300 1234567", style: TextStyle(color: Colors.white70)),
-          const Text("📧 info@eventsaffairs.com", style: TextStyle(color: Colors.white70)),
+          Text(t.translate('phoneContact'), style: const TextStyle(color: Colors.white70)),
+          Text(t.translate('emailContact'), style: const TextStyle(color: Colors.white70)),
 
           const SizedBox(height: 20),
 
@@ -72,10 +80,10 @@ class AppFooter extends StatelessWidget {
 
           const SizedBox(height: 10),
 
-          const Center(
+          Center(
             child: Text(
-              "© 2026 Events Affairs. All rights reserved.",
-              style: TextStyle(
+              t.translate('footerCopyright'),
+              style: const TextStyle(
                 color: Colors.white70,
                 fontSize: 12,
               ),
@@ -85,4 +93,25 @@ class AppFooter extends StatelessWidget {
       ),
     );
   }
-}
+
+  Widget _footerLink(BuildContext context, String label, Widget page) {
+    return InkWell(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => page),
+        );
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Text(
+          '• $label',
+          style: const TextStyle(color: Colors.white70, decoration: TextDecoration.underline),
+        ),
+      ),
+    );
+  }
+        
+      
+    
+  }
