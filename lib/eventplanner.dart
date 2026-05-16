@@ -1013,25 +1013,40 @@ class EventPlannerVendor {
       servicesList = List<String>.from(data['services']);
     }
 
-    // Parse price value (numeric) from the stored field
+    String? startingPriceRaw;
     double parsedPriceValue = 0;
-    if (data['priceValue'] != null) {
+
+    if (data['startingPrice'] != null) {
+      final sp = data['startingPrice'];
+      if (sp is num) {
+        startingPriceRaw = sp.toString();
+        parsedPriceValue = sp.toDouble();
+      } else {
+        startingPriceRaw = sp.toString().trim();
+        final cleaned = startingPriceRaw
+            .replaceAll(RegExp(r'pkR', caseSensitive: false), '')
+            .replaceAll(RegExp(r'rs\\.?', caseSensitive: false), '')
+            .replaceAll(',', '')
+            .replaceAll(' ', '')
+            .trim();
+        parsedPriceValue = double.tryParse(cleaned) ?? 0;
+      }
+    }
+
+    if (parsedPriceValue == 0 && data['priceValue'] != null) {
       try {
         parsedPriceValue = (data['priceValue'] as num).toDouble();
       } catch (_) {
         parsedPriceValue = 0;
       }
     }
-    
-    // If priceValue not available, try to extract from price string
+
     if (parsedPriceValue == 0 && data['price'] != null) {
       try {
-        // Try to extract numeric value from price string e.g. "PKR 80,000"
         final priceStr = data['price'].toString();
         final cleaned = priceStr
-            .replaceAll('PKR', '')
-            .replaceAll('Rs', '')
-            .replaceAll('Rs.', '')
+            .replaceAll(RegExp(r'pkR', caseSensitive: false), '')
+            .replaceAll(RegExp(r'rs\\.?', caseSensitive: false), '')
             .replaceAll(',', '')
             .replaceAll(' ', '')
             .trim();
@@ -1046,13 +1061,23 @@ class EventPlannerVendor {
       capacityStr = 'Contact for guest capacity';
     }
 
+    String priceLabel = data['price']?.toString() ?? 'Contact for price';
+    if (startingPriceRaw != null && startingPriceRaw.isNotEmpty) {
+      final lower = startingPriceRaw.toLowerCase();
+      if (lower.contains('pkr') || lower.startsWith('rs') || lower.contains('rs ')) {
+        priceLabel = startingPriceRaw;
+      } else {
+        priceLabel = 'PKR $startingPriceRaw';
+      }
+    }
+
     return EventPlannerVendor(
       name: data['businessName'] ?? data['name'] ?? 'Unknown Vendor',
       location: data['city'] ?? data['location'] ?? 'Pakistan',
       category: data['businessCategory'] ?? data['category'] ?? 'Event Planner',
       rating: data['rating'] != null ? (data['rating'] as num).toDouble() : 0.0,
       reviews: data['reviews'] != null ? (data['reviews'] as num).toInt() : 0,
-      price: data['price'] ?? 'Contact for price',
+      price: priceLabel,
       priceValue: parsedPriceValue,
       experience: data['experience'] ?? 'New',
       image: data['image'] ?? 'assets/images/download.jpg',
@@ -2103,3 +2128,4 @@ class EventPlannerVendorCard extends StatelessWidget {
     );
   }
 }
+

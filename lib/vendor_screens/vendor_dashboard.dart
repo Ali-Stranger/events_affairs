@@ -694,7 +694,7 @@ class _VendorProfileCompletion {
     final checks = <String, bool>{
       'Business name': _nonEmpty(d['businessName']),
       'Tagline': _nonEmpty(d['tagline']),
-      'Starting price': _nonEmpty(d['startingPrice']),
+      'Starting price.You will be filter on the basis of this': _nonEmpty(d['startingPrice']),
       'Years of experience': _nonEmpty(d['yearsExperience']),
       'Phone number': _nonEmpty(d['phone']),
       'WhatsApp': _nonEmpty(d['whatsapp']),
