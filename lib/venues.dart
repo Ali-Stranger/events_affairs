@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'app_localizations.dart';
 import 'footer.dart';
 import 'eventplanner.dart';
 import 'drawer.dart';
@@ -95,9 +96,10 @@ class _VenuesPageState extends State<VenuesPage> {
       });
     } catch (_) {
       if (!mounted) return;
+      final t = AppLocalizations.of(context);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Could not update saved vendors.'),
+        SnackBar(
+          content: Text(t.translate('couldNotUpdateSavedVendors')),
           backgroundColor: Colors.red,
           behavior: SnackBarBehavior.floating,
         ),
@@ -128,8 +130,9 @@ class _VenuesPageState extends State<VenuesPage> {
       });
     } catch (e) {
       if (!mounted) return;
+      final t = AppLocalizations.of(context);
       setState(() {
-        _error = 'Failed to load vendors. Please try again.';
+        _error = t.translate('failedToLoadVendors');
         _isLoading = false;
       });
     }
@@ -158,15 +161,16 @@ class _VenuesPageState extends State<VenuesPage> {
   }
 
   Widget _buildLoadingState() {
-    return const Center(
+    final t = AppLocalizations.of(context);
+    return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          CircularProgressIndicator(color: primary),
-          SizedBox(height: 16),
+          const CircularProgressIndicator(color: primary),
+          const SizedBox(height: 16),
           Text(
-            'Loading vendors...',
-            style: TextStyle(color: Colors.grey, fontSize: 14),
+            t.translate('loadingVendors'),
+            style: const TextStyle(color: Colors.grey, fontSize: 14),
           ),
         ],
       ),
@@ -174,6 +178,7 @@ class _VenuesPageState extends State<VenuesPage> {
   }
 
   Widget _buildErrorState() {
+    final t = AppLocalizations.of(context);
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -183,7 +188,7 @@ class _VenuesPageState extends State<VenuesPage> {
             Icon(Icons.wifi_off_rounded, size: 64, color: Colors.grey.shade300),
             const SizedBox(height: 16),
             Text(
-              _error ?? 'Something went wrong',
+              _error ?? t.translate('somethingWentWrong'),
               textAlign: TextAlign.center,
               style: const TextStyle(color: Colors.grey, fontSize: 15),
             ),
@@ -197,8 +202,10 @@ class _VenuesPageState extends State<VenuesPage> {
               ),
               onPressed: _fetchVendors,
               icon: const Icon(Icons.refresh, color: Colors.white),
-              label: const Text('Retry',
-                  style: TextStyle(color: Colors.white)),
+              label: Text(
+                t.translate('retry'),
+                style: const TextStyle(color: Colors.white),
+              ),
             ),
           ],
         ),
@@ -208,8 +215,12 @@ class _VenuesPageState extends State<VenuesPage> {
 
   @override
   Widget build(BuildContext context) {
+    final t = AppLocalizations.of(context);
     final vendorDocs = _filteredVendorDocs;
     final locations = _locationOptions;
+    final vendorCountText = vendorDocs.length == 1
+        ? '${vendorDocs.length} ${t.translate('vendorFound')}'
+        : '${vendorDocs.length} ${t.translate('vendorsFound')}';
 
     return Scaffold(
       drawer: const CommonDrawer(),
@@ -257,9 +268,9 @@ class _VenuesPageState extends State<VenuesPage> {
                               ),
                               child: Column(
                                 children: [
-                                  const Text(
-                                    'Find Event Vendors',
-                                    style: TextStyle(
+                                  Text(
+                                    t.translate('findEventVendors'),
+                                    style: const TextStyle(
                                       color: primary,
                                       fontSize: 20,
                                       fontWeight: FontWeight.bold,
@@ -267,7 +278,7 @@ class _VenuesPageState extends State<VenuesPage> {
                                   ),
                                   const SizedBox(height: 2),
                                   Text(
-                                    '${_vendorDocs.length} verified vendors across Pakistan',
+                                    '${_vendorDocs.length} ${t.translate('verifiedVendorsAcrossPakistan')}',
                                     style: TextStyle(
                                         color: primary.withOpacity(0.7),
                                         fontSize: 13),
@@ -287,7 +298,7 @@ class _VenuesPageState extends State<VenuesPage> {
                                     setState(() => _searchQuery = v),
                                 decoration: InputDecoration(
                                   hintText:
-                                      'Search vendors by name, city, or details...',
+                                      t.translate('searchVendorsByNameCityOrDetails'),
                                   prefixIcon:
                                       const Icon(Icons.search, color: primary),
                                   suffixIcon: _searchQuery.isNotEmpty
@@ -430,7 +441,7 @@ class _VenuesPageState extends State<VenuesPage> {
                               padding:
                                   const EdgeInsets.symmetric(horizontal: 16),
                               child: Text(
-                                '${vendorDocs.length} vendor${vendorDocs.length == 1 ? '' : 's'} found',
+                                vendorCountText,
                                 style: TextStyle(
                                   fontSize: 13,
                                   color: Colors.grey.shade600,
@@ -451,15 +462,17 @@ class _VenuesPageState extends State<VenuesPage> {
                                               size: 60,
                                               color: Colors.grey.shade300),
                                           const SizedBox(height: 12),
-                                          const Text('No vendors found',
-                                              style: TextStyle(
-                                                  fontSize: 16,
-                                                  color: Colors.grey)),
+                                          Text(
+                                            t.translate('noVendorsFound'),
+                                            style: const TextStyle(
+                                                fontSize: 16,
+                                                color: Colors.grey),
+                                          ),
                                           const SizedBox(height: 8),
                                           Text(
                                             _vendorDocs.isEmpty
-                                                ? 'No vendor accounts yet. Vendors appear here after they sign up with role vendor in Firebase.'
-                                                : 'Try adjusting filters or search.',
+                                                ? t.translate('noVendorAccountsYet')
+                                                : t.translate('tryAdjustingFiltersOrSearch'),
                                             textAlign: TextAlign.center,
                                             style: TextStyle(
                                               fontSize: 13,
@@ -514,9 +527,9 @@ class _VenuesPageState extends State<VenuesPage> {
                                     ),
                                     icon: const Icon(Icons.explore_outlined,
                                         color: Colors.white, size: 18),
-                                    label: const Text(
-                                      'Explore All Vendors',
-                                      style: TextStyle(
+                                    label: Text(
+                                      t.translate('exploreAllVendors'),
+                                      style: const TextStyle(
                                         color: Colors.white,
                                         fontSize: 15,
                                         fontWeight: FontWeight.w600,

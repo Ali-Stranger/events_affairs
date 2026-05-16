@@ -717,6 +717,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'app_localizations.dart';
 import 'footer.dart';
 import 'drawer.dart';
 import 'saved_vendors_repository.dart';
@@ -873,11 +874,12 @@ class _VenueContactPageState extends State<VenueContactPage> {
   }
 
   Future<void> _onBookmarkTap() async {
+    final t = AppLocalizations.of(context);
     final customerUid = FirebaseAuth.instance.currentUser?.uid;
     if (customerUid == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Sign in to save vendors to your list.'),
+        SnackBar(
+          content: Text(t.translate('signInToSaveVendors')),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -886,8 +888,8 @@ class _VenueContactPageState extends State<VenueContactPage> {
     final vid = _vendorUid;
     if (vid == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Vendor profile is still loading. Try again.'),
+        SnackBar(
+          content: Text(t.translate('vendorProfileLoadingTryAgain')),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -907,8 +909,8 @@ class _VenueContactPageState extends State<VenueContactPage> {
         SnackBar(
           content: Text(
             next
-                ? '${widget.name} saved to favourites!'
-                : 'Removed from favourites',
+                ? '${widget.name} ${t.translate('savedToFavourites')}'
+                : t.translate('removedFromFavourites'),
           ),
           backgroundColor: primary,
           behavior: SnackBarBehavior.floating,
@@ -918,8 +920,8 @@ class _VenueContactPageState extends State<VenueContactPage> {
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Could not update saved vendors.'),
+        SnackBar(
+          content: Text(t.translate('couldNotUpdateSavedVendors')),
           backgroundColor: Colors.red,
           behavior: SnackBarBehavior.floating,
         ),
@@ -990,11 +992,12 @@ class _VenueContactPageState extends State<VenueContactPage> {
 
   // ── Submit form ────────────────────────────────────────────────────────────
   Future<void> _submit() async {
+    final t = AppLocalizations.of(context);
     if (!_formKey.currentState!.validate()) return;
     if (_selectedDate == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select a preferred event date'),
+        SnackBar(
+          content: Text(t.translate('pleaseSelectPreferredDate')),
           backgroundColor: Colors.orange,
           behavior: SnackBarBehavior.floating,
         ),
@@ -1005,8 +1008,8 @@ class _VenueContactPageState extends State<VenueContactPage> {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please login to send an enquiry.'),
+        SnackBar(
+          content: Text(t.translate('pleaseLoginToSendEnquiry')),
           backgroundColor: Colors.orange,
           behavior: SnackBarBehavior.floating,
         ),
@@ -1020,14 +1023,10 @@ class _VenueContactPageState extends State<VenueContactPage> {
     if (vendorUid == null) {
       setState(() => _isSubmitting = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Vendor not found. Please try again later.'),
-          backgroundColor: Colors.red,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-      return;
-    }
+          SnackBar(
+            content: Text(t.translate('vendorNotFoundPleaseTryAgainLater')),
+      )
+    );}
 
     try {
       final budgetPkr = _parseBudgetPkr(_budgetCtrl.text) ?? 0;
@@ -1062,8 +1061,8 @@ class _VenueContactPageState extends State<VenueContactPage> {
     } catch (_) {
       setState(() => _isSubmitting = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Failed to send enquiry. Please try again.'),
+        SnackBar(
+          content: Text(t.translate('failedToSendEnquiry')),
           backgroundColor: Colors.red,
           behavior: SnackBarBehavior.floating,
         ),
@@ -1079,10 +1078,11 @@ class _VenueContactPageState extends State<VenueContactPage> {
   }
 
   Future<void> _submitReview() async {
+    final t = AppLocalizations.of(context);
     if (_reviewCtrl.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please write your review'),
+        SnackBar(
+          content: Text(t.translate('pleaseWriteYourReview')),
           backgroundColor: Colors.orange,
           behavior: SnackBarBehavior.floating,
         ),
@@ -1101,8 +1101,8 @@ class _VenueContactPageState extends State<VenueContactPage> {
       if (vendorSnap.docs.isEmpty) {
         setState(() => _reviewSubmitting = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Vendor not found.'),
+          SnackBar(
+            content: Text(t.translate('vendorNotFoundPleaseTryAgainLater')),
             backgroundColor: Colors.red,
             behavior: SnackBarBehavior.floating,
           ),
@@ -1116,8 +1116,8 @@ class _VenueContactPageState extends State<VenueContactPage> {
       if (user == null) {
         setState(() => _reviewSubmitting = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Please login to leave a review.'),
+          SnackBar(
+            content: Text(t.translate('pleaseLoginToLeaveAReview')),
             backgroundColor: Colors.orange,
             behavior: SnackBarBehavior.floating,
           ),
@@ -1147,8 +1147,8 @@ class _VenueContactPageState extends State<VenueContactPage> {
       setState(() => _reviewSubmitting = false);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Failed to submit review. Try again.'),
+        SnackBar(
+          content: Text(t.translate('failedToSubmitReview')),
           backgroundColor: Colors.red,
           behavior: SnackBarBehavior.floating,
         ),
@@ -1183,6 +1183,7 @@ class _VenueContactPageState extends State<VenueContactPage> {
 
   @override
   Widget build(BuildContext context) {
+    final t = AppLocalizations.of(context);
     return Scaffold(
       drawer: const CommonDrawer(),
       appBar: const CommonAppBar(),
@@ -1372,9 +1373,9 @@ class _VenueContactPageState extends State<VenueContactPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'About this Venue',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  Text(
+                    t.translate('aboutThisVenue'),
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),
                   Text(
@@ -1393,9 +1394,9 @@ class _VenueContactPageState extends State<VenueContactPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Amenities',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  Text(
+                    t.translate('amenities'),
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 10),
                   Wrap(
@@ -1456,16 +1457,16 @@ class _VenueContactPageState extends State<VenueContactPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            'Send Enquiry',
-                            style: TextStyle(
+Text(
+                            t.translate('sendEnquiry'),
+                            style: const TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            'Fill in your details and the venue will contact you shortly.',
+                            t.translate('fillDetailsVenueContact'),
                             style: TextStyle(
                               fontSize: 13,
                               color: Colors.grey.shade600,
@@ -1477,10 +1478,10 @@ class _VenueContactPageState extends State<VenueContactPage> {
                           // Name
                           _formField(
                             controller: _nameCtrl,
-                            label: 'Full Name',
+                            label: t.translate('fullName'),
                             icon: Icons.person_outline,
                             validator: (v) => v == null || v.trim().isEmpty
-                                ? 'Please enter your name'
+                                ? t.translate('pleaseEnterYourName')
                                 : null,
                           ),
 
@@ -1489,7 +1490,7 @@ class _VenueContactPageState extends State<VenueContactPage> {
                           // Phone
                           _formField(
                             controller: _phoneCtrl,
-                            label: 'Phone Number',
+                            label: t.translate('contactNumber'),
                             icon: Icons.phone_outlined,
                             keyboardType: TextInputType.phone,
                             inputFormatters: [
@@ -1498,10 +1499,10 @@ class _VenueContactPageState extends State<VenueContactPage> {
                             ],
                             validator: (v) {
                               if (v == null || v.trim().isEmpty) {
-                                return 'Please enter your phone number';
+                                return t.translate('pleaseEnterYourPhoneNumber');
                               }
                               if (v.length < 10) {
-                                return 'Enter a valid phone number';
+                                return t.translate('enterValidPhoneNumber');
                               }
                               return null;
                             },
@@ -1512,15 +1513,15 @@ class _VenueContactPageState extends State<VenueContactPage> {
                           // Email
                           _formField(
                             controller: _emailCtrl,
-                            label: 'Email Address',
+                            label: t.translate('emailAddress'),
                             icon: Icons.email_outlined,
                             keyboardType: TextInputType.emailAddress,
                             validator: (v) {
                               if (v == null || v.trim().isEmpty) {
-                                return 'Please enter your email';
+                                return t.translate('pleaseEnterYourEmail');
                               }
                               if (!v.contains('@') || !v.contains('.')) {
-                                return 'Enter a valid email address';
+                                return t.translate('enterValidEmail');
                               }
                               return null;
                             },
@@ -1531,7 +1532,7 @@ class _VenueContactPageState extends State<VenueContactPage> {
                           // Estimated budget (PKR)
                           _formField(
                             controller: _budgetCtrl,
-                            label: 'Estimated budget (PKR)',
+                            label: t.translate('estimatedBudgetPkr'),
                             icon: Icons.account_balance_wallet_outlined,
                             keyboardType: TextInputType.number,
                             inputFormatters: [
@@ -1542,10 +1543,10 @@ class _VenueContactPageState extends State<VenueContactPage> {
                             validator: (v) {
                               final n = _parseBudgetPkr(v ?? '');
                               if (n == null || n <= 0) {
-                                return 'Enter a valid budget amount';
+                                return t.translate('enterValidBudgetAmount');
                               }
                               if (n > 100000000) {
-                                return 'Amount is too large';
+                                return t.translate('amountTooLarge');
                               }
                               return null;
                             },
@@ -1578,8 +1579,8 @@ class _VenueContactPageState extends State<VenueContactPage> {
                                   const SizedBox(width: 10),
                                   Text(
                                     _selectedDate == null
-                                        ? 'Select Event Date'
-                                        : 'Event Date: ${_formatDate(_selectedDate!)}',
+                                        ? t.translate('selectEventDate')
+                                        : '${t.translate('eventDateLabel')} ${_formatDate(_selectedDate!)}',
                                     style: TextStyle(
                                       fontSize: 14,
                                       color: _selectedDate == null
@@ -1599,7 +1600,7 @@ class _VenueContactPageState extends State<VenueContactPage> {
                             controller: _messageCtrl,
                             maxLines: 3,
                             decoration: InputDecoration(
-                              labelText: 'Additional Message (optional)',
+                              labelText: t.translate('additionalMessageOptional'),
                               alignLabelWithHint: true,
                               prefixIcon: const Padding(
                                 padding: EdgeInsets.only(bottom: 40),
@@ -1654,9 +1655,9 @@ class _VenueContactPageState extends State<VenueContactPage> {
                                         strokeWidth: 2,
                                       ),
                                     )
-                                  : const Text(
-                                      'Send Enquiry to Venue',
-                                      style: TextStyle(
+                                  : Text(
+                                      t.translate('sendEnquiryToVenue'),
+                                      style: const TextStyle(
                                         color: Colors.white,
                                         fontSize: 15,
                                         fontWeight: FontWeight.w600,
@@ -1677,9 +1678,9 @@ class _VenueContactPageState extends State<VenueContactPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Reviews',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  Text(
+                    t.translate('reviews'),
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 12),
 
@@ -1838,7 +1839,7 @@ class _VenueContactPageState extends State<VenueContactPage> {
                             Icons.rate_review_outlined,
                             size: 18,
                           ),
-                          label: const Text('Leave a Review'),
+                          label: Text(t.translate('leaveAReview')),
                         ),
                       )
                     else
@@ -1852,9 +1853,9 @@ class _VenueContactPageState extends State<VenueContactPage> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
-                              'Your Rating',
-                              style: TextStyle(
+                            Text(
+                              t.translate('yourRating'),
+                              style: const TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 14,
                               ),
@@ -1881,7 +1882,7 @@ class _VenueContactPageState extends State<VenueContactPage> {
                               controller: _reviewCtrl,
                               maxLines: 3,
                               decoration: InputDecoration(
-                                hintText: 'Share your experience...',
+                                hintText: t.translate('shareYourExperience'),
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(10),
                                 ),
@@ -1916,7 +1917,7 @@ class _VenueContactPageState extends State<VenueContactPage> {
                                         borderRadius: BorderRadius.circular(10),
                                       ),
                                     ),
-                                    child: const Text('Cancel'),
+                                    child: Text(t.translate('cancel')),
                                   ),
                                 ),
                                 const SizedBox(width: 10),
@@ -1940,9 +1941,9 @@ class _VenueContactPageState extends State<VenueContactPage> {
                                               strokeWidth: 2,
                                             ),
                                           )
-                                        : const Text(
-                                            'Submit',
-                                            style: TextStyle(
+                                        : Text(
+                                            t.translate('submit'),
+                                            style: const TextStyle(
                                               color: Colors.white,
                                             ),
                                           ),
@@ -1963,17 +1964,17 @@ class _VenueContactPageState extends State<VenueContactPage> {
                           color: Colors.green.withOpacity(0.3),
                         ),
                       ),
-                      child: const Row(
+                      child: Row(
                         children: [
-                          Icon(
+                          const Icon(
                             Icons.check_circle,
                             color: Colors.green,
                             size: 20,
                           ),
-                          SizedBox(width: 10),
+                          const SizedBox(width: 10),
                           Text(
-                            'Review submitted! Thank you.',
-                            style: TextStyle(color: Colors.green),
+                            t.translate('reviewSubmittedThankYou'),
+                            style: const TextStyle(color: Colors.green),
                           ),
                         ],
                       ),
@@ -2069,6 +2070,8 @@ class _SuccessView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = AppLocalizations.of(context);
+
     return Column(
       children: [
         const SizedBox(height: 10),
@@ -2086,9 +2089,9 @@ class _SuccessView extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 16),
-        const Text(
-          'Enquiry Sent!',
-          style: TextStyle(
+        Text(
+          t.translate('enquirySent'),
+          style: const TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,
             color: Colors.green,
@@ -2096,7 +2099,7 @@ class _SuccessView extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         Text(
-          'Your request has been sent to $venueName.\nThey will contact you shortly.',
+          t.translate('requestSentToVenue', {'venueName': venueName}),
           textAlign: TextAlign.center,
           style: const TextStyle(fontSize: 14, height: 1.6),
         ),
@@ -2111,7 +2114,7 @@ class _SuccessView extends StatelessWidget {
           ),
           onPressed: () => Navigator.pop(context),
           icon: const Icon(Icons.arrow_back, size: 16),
-          label: const Text('Back to Venues'),
+          label: Text(t.translate('backToVenues')),
         ),
         const SizedBox(height: 10),
       ],
@@ -2130,6 +2133,7 @@ class _ReviewsList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = AppLocalizations.of(context);
     if (!vendorUidLoaded) {
       return const Padding(
         padding: EdgeInsets.all(16),
@@ -2145,9 +2149,9 @@ class _ReviewsList extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: primary.withOpacity(0.15)),
         ),
-        child: const Text(
-          'No reviews yet.',
-          style: TextStyle(color: Colors.grey),
+        child: Text(
+          t.translate('noReviewsYet'),
+          style: const TextStyle(color: Colors.grey),
         ),
       );
     }
@@ -2175,9 +2179,9 @@ class _ReviewsList extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: primary.withOpacity(0.15)),
             ),
-            child: const Text(
-              'No reviews yet. Be the first to review!',
-              style: TextStyle(color: Colors.grey),
+            child: Text(
+              t.translate('noReviewsYetBeFirstToReview'),
+              style: const TextStyle(color: Colors.grey),
             ),
           );
         }
@@ -2253,7 +2257,7 @@ class _ReviewsList extends StatelessWidget {
                         ),
                       ),
                       child: Text(
-                        'Vendor: ${d['reply']}',
+                        '${t.translate('vendorReplyPrefix')}${d['reply']}',
                         style: const TextStyle(
                           fontSize: 12,
                           color: Colors.black87,

@@ -1159,40 +1159,40 @@ class _ProfileHeader extends StatelessWidget {
                     color: isDark ? Colors.white54 : Colors.black54,
                   ),
                 ),
-                const SizedBox(height: 6),
-                Row(
-                  children: [
-                    const Icon(Icons.star, color: Colors.amber, size: 14),
-                    const SizedBox(width: 4),
-                    Text(
-                      '4.8',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: isDark ? Colors.white : Colors.black87,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.green.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Text(
-                        'Live',
-                        style: TextStyle(
-                          color: Colors.green,
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+                // const SizedBox(height: 6),
+                // Row(
+                //   children: [
+                //     // const Icon(Icons.star, color: Colors.amber, size: 14),
+                //     // const SizedBox(width: 4),
+                //     // // Text(
+                //     //   '4.8',
+                //     //   style: TextStyle(
+                //     //     fontSize: 12,
+                //     //     fontWeight: FontWeight.bold,
+                //     //     color: isDark ? Colors.white : Colors.black87,
+                //     //   ),
+                //     // ),
+                //     const SizedBox(width: 8),
+                //     Container(
+                //       padding: const EdgeInsets.symmetric(
+                //         horizontal: 8,
+                //         vertical: 2,
+                //       ),
+                //       decoration: BoxDecoration(
+                //         color: Colors.green.withOpacity(0.1),
+                //         borderRadius: BorderRadius.circular(12),
+                //       ),
+                //       child: const Text(
+                //         'Live',
+                //         style: TextStyle(
+                //           color: Colors.green,
+                //           fontSize: 10,
+                //           fontWeight: FontWeight.bold,
+                //         ),
+                //       ),
+                //     ),
+                //   ],
+                // ),
               ],
             ),
           ),
