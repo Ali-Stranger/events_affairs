@@ -366,6 +366,7 @@ class AdminStore extends ChangeNotifier {
 
       leads = quotesSnap.docs.map((doc) {
         final d = doc.data();
+        final message = d['message']?.toString().trim() ?? '';
 
         return AdminLead(
           id: doc.id,
@@ -375,7 +376,9 @@ class AdminStore extends ChangeNotifier {
           city: d['city']?.toString() ?? '',
           eventDate: d['eventDate']?.toString() ?? '',
           createdAt: (d['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
-          note: 'Lead only — vendor should call user directly.',
+          note: message.isEmpty
+              ? 'Lead only — vendor should call user directly.'
+              : message,
         );
       }).toList();
 

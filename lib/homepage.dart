@@ -115,6 +115,7 @@ class _CreateHomePageState extends State<CreateHomePage> {
   final _quoteFormKey = GlobalKey<FormState>();
   final _quoteNameCtrl = TextEditingController();
   final _quotePhoneCtrl = TextEditingController();
+  final _quoteMessageCtrl = TextEditingController();
   String? _formCategory;
   String? _formLocation;
   DateTime? _eventDate;
@@ -126,6 +127,7 @@ class _CreateHomePageState extends State<CreateHomePage> {
     _vendorSearchCtrl.dispose();
     _quoteNameCtrl.dispose();
     _quotePhoneCtrl.dispose();
+    _quoteMessageCtrl.dispose();
     super.dispose();
   }
 
@@ -455,6 +457,7 @@ class _CreateHomePageState extends State<CreateHomePage> {
         'category': _formCategory,
         'city': _formLocation,
         'eventDate': _formatDate(_eventDate!),
+        'message': _quoteMessageCtrl.text.trim(),
         'createdAt': FieldValue.serverTimestamp(),
         'status': 'pending',
       });
@@ -480,6 +483,7 @@ class _CreateHomePageState extends State<CreateHomePage> {
   void _resetQuote() {
     _quoteNameCtrl.clear();
     _quotePhoneCtrl.clear();
+    _quoteMessageCtrl.clear();
     setState(() {
       _formCategory = null;
       _formLocation = null;
@@ -908,6 +912,25 @@ class _CreateHomePageState extends State<CreateHomePage> {
                                 ],
                               ),
                             ),
+                          ),
+
+                          const SizedBox(height: 12),
+
+                          // Row 5: Message field
+                          TextFormField(
+                            controller: _quoteMessageCtrl,
+                            maxLines: 3,
+                            decoration: _inputDecoration(
+                              t.translate('additionalNotes') ?? 'Additional Notes / Details',
+                              Icons.message_outlined,
+                            ),
+                            validator: (v) {
+                              // Optional field, but if provided, should be at least 3 characters
+                              if (v != null && v.trim().isNotEmpty && v.trim().length < 3) {
+                                return 'Please enter at least 3 characters';
+                              }
+                              return null;
+                            },
                           ),
 
                           const SizedBox(height: 20),

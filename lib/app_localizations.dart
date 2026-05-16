@@ -144,6 +144,7 @@ const Map<String, Map<String, String>> _translations = {
     'logout': 'Log Out',
     'logoutDialogMessage': 'Are you sure you want to log out?',
     'cancel': 'Cancel',
+    'additionalNotes': 'Additional Notes / Details',
     'edit': 'Edit',
     'selectDefaultCity': 'Select Default City',
     'selectLanguage': 'Select Language',
