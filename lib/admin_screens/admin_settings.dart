@@ -312,14 +312,14 @@ class _AdminSettingsPageState extends State<AdminSettingsPage> {
                 subtitle: _defaultCity,
                 onTap: _showCityPicker,
               ),
-              _SettingsTile(
-                icon: Icons.format_list_numbered,
-                iconBg: Colors.indigo.withValues(alpha: 0.13),
-                title: 'Leads Per Page',
-                subtitle: '$_leadsPerPage leads',
-                onTap: _showLeadsPerPagePicker,
-                showDivider: false,
-              ),
+              // _SettingsTile(
+              //   icon: Icons.format_list_numbered,
+              //   iconBg: Colors.indigo.withValues(alpha: 0.13),
+              //   title: 'Leads Per Page',
+              //   subtitle: '$_leadsPerPage leads',
+              //   onTap: _showLeadsPerPagePicker,
+              //   showDivider: false,
+              // ),
             ]),
             _sectionLabel('Notifications'),
             _settingsCard([
