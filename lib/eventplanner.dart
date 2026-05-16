@@ -962,7 +962,6 @@
 //   }
 // }
 
-
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -1064,7 +1063,9 @@ class EventPlannerVendor {
     String priceLabel = data['price']?.toString() ?? 'Contact for price';
     if (startingPriceRaw != null && startingPriceRaw.isNotEmpty) {
       final lower = startingPriceRaw.toLowerCase();
-      if (lower.contains('pkr') || lower.startsWith('rs') || lower.contains('rs ')) {
+      if (lower.contains('pkr') ||
+          lower.startsWith('rs') ||
+          lower.contains('rs ')) {
         priceLabel = startingPriceRaw;
       } else {
         priceLabel = 'PKR $startingPriceRaw';
@@ -1216,15 +1217,15 @@ class _EventplannerState extends State<Eventplanner> {
 
     try {
       // Query the 'users' collection where role == 'vendor'
-      // Optionally filter approved == true if you have that field
       final QuerySnapshot snapshot = await FirebaseFirestore.instance
           .collection('users')
           .where('role', isEqualTo: 'vendor')
-          // Uncomment the line below to only show approved vendors:
-          // .where('approved', isEqualTo: true)
           .get();
 
-      final docs = snapshot.docs;
+      final docs = snapshot.docs.where((doc) {
+        final data = doc.data() as Map<String, dynamic>;
+        return _isVisibleVendor(data);
+      }).toList();
       final byId = <String, EventPlannerVendor>{
         for (final doc in docs)
           doc.id: EventPlannerVendor.fromFirestore(
@@ -1250,7 +1251,8 @@ class _EventplannerState extends State<Eventplanner> {
   List<String> get _filteredVendorIds {
     final ids = _vendorIdsInOrder.where((id) {
       final v = _vendorById[id]!;
-      final matchSearch = _searchQuery.isEmpty ||
+      final matchSearch =
+          _searchQuery.isEmpty ||
           v.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
           v.description.toLowerCase().contains(_searchQuery.toLowerCase());
       final matchLoc =
@@ -1265,28 +1267,24 @@ class _EventplannerState extends State<Eventplanner> {
     switch (_sortBy) {
       case 'Price: Low to High':
         ids.sort(
-          (a, b) => _vendorById[a]!
-              .priceValue
-              .compareTo(_vendorById[b]!.priceValue),
+          (a, b) =>
+              _vendorById[a]!.priceValue.compareTo(_vendorById[b]!.priceValue),
         );
         break;
       case 'Price: High to Low':
         ids.sort(
-          (a, b) => _vendorById[b]!
-              .priceValue
-              .compareTo(_vendorById[a]!.priceValue),
+          (a, b) =>
+              _vendorById[b]!.priceValue.compareTo(_vendorById[a]!.priceValue),
         );
         break;
       case 'Top Rated':
         ids.sort(
-          (a, b) =>
-              _vendorById[b]!.rating.compareTo(_vendorById[a]!.rating),
+          (a, b) => _vendorById[b]!.rating.compareTo(_vendorById[a]!.rating),
         );
         break;
       case 'Most Reviewed':
         ids.sort(
-          (a, b) =>
-              _vendorById[b]!.reviews.compareTo(_vendorById[a]!.reviews),
+          (a, b) => _vendorById[b]!.reviews.compareTo(_vendorById[a]!.reviews),
         );
         break;
     }
@@ -1304,12 +1302,21 @@ class _EventplannerState extends State<Eventplanner> {
     });
   }
 
+  bool _isVisibleVendor(Map<String, dynamic> data) {
+    final approvedValue = data['approved'];
+    final bool isApproved =
+        approvedValue == true ||
+        (approvedValue is String && approvedValue.toLowerCase() == 'true');
+    final suspendedValue = data['suspended'];
+    final bool isSuspended =
+        suspendedValue == true ||
+        (suspendedValue is String && suspendedValue.toLowerCase() == 'true');
+    return isApproved && !isSuspended;
+  }
+
   String _formatPrice(double v) {
     if (v >= 1000000) return 'PKR 10,00,000';
-    return 'PKR ${v.round().toString().replaceAllMapped(
-          RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-          (m) => '${m[1]},',
-        )}';
+    return 'PKR ${v.round().toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')}';
   }
 
   @override
@@ -1331,363 +1338,385 @@ class _EventplannerState extends State<Eventplanner> {
             child: _isLoading
                 ? _buildLoadingState()
                 : _error != null
-                    ? _buildErrorState()
-                    : SingleChildScrollView(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // ── Header ──────────────────────────────────────
-                            Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 8),
-                              child: Row(
-                                children: [
-                                  Builder(
-                                    builder: (ctx) => IconButton(
-                                      icon: const Icon(Icons.menu),
-                                      onPressed: () =>
-                                          Scaffold.of(ctx).openDrawer(),
-                                    ),
-                                  ),
-                                  Image.asset('assets/images/logo.png',
-                                      width: 80, height: 80),
-                                ],
-                              ),
-                            ),
-
-                            // ── Title banner ─────────────────────────────────
-                            Container(
-                              width: double.infinity,
-                              margin: const EdgeInsets.symmetric(horizontal: 16),
-                              padding:
-                                  const EdgeInsets.symmetric(vertical: 14),
-                              alignment: Alignment.center,
-                              decoration: BoxDecoration(
-                                color: kPrimary.withOpacity(0.10),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                    color: kPrimary.withOpacity(0.3)),
-                              ),
-                              child: Column(
-                                children: [
-                                  const Text(
-                                    'Find Event Vendors',
-                                    style: TextStyle(
-                                      color: kPrimary,
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    '${_vendorIdsInOrder.length} verified vendors across Pakistan',
-                                    style: TextStyle(
-                                        color: kPrimary.withOpacity(0.7),
-                                        fontSize: 13),
-                                  ),
-                                ],
-                              ),
-                            ),
-
-                            const SizedBox(height: 16),
-
-                            // ── Search bar ───────────────────────────────────
-                            Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 16),
-                              child: TextField(
-                                controller: _searchCtrl,
-                                onChanged: (v) =>
-                                    setState(() => _searchQuery = v),
-                                decoration: InputDecoration(
-                                  hintText: 'Search vendors by name...',
-                                  prefixIcon: const Icon(Icons.search,
-                                      color: kPrimary, size: 20),
-                                  suffixIcon: _searchQuery.isNotEmpty
-                                      ? IconButton(
-                                          icon: const Icon(Icons.clear,
-                                              size: 18),
-                                          onPressed: () {
-                                            _searchCtrl.clear();
-                                            setState(() => _searchQuery = '');
-                                          },
-                                        )
-                                      : null,
-                                  border: OutlineInputBorder(
-                                      borderRadius:
-                                          BorderRadius.circular(12)),
-                                  focusedBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                    borderSide: const BorderSide(
-                                        color: kPrimary, width: 1.5),
-                                  ),
-                                  enabledBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                    borderSide: BorderSide(
-                                        color: kPrimary.withOpacity(0.3)),
-                                  ),
-                                  filled: true,
-                                  contentPadding:
-                                      const EdgeInsets.symmetric(vertical: 0),
+                ? _buildErrorState()
+                : SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // ── Header ──────────────────────────────────────
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          child: Row(
+                            children: [
+                              Builder(
+                                builder: (ctx) => IconButton(
+                                  icon: const Icon(Icons.menu),
+                                  onPressed: () =>
+                                      Scaffold.of(ctx).openDrawer(),
                                 ),
                               ),
+                              Image.asset(
+                                'assets/images/logo.png',
+                                width: 80,
+                                height: 80,
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        // ── Title banner ─────────────────────────────────
+                        Container(
+                          width: double.infinity,
+                          margin: const EdgeInsets.symmetric(horizontal: 16),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: kPrimary.withOpacity(0.10),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: kPrimary.withOpacity(0.3),
                             ),
+                          ),
+                          child: Column(
+                            children: [
+                              const Text(
+                                'Find Event Vendors',
+                                style: TextStyle(
+                                  color: kPrimary,
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                '${_vendorIdsInOrder.length} verified vendors across Pakistan',
+                                style: TextStyle(
+                                  color: kPrimary.withOpacity(0.7),
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
 
-                            const SizedBox(height: 12),
+                        const SizedBox(height: 16),
 
-                            // ── Category chips ────────────────────────────────
-                            SizedBox(
-                              height: 38,
-                              child: ListView.separated(
-                                scrollDirection: Axis.horizontal,
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 16),
-                                itemCount: kCategories.length,
-                                separatorBuilder: (_, __) =>
-                                    const SizedBox(width: 8),
-                                itemBuilder: (_, i) {
-                                  final cat = kCategories[i];
-                                  final isSelected =
-                                      _selectedCategory == cat;
-                                  return GestureDetector(
-                                    onTap: () => setState(
-                                        () => _selectedCategory = cat),
-                                    child: AnimatedContainer(
-                                      duration:
-                                          const Duration(milliseconds: 180),
+                        // ── Search bar ───────────────────────────────────
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: TextField(
+                            controller: _searchCtrl,
+                            onChanged: (v) => setState(() => _searchQuery = v),
+                            decoration: InputDecoration(
+                              hintText: 'Search vendors by name...',
+                              prefixIcon: const Icon(
+                                Icons.search,
+                                color: kPrimary,
+                                size: 20,
+                              ),
+                              suffixIcon: _searchQuery.isNotEmpty
+                                  ? IconButton(
+                                      icon: const Icon(Icons.clear, size: 18),
+                                      onPressed: () {
+                                        _searchCtrl.clear();
+                                        setState(() => _searchQuery = '');
+                                      },
+                                    )
+                                  : null,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: const BorderSide(
+                                  color: kPrimary,
+                                  width: 1.5,
+                                ),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                  color: kPrimary.withOpacity(0.3),
+                                ),
+                              ),
+                              filled: true,
+                              contentPadding: const EdgeInsets.symmetric(
+                                vertical: 0,
+                              ),
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(height: 12),
+
+                        // ── Category chips ────────────────────────────────
+                        SizedBox(
+                          height: 38,
+                          child: ListView.separated(
+                            scrollDirection: Axis.horizontal,
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            itemCount: kCategories.length,
+                            separatorBuilder: (_, __) =>
+                                const SizedBox(width: 8),
+                            itemBuilder: (_, i) {
+                              final cat = kCategories[i];
+                              final isSelected = _selectedCategory == cat;
+                              return GestureDetector(
+                                onTap: () =>
+                                    setState(() => _selectedCategory = cat),
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 180),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 8,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: isSelected
+                                        ? kPrimary
+                                        : kPrimary.withOpacity(0.08),
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(
+                                      color: isSelected
+                                          ? kPrimary
+                                          : kPrimary.withOpacity(0.3),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    cat,
+                                    style: TextStyle(
+                                      color: isSelected
+                                          ? Colors.white
+                                          : kPrimary,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+
+                        const SizedBox(height: 12),
+
+                        // ── Location + Sort row ───────────────────────────
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: _filterDropdown<String>(
+                                  value: _selectedLocation,
+                                  hint: 'All Cities',
+                                  icon: Icons.location_on_outlined,
+                                  items: kLocations,
+                                  onChanged: (v) =>
+                                      setState(() => _selectedLocation = v),
+                                  showClear: _selectedLocation != null,
+                                  onClear: () =>
+                                      setState(() => _selectedLocation = null),
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: _filterDropdown<String>(
+                                  value: _sortBy,
+                                  hint: 'Sort By',
+                                  icon: Icons.sort,
+                                  items: kSortOptions,
+                                  onChanged: (v) => setState(
+                                    () => _sortBy = v ?? 'Recommended',
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        const SizedBox(height: 14),
+
+                        // ── Price slider ──────────────────────────────────
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 12,
+                            ),
+                            decoration: BoxDecoration(
+                              color: kPrimary.withOpacity(0.05),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: kPrimary.withOpacity(0.2),
+                              ),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    const Text(
+                                      'Max Budget',
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w600,
+                                        color: kPrimary,
+                                      ),
+                                    ),
+                                    Container(
                                       padding: const EdgeInsets.symmetric(
-                                          horizontal: 16, vertical: 8),
+                                        horizontal: 10,
+                                        vertical: 3,
+                                      ),
                                       decoration: BoxDecoration(
-                                        color: isSelected
-                                            ? kPrimary
-                                            : kPrimary.withOpacity(0.08),
-                                        borderRadius:
-                                            BorderRadius.circular(20),
-                                        border: Border.all(
-                                          color: isSelected
-                                              ? kPrimary
-                                              : kPrimary.withOpacity(0.3),
-                                        ),
+                                        color: kPrimary,
+                                        borderRadius: BorderRadius.circular(20),
                                       ),
                                       child: Text(
-                                        cat,
-                                        style: TextStyle(
-                                          color: isSelected
-                                              ? Colors.white
-                                              : kPrimary,
+                                        _formatPrice(_maxPrice),
+                                        style: const TextStyle(
+                                          color: Colors.white,
                                           fontSize: 12,
-                                          fontWeight: FontWeight.w600,
+                                          fontWeight: FontWeight.bold,
                                         ),
                                       ),
-                                    ),
-                                  );
-                                },
-                              ),
-                            ),
-
-                            const SizedBox(height: 12),
-
-                            // ── Location + Sort row ───────────────────────────
-                            Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 16),
-                              child: Row(
-                                children: [
-                                  Expanded(
-                                    child: _filterDropdown<String>(
-                                      value: _selectedLocation,
-                                      hint: 'All Cities',
-                                      icon: Icons.location_on_outlined,
-                                      items: kLocations,
-                                      onChanged: (v) => setState(
-                                          () => _selectedLocation = v),
-                                      showClear: _selectedLocation != null,
-                                      onClear: () => setState(
-                                          () => _selectedLocation = null),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 10),
-                                  Expanded(
-                                    child: _filterDropdown<String>(
-                                      value: _sortBy,
-                                      hint: 'Sort By',
-                                      icon: Icons.sort,
-                                      items: kSortOptions,
-                                      onChanged: (v) => setState(() =>
-                                          _sortBy = v ?? 'Recommended'),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-
-                            const SizedBox(height: 14),
-
-                            // ── Price slider ──────────────────────────────────
-                            Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 16),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 16, vertical: 12),
-                                decoration: BoxDecoration(
-                                  color: kPrimary.withOpacity(0.05),
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                      color: kPrimary.withOpacity(0.2)),
-                                ),
-                                child: Column(
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        const Text(
-                                          'Max Budget',
-                                          style: TextStyle(
-                                            fontSize: 13,
-                                            fontWeight: FontWeight.w600,
-                                            color: kPrimary,
-                                          ),
-                                        ),
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(
-                                              horizontal: 10, vertical: 3),
-                                          decoration: BoxDecoration(
-                                            color: kPrimary,
-                                            borderRadius:
-                                                BorderRadius.circular(20),
-                                          ),
-                                          child: Text(
-                                            _formatPrice(_maxPrice),
-                                            style: const TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    Slider(
-                                      value: _maxPrice,
-                                      min: 10000,
-                                      max: 1000000,
-                                      divisions: 99,
-                                      activeColor: kPrimary,
-                                      inactiveColor:
-                                          kPrimary.withOpacity(0.15),
-                                      onChanged: (v) =>
-                                          setState(() => _maxPrice = v),
-                                    ),
-                                    Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Text('PKR 10,000',
-                                            style: TextStyle(
-                                                fontSize: 11,
-                                                color: Colors.grey.shade500)),
-                                        Text('PKR 10,00,000',
-                                            style: TextStyle(
-                                                fontSize: 11,
-                                                color: Colors.grey.shade500)),
-                                      ],
                                     ),
                                   ],
                                 ),
-                              ),
-                            ),
-
-                            const SizedBox(height: 12),
-
-                            // ── Results row ───────────────────────────────────
-                            Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 16),
-                              child: Row(
-                                children: [
-                                  Text(
-                                    '${vendorIds.length} vendor${vendorIds.length == 1 ? '' : 's'} found',
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      color: Colors.grey.shade600,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                  const Spacer(),
-                                  if (_searchQuery.isNotEmpty ||
-                                      _selectedLocation != null ||
-                                      _selectedCategory != 'All' ||
-                                      _maxPrice < 1000000)
-                                    TextButton.icon(
-                                      onPressed: _resetFilters,
-                                      icon: const Icon(Icons.refresh,
-                                          size: 14, color: kPrimary),
-                                      label: const Text('Reset',
-                                          style: TextStyle(
-                                              color: kPrimary, fontSize: 12)),
-                                      style: TextButton.styleFrom(
-                                          padding: EdgeInsets.zero),
-                                    ),
-                                ],
-                              ),
-                            ),
-
-                            const SizedBox(height: 8),
-
-                            // ── Vendor cards ──────────────────────────────────
-                            vendorIds.isEmpty
-                                ? Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                        vertical: 40),
-                                    child: Center(
-                                      child: Column(
-                                        children: [
-                                          Icon(Icons.search_off,
-                                              size: 64,
-                                              color: Colors.grey.shade300),
-                                          const SizedBox(height: 12),
-                                          const Text('No vendors found',
-                                              style: TextStyle(
-                                                  fontSize: 16,
-                                                  color: Colors.grey)),
-                                          const SizedBox(height: 8),
-                                          TextButton(
-                                            onPressed: _resetFilters,
-                                            child: const Text(
-                                                'Clear all filters',
-                                                style: TextStyle(
-                                                    color: kPrimary)),
-                                          ),
-                                        ],
+                                Slider(
+                                  value: _maxPrice,
+                                  min: 10000,
+                                  max: 1000000,
+                                  divisions: 99,
+                                  activeColor: kPrimary,
+                                  inactiveColor: kPrimary.withOpacity(0.15),
+                                  onChanged: (v) =>
+                                      setState(() => _maxPrice = v),
+                                ),
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      'PKR 10,000',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        color: Colors.grey.shade500,
                                       ),
                                     ),
-                                  )
-                                : ListView.builder(
-                                    shrinkWrap: true,
-                                    physics:
-                                        const NeverScrollableScrollPhysics(),
-                                    itemCount: vendorIds.length,
-                                    itemBuilder: (ctx, i) {
-                                      final id = vendorIds[i];
-                                      final vendor = _vendorById[id]!;
-                                      return EventPlannerVendorCard(
-                                        vendor: vendor,
-                                        isFavorite:
-                                            _favoriteVendorIds.contains(id),
-                                        onFavoriteToggle: () =>
-                                            _toggleFavorite(id),
-                                      );
-                                    },
-                                  ),
-
-                            const SizedBox(height: 24),
-                          ],
+                                    Text(
+                                      'PKR 10,00,000',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        color: Colors.grey.shade500,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
-                      ),
+
+                        const SizedBox(height: 12),
+
+                        // ── Results row ───────────────────────────────────
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: Row(
+                            children: [
+                              Text(
+                                '${vendorIds.length} vendor${vendorIds.length == 1 ? '' : 's'} found',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: Colors.grey.shade600,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              const Spacer(),
+                              if (_searchQuery.isNotEmpty ||
+                                  _selectedLocation != null ||
+                                  _selectedCategory != 'All' ||
+                                  _maxPrice < 1000000)
+                                TextButton.icon(
+                                  onPressed: _resetFilters,
+                                  icon: const Icon(
+                                    Icons.refresh,
+                                    size: 14,
+                                    color: kPrimary,
+                                  ),
+                                  label: const Text(
+                                    'Reset',
+                                    style: TextStyle(
+                                      color: kPrimary,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                  style: TextButton.styleFrom(
+                                    padding: EdgeInsets.zero,
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+
+                        const SizedBox(height: 8),
+
+                        // ── Vendor cards ──────────────────────────────────
+                        vendorIds.isEmpty
+                            ? Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 40,
+                                ),
+                                child: Center(
+                                  child: Column(
+                                    children: [
+                                      Icon(
+                                        Icons.search_off,
+                                        size: 64,
+                                        color: Colors.grey.shade300,
+                                      ),
+                                      const SizedBox(height: 12),
+                                      const Text(
+                                        'No vendors found',
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          color: Colors.grey,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      TextButton(
+                                        onPressed: _resetFilters,
+                                        child: const Text(
+                                          'Clear all filters',
+                                          style: TextStyle(color: kPrimary),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              )
+                            : ListView.builder(
+                                shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
+                                itemCount: vendorIds.length,
+                                itemBuilder: (ctx, i) {
+                                  final id = vendorIds[i];
+                                  final vendor = _vendorById[id]!;
+                                  return EventPlannerVendorCard(
+                                    vendor: vendor,
+                                    isFavorite: _favoriteVendorIds.contains(id),
+                                    onFavoriteToggle: () => _toggleFavorite(id),
+                                  );
+                                },
+                              ),
+
+                        const SizedBox(height: 24),
+                      ],
+                    ),
+                  ),
           ),
         ],
       ),
@@ -1731,12 +1760,12 @@ class _EventplannerState extends State<Eventplanner> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: kPrimary,
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10)),
+                  borderRadius: BorderRadius.circular(10),
+                ),
               ),
               onPressed: _fetchVendors,
               icon: const Icon(Icons.refresh, color: Colors.white),
-              label: const Text('Retry',
-                  style: TextStyle(color: Colors.white)),
+              label: const Text('Retry', style: TextStyle(color: Colors.white)),
             ),
           ],
         ),
@@ -1769,19 +1798,22 @@ class _EventplannerState extends State<Eventplanner> {
               child: DropdownButton<T>(
                 value: value,
                 isExpanded: true,
-                hint: Text(hint,
-                    style: TextStyle(
-                        fontSize: 12, color: Colors.grey.shade500)),
+                hint: Text(
+                  hint,
+                  style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
+                ),
                 style: const TextStyle(
-                    fontSize: 12,
-                    color: Colors.black87,
-                    fontWeight: FontWeight.w500),
+                  fontSize: 12,
+                  color: Colors.black87,
+                  fontWeight: FontWeight.w500,
+                ),
                 items: items
-                    .map((v) => DropdownMenuItem<T>(
-                          value: v as T,
-                          child:
-                              Text(v, style: const TextStyle(fontSize: 12)),
-                        ))
+                    .map(
+                      (v) => DropdownMenuItem<T>(
+                        value: v as T,
+                        child: Text(v, style: const TextStyle(fontSize: 12)),
+                      ),
+                    )
                     .toList(),
                 onChanged: onChanged,
               ),
@@ -1895,7 +1927,9 @@ class EventPlannerVendorCard extends StatelessWidget {
                     left: 10,
                     child: Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 4),
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: kPrimary,
                         borderRadius: BorderRadius.circular(20),
@@ -1923,14 +1957,13 @@ class EventPlannerVendorCard extends StatelessWidget {
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
-                                color: Colors.black.withOpacity(0.12),
-                                blurRadius: 4),
+                              color: Colors.black.withOpacity(0.12),
+                              blurRadius: 4,
+                            ),
                           ],
                         ),
                         child: Icon(
-                          isFavorite
-                              ? Icons.favorite
-                              : Icons.favorite_border,
+                          isFavorite ? Icons.favorite : Icons.favorite_border,
                           color: isFavorite ? Colors.red : Colors.grey,
                           size: 18,
                         ),
@@ -1943,17 +1976,17 @@ class EventPlannerVendorCard extends StatelessWidget {
                     left: 10,
                     child: Row(
                       children: [
-                        const Icon(Icons.star,
-                            color: Colors.amber, size: 14),
+                        const Icon(Icons.star, color: Colors.amber, size: 14),
                         const SizedBox(width: 3),
                         Text(
                           vendor.rating > 0
                               ? '${vendor.rating} (${vendor.reviews})'
                               : 'New',
                           style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600),
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ],
                     ),
@@ -1964,7 +1997,9 @@ class EventPlannerVendorCard extends StatelessWidget {
                     right: 10,
                     child: Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 4),
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(20),
@@ -1996,21 +2031,28 @@ class EventPlannerVendorCard extends StatelessWidget {
                           child: Text(
                             vendor.name,
                             style: const TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.bold),
+                              fontSize: 15,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
                         const SizedBox(width: 8),
                         Row(
                           children: [
-                            const Icon(Icons.location_on,
-                                color: kPrimary, size: 14),
+                            const Icon(
+                              Icons.location_on,
+                              color: kPrimary,
+                              size: 14,
+                            ),
                             const SizedBox(width: 2),
-                            Text(vendor.location,
-                                style: const TextStyle(
-                                    color: kPrimary,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w500)),
+                            Text(
+                              vendor.location,
+                              style: const TextStyle(
+                                color: kPrimary,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
                           ],
                         ),
                       ],
@@ -2020,13 +2062,18 @@ class EventPlannerVendorCard extends StatelessWidget {
                         vendor.experience != 'New')
                       Row(
                         children: [
-                          const Icon(Icons.work_outline,
-                              size: 13, color: Colors.grey),
+                          const Icon(
+                            Icons.work_outline,
+                            size: 13,
+                            color: Colors.grey,
+                          ),
                           const SizedBox(width: 4),
                           Text(
                             '${vendor.experience} experience',
                             style: const TextStyle(
-                                fontSize: 12, color: Colors.grey),
+                              fontSize: 12,
+                              color: Colors.grey,
+                            ),
                           ),
                         ],
                       ),
@@ -2040,7 +2087,9 @@ class EventPlannerVendorCard extends StatelessWidget {
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
-                                fontSize: 12, color: Colors.grey),
+                              fontSize: 12,
+                              color: Colors.grey,
+                            ),
                           )
                         : Wrap(
                             spacing: 6,
@@ -2048,18 +2097,24 @@ class EventPlannerVendorCard extends StatelessWidget {
                             children: vendor.services.map((s) {
                               return Container(
                                 padding: const EdgeInsets.symmetric(
-                                    horizontal: 8, vertical: 3),
+                                  horizontal: 8,
+                                  vertical: 3,
+                                ),
                                 decoration: BoxDecoration(
                                   color: kPrimary.withOpacity(0.07),
                                   borderRadius: BorderRadius.circular(20),
                                   border: Border.all(
-                                      color: kPrimary.withOpacity(0.2)),
+                                    color: kPrimary.withOpacity(0.2),
+                                  ),
                                 ),
-                                child: Text(s,
-                                    style: const TextStyle(
-                                        fontSize: 10,
-                                        color: kPrimary,
-                                        fontWeight: FontWeight.w500)),
+                                child: Text(
+                                  s,
+                                  style: const TextStyle(
+                                    fontSize: 10,
+                                    color: kPrimary,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
                               );
                             }).toList(),
                           ),
@@ -2072,7 +2127,8 @@ class EventPlannerVendorCard extends StatelessWidget {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: kPrimary,
                           shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10)),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
                         ),
                         onPressed: () => Navigator.push(
                           context,
@@ -2091,13 +2147,19 @@ class EventPlannerVendorCard extends StatelessWidget {
                             ),
                           ),
                         ),
-                        icon: const Icon(Icons.visibility_outlined,
-                            color: Colors.white, size: 16),
-                        label: const Text('View Details',
-                            style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600)),
+                        icon: const Icon(
+                          Icons.visibility_outlined,
+                          color: Colors.white,
+                          size: 16,
+                        ),
+                        label: const Text(
+                          'View Details',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                       ),
                     ),
                   ],
@@ -2128,4 +2190,3 @@ class EventPlannerVendorCard extends StatelessWidget {
     );
   }
 }
-
