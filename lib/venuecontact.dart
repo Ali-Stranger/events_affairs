@@ -987,7 +987,40 @@ class _VenueContactPageState extends State<VenueContactPage> {
         child: child!,
       ),
     );
-    if (picked != null) setState(() => _selectedDate = picked);
+
+    if (picked == null) return;
+
+    // Check if vendor has blocked this date
+    final vid = _vendorUid;
+    if (vid != null) {
+      final key =
+          '${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}';
+      try {
+        final doc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(vid)
+            .get();
+        final blocked = (doc.data()?['blockedDates'] as List<dynamic>? ?? [])
+            .map((e) => e.toString())
+            .toList();
+        if (blocked.contains(key)) {
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'This vendor is not available on the selected date. Please choose another date.',
+              ),
+              backgroundColor: Colors.red,
+              behavior: SnackBarBehavior.floating,
+              duration: Duration(seconds: 3),
+            ),
+          );
+          return; // Don't set the date
+        }
+      } catch (_) {}
+    }
+
+    setState(() => _selectedDate = picked);
   }
 
   // ── Submit form ────────────────────────────────────────────────────────────
@@ -1023,10 +1056,11 @@ class _VenueContactPageState extends State<VenueContactPage> {
     if (vendorUid == null) {
       setState(() => _isSubmitting = false);
       ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(t.translate('vendorNotFoundPleaseTryAgainLater')),
-      )
-    );}
+        SnackBar(
+          content: Text(t.translate('vendorNotFoundPleaseTryAgainLater')),
+        ),
+      );
+    }
 
     try {
       final budgetPkr = _parseBudgetPkr(_budgetCtrl.text) ?? 0;
@@ -1375,7 +1409,10 @@ class _VenueContactPageState extends State<VenueContactPage> {
                 children: [
                   Text(
                     t.translate('aboutThisVenue'),
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: 8),
                   Text(
@@ -1396,7 +1433,10 @@ class _VenueContactPageState extends State<VenueContactPage> {
                 children: [
                   Text(
                     t.translate('amenities'),
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: 10),
                   Wrap(
@@ -1457,7 +1497,7 @@ class _VenueContactPageState extends State<VenueContactPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-Text(
+                          Text(
                             t.translate('sendEnquiry'),
                             style: const TextStyle(
                               fontSize: 18,
@@ -1499,7 +1539,9 @@ Text(
                             ],
                             validator: (v) {
                               if (v == null || v.trim().isEmpty) {
-                                return t.translate('pleaseEnterYourPhoneNumber');
+                                return t.translate(
+                                  'pleaseEnterYourPhoneNumber',
+                                );
                               }
                               if (v.length < 10) {
                                 return t.translate('enterValidPhoneNumber');
@@ -1600,7 +1642,9 @@ Text(
                             controller: _messageCtrl,
                             maxLines: 3,
                             decoration: InputDecoration(
-                              labelText: t.translate('additionalMessageOptional'),
+                              labelText: t.translate(
+                                'additionalMessageOptional',
+                              ),
                               alignLabelWithHint: true,
                               prefixIcon: const Padding(
                                 padding: EdgeInsets.only(bottom: 40),
@@ -1680,7 +1724,10 @@ Text(
                 children: [
                   Text(
                     t.translate('reviews'),
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: 12),
 
