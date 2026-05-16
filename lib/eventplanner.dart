@@ -1016,15 +1016,29 @@ class EventPlannerVendor {
     // Parse price value (numeric) from the stored field
     double parsedPriceValue = 0;
     if (data['priceValue'] != null) {
-      parsedPriceValue = (data['priceValue'] as num).toDouble();
-    } else if (data['price'] != null) {
-      // Try to extract numeric value from price string e.g. "PKR 80,000"
-      final cleaned = data['price']
-          .toString()
-          .replaceAll('PKR', '')
-          .replaceAll(',', '')
-          .trim();
-      parsedPriceValue = double.tryParse(cleaned) ?? 0;
+      try {
+        parsedPriceValue = (data['priceValue'] as num).toDouble();
+      } catch (_) {
+        parsedPriceValue = 0;
+      }
+    }
+    
+    // If priceValue not available, try to extract from price string
+    if (parsedPriceValue == 0 && data['price'] != null) {
+      try {
+        // Try to extract numeric value from price string e.g. "PKR 80,000"
+        final priceStr = data['price'].toString();
+        final cleaned = priceStr
+            .replaceAll('PKR', '')
+            .replaceAll('Rs', '')
+            .replaceAll('Rs.', '')
+            .replaceAll(',', '')
+            .replaceAll(' ', '')
+            .trim();
+        parsedPriceValue = double.tryParse(cleaned) ?? 0;
+      } catch (_) {
+        parsedPriceValue = 0;
+      }
     }
 
     String capacityStr = (data['capacity'] ?? '').toString().trim();
@@ -1218,7 +1232,8 @@ class _EventplannerState extends State<Eventplanner> {
           _selectedLocation == null || v.location == _selectedLocation;
       final matchCat =
           _selectedCategory == 'All' || v.category == _selectedCategory;
-      final matchPrice = v.priceValue <= _maxPrice || v.priceValue == 0;
+      // Only show vendors with a valid price within the budget
+      final matchPrice = v.priceValue > 0 && v.priceValue <= _maxPrice;
       return matchSearch && matchLoc && matchCat && matchPrice;
     }).toList();
 
