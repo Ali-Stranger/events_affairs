@@ -1,3 +1,5 @@
+import 'vendor_availability.dart';
+import 'vendor_documents.dart';
 // // ═══════════════════════════════════════════════════════════════
 // // vendor_gallery.dart
 // // ═══════════════════════════════════════════════════════════════
@@ -5643,16 +5645,28 @@ class _VendorSettingsPageState extends State<VendorSettingsPage> {
             _sectionLabel('Business'),
             _settingsCard([
               _SettingsTile(
-                icon: Icons.event_available_outlined,
-                iconBg: Colors.teal.withOpacity(0.13),
-                title: 'Manage Availability',
-                onTap: () {},
-              ),
-              _SettingsTile(
                 icon: Icons.description_outlined,
                 iconBg: Colors.purple.withOpacity(0.13),
                 title: 'Business Documents',
-                onTap: () {},
+                subtitle: 'Upload your business documents',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const BusinessDocumentsPage(),
+                  ),
+                ),
+              ),
+              _SettingsTile(
+                icon: Icons.event_available_outlined,
+                iconBg: Colors.teal.withOpacity(0.13),
+                title: 'Manage Availability',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const ManageAvailabilityPage(),
+                  ),
+                ),
+                showDivider: false,
               ),
               // _SettingsTile(
               //   icon: Icons.account_balance_outlined,
