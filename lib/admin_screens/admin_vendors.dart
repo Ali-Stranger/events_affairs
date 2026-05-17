@@ -396,8 +396,8 @@ class _AdminVendorDetailPageState extends State<AdminVendorDetailPage> {
             .get(),
       ]);
 
-      final userDoc = results[0] as DocumentSnapshot<Map<String, dynamic>>;
-      final docsDoc = results[1] as DocumentSnapshot<Map<String, dynamic>>;
+      final userDoc = results[0];
+      final docsDoc = results[1];
 
       if (!mounted) return;
       setState(() {
