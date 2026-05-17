@@ -74,8 +74,10 @@ flutter build ios
 ## Screenshots
 
 Add your app screenshots here after uploading them.
+<img width="461" height="923" alt="Screenshot 2026-05-17 164912" src="https://github.com/user-attachments/assets/d85bc60f-2c76-4e51-9fc4-38cbb592d959" />
 
-- `screenshot1.png`
+
+- ``
 - `screenshot2.png`
 - `screenshot3.png`
 - `screenshot4.png`
