@@ -5645,18 +5645,6 @@ class _VendorSettingsPageState extends State<VendorSettingsPage> {
             _sectionLabel('Business'),
             _settingsCard([
               _SettingsTile(
-                icon: Icons.description_outlined,
-                iconBg: Colors.purple.withOpacity(0.13),
-                title: 'Business Documents',
-                subtitle: 'Upload your business documents',
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const BusinessDocumentsPage(),
-                  ),
-                ),
-              ),
-              _SettingsTile(
                 icon: Icons.event_available_outlined,
                 iconBg: Colors.teal.withOpacity(0.13),
                 title: 'Manage Availability',
@@ -5668,14 +5656,17 @@ class _VendorSettingsPageState extends State<VendorSettingsPage> {
                 ),
                 showDivider: false,
               ),
-              // _SettingsTile(
-              //   icon: Icons.account_balance_outlined,
-              //   iconBg: Colors.indigo.withOpacity(0.13),
-              //   title: 'Payout Settings',
-              //   showDivider: false,
-              //   onTap: () {},
-              // ),
             ]),
+
+            // _SettingsTile(
+
+            // _SettingsTile(
+            //   icon: Icons.account_balance_outlined,
+            //   iconBg: Colors.indigo.withOpacity(0.13),
+            //   title: 'Payout Settings',
+            //   showDivider: false,
+            //   onTap: () {},
+            // ),
 
             // ─── SECURITY ───
             _sectionLabel('Security'),

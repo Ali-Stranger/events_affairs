@@ -383,13 +383,29 @@ class _AdminVendorDetailPageState extends State<AdminVendorDetailPage> {
 
   Future<void> _load() async {
     try {
-      final doc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(widget.vendorId)
-          .get();
+      final results = await Future.wait([
+        FirebaseFirestore.instance
+            .collection('users')
+            .doc(widget.vendorId)
+            .get(),
+        FirebaseFirestore.instance
+            .collection('users')
+            .doc(widget.vendorId)
+            .collection('businessDocuments')
+            .doc('identity')
+            .get(),
+      ]);
+
+      final userDoc = results[0] as DocumentSnapshot<Map<String, dynamic>>;
+      final docsDoc = results[1] as DocumentSnapshot<Map<String, dynamic>>;
+
       if (!mounted) return;
       setState(() {
-        _data = doc.data() ?? {};
+        _data = userDoc.data() ?? {};
+        // Merge business documents into _data so existing _infoRow calls work
+        if (docsDoc.exists) {
+          _data['_bizDocs'] = docsDoc.data() ?? {};
+        }
         _loading = false;
       });
     } catch (_) {
@@ -487,27 +503,31 @@ class _AdminVendorDetailPageState extends State<AdminVendorDetailPage> {
                     _infoRow(
                       Icons.credit_card_outlined,
                       'CNIC Number',
-                      (_data['businessDocuments']
-                              as Map<String, dynamic>?)?['cnic'] ??
+                      (_data['_bizDocs']
+                              as Map<String, dynamic>?)?['cnicNumber'] ??
                           '—',
                       isDark,
                     ),
                     _infoRow(
                       Icons.receipt_long_outlined,
                       'NTN Number',
-                      (_data['businessDocuments']
-                              as Map<String, dynamic>?)?['ntn'] ??
+                      (_data['_bizDocs']
+                              as Map<String, dynamic>?)?['ntnNumber'] ??
                           '—',
                       isDark,
                     ),
                     _infoRow(
                       Icons.business_outlined,
                       'Business Reg. No.',
-                      (_data['businessDocuments']
-                              as Map<
-                                String,
-                                dynamic
-                              >?)?['registrationNumber'] ??
+                      (_data['_bizDocs']
+                              as Map<String, dynamic>?)?['businessRegNumber'] ??
+                          '—',
+                      isDark,
+                    ),
+                    _infoRow(
+                      Icons.flag_outlined,
+                      'Doc Status',
+                      (_data['_bizDocs'] as Map<String, dynamic>?)?['status'] ??
                           '—',
                       isDark,
                     ),
