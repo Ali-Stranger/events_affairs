@@ -13,7 +13,7 @@ Events Affairs helps users discover vendors and venues, manage bookings, save fa
 - [x] Booking management and saved items
 - [x] Couple profile editing and event planning tools
 - [x] Push notifications support via local notifications
-- [x] Google Maps integration for venue location display
+- [x] In Urdu Language using AppLocalizatiom
 - [x] Image upload support for event and profile assets
 - [x] Firebase Firestore, Realtime Database, and Storage integration
 
