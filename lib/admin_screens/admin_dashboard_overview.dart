@@ -737,6 +737,64 @@ class _LeadPreviewTile extends StatelessWidget {
 class _NotificationsSheet extends StatelessWidget {
   const _NotificationsSheet();
 
+  String _formatTime(DateTime? time) {
+    if (time == null) return '';
+    final diff = DateTime.now().difference(time);
+    if (diff.inMinutes < 1) return 'Just now';
+    if (diff.inMinutes < 60) return '${diff.inMinutes} min ago';
+    if (diff.inHours < 24) return '${diff.inHours} hr ago';
+    if (diff.inDays == 1) return 'Yesterday';
+    return '${diff.inDays} days ago';
+  }
+
+  Future<List<_AdminNotifItem>> _loadNotifications() async {
+    final quotesSnap = await FirebaseFirestore.instance
+        .collection('quotes')
+        .orderBy('createdAt', descending: true)
+        .limit(4)
+        .get();
+
+    final vendorsSnap = await FirebaseFirestore.instance
+        .collection('users')
+        .where('role', isEqualTo: 'vendor')
+        .get();
+
+    final leadItems = quotesSnap.docs.map((doc) {
+      final data = doc.data();
+      final name = data['name']?.toString() ?? 'A user';
+      final service = data['category']?.toString() ?? 'service';
+      final createdAt = (data['createdAt'] as Timestamp?)?.toDate();
+      return _AdminNotifItem(
+        text: 'Lead submitted by $name for $service',
+        createdAt: createdAt,
+        unread: true,
+      );
+    });
+
+    final vendorItems = vendorsSnap.docs
+        .where((doc) => doc.data()['approved'] != true)
+        .map((doc) {
+          final data = doc.data();
+          final vendorName = data['businessName']?.toString() ??
+              data['name']?.toString() ??
+              'New vendor';
+          final createdAt = (data['createdAt'] as Timestamp?)?.toDate();
+          return _AdminNotifItem(
+            text: 'New vendor profile created: $vendorName',
+            createdAt: createdAt,
+            unread: true,
+          );
+        });
+
+    final items = <_AdminNotifItem>[...leadItems, ...vendorItems];
+    items.sort((a, b) {
+      final aTime = a.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0);
+      final bTime = b.createdAt ?? DateTime.fromMillisecondsSinceEpoch(0);
+      return bTime.compareTo(aTime);
+    });
+    return items.take(6).toList();
+  }
+
   @override
   Widget build(BuildContext context) {
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
@@ -773,26 +831,80 @@ class _NotificationsSheet extends StatelessWidget {
             ],
           ),
           const Divider(height: 30),
-          const _NotifTile(
-            text: 'New lead submitted (user shared contact number)',
-            time: 'Just now',
-            unread: true,
-          ),
-          const _NotifTile(
-            text: 'Vendor approval required',
-            time: '1 hr ago',
-            unread: true,
-          ),
-          const _NotifTile(
-            text: 'Blog event assignment pending',
-            time: 'Yesterday',
-            unread: false,
+          FutureBuilder<List<_AdminNotifItem>>(
+            future: _loadNotifications(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 20),
+                  child: CircularProgressIndicator(
+                    color: kPrimary,
+                    strokeWidth: 2,
+                  ),
+                );
+              }
+              if (snapshot.hasError) {
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 20),
+                  child: Text(
+                    'Unable to load notifications.',
+                    style: TextStyle(
+                      color: isDark ? Colors.white54 : Colors.black54,
+                    ),
+                  ),
+                );
+              }
+              final items = snapshot.data ?? [];
+              if (items.isEmpty) {
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 20),
+                  child: Column(
+                    children: [
+                      Icon(
+                        Icons.notifications_none,
+                        size: 40,
+                        color: isDark ? Colors.white30 : Colors.black26,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'No notifications yet',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: isDark ? Colors.white54 : Colors.black45,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }
+              return Column(
+                children: items
+                    .map((item) => _NotifTile(
+                          text: item.text,
+                          time: _formatTime(item.createdAt),
+                          unread: item.unread,
+                        ))
+                    .toList(),
+              );
+            },
           ),
           const SizedBox(height: 20),
         ],
       ),
     );
   }
+}
+
+class _AdminNotifItem {
+  final String text;
+  final DateTime? createdAt;
+  final bool unread;
+
+  _AdminNotifItem({
+    required this.text,
+    required this.createdAt,
+    required this.unread,
+  });
 }
 
 class _NotifTile extends StatelessWidget {
