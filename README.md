@@ -73,8 +73,11 @@ flutter build ios
 
 ## Screenshots
 
-Add your app screenshots here after uploading them.
+Venues in User Screen
+<img width="446" height="972" alt="Screenshot 2026-05-17 164835" src="https://github.com/user-attachments/assets/1a361608-ef3a-44a6-ae51-91cb26ca3fd0" />
 <img width="461" height="923" alt="Screenshot 2026-05-17 164912" src="https://github.com/user-attachments/assets/d85bc60f-2c76-4e51-9fc4-38cbb592d959" />
+Push Notification
+<img width="452" height="912" alt="Screenshot 2026-05-17 165016" src="https://github.com/user-attachments/assets/36b43ea6-9d55-4168-9a6c-39c93ba1b088" />
 
 
 - ``
