@@ -78,15 +78,29 @@ Venues in User Screen
 <img width="461" height="923" alt="Screenshot 2026-05-17 164912" src="https://github.com/user-attachments/assets/d85bc60f-2c76-4e51-9fc4-38cbb592d959" />
 Push Notification
 <img width="452" height="912" alt="Screenshot 2026-05-17 165016" src="https://github.com/user-attachments/assets/36b43ea6-9d55-4168-9a6c-39c93ba1b088" />
+Dark Mode
+<img width="483" height="860" alt="App Dark Mode" src="https://github.com/user-attachments/assets/259d4ebe-ab33-48d8-9214-562e8f82f0bb" />
+Urdu Language
+<img width="458" height="906" alt="Urdu Language" src="https://github.com/user-attachments/assets/6483ea06-5d38-4c3c-8849-b1c0622de4ea" />
+Vendor DashBoard
+<img width="458" height="867" alt="Vendor Dashboard" src="https://github.com/user-attachments/assets/aad4449e-a248-4a67-aaac-bd072abf567b" />
+Easy Analysis of inquiries For vendor
+<img width="451" height="826" alt="Easy Analysis of inquiries for vendor" src="https://github.com/user-attachments/assets/ee854ab7-a8eb-4104-b831-2a9a1339aa6b" />
+Reviews and Reply
+<img width="460" height="865" alt="Reviews and Reply " src="https://github.com/user-attachments/assets/bfd5d0d5-e06a-426c-aaaf-e2dda14f9611" />
+Leads Section For Admin
+<img width="462" height="796" alt="Leads Section For admin" src="https://github.com/user-attachments/assets/b704bcfe-2844-4d9d-89fe-dc09a41d17aa" />
+All Vendor Profile and their Status
+<img width="447" height="802" alt="All vendors Profile and their Status" src="https://github.com/user-attachments/assets/bf0d9457-2082-4437-a826-7164edd4e263" />
+Modification and Creation of Blogs at Admin Site
+<img width="448" height="572" alt="To Modifiy and Create Blogs" src="https://github.com/user-attachments/assets/ece5c603-af58-4325-b374-84f705dacaec" />
+List of All users 
+<img width="458" height="721" alt="List Of All Users" src="https://github.com/user-attachments/assets/85403a7f-de21-4daf-b36d-3754fb524f06" />
 
 
-- ``
-- `screenshot2.png`
-- `screenshot3.png`
-- `screenshot4.png`
-- `screenshot5.png`
 
-> Replace the above placeholders with actual screenshot image links or markdown once images are available.
+
+
 
 ## Firebase Setup Instructions
 
