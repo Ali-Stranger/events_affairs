@@ -91,7 +91,7 @@ A selection of the current app screens showing core user flows and admin feature
 |---|---|---|
 | ![All Vendor Profile and their Status](https://github.com/user-attachments/assets/bf0d9457-2082-4437-a826-7164edd4e263) | ![Modification and Creation of Blogs at Admin Site](https://github.com/user-attachments/assets/ece5c603-af58-4325-b374-84f705dacaec) | ![List Of All Users](https://github.com/user-attachments/assets/85403a7f-de21-4daf-b36d-3754fb524f06) |
 
-> If you want, you can replace these inline image URLs with local screenshot files or GitHub relative image paths after uploading them to the repository.
+
 
 ## Firebase Setup Instructions
 
