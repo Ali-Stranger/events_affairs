@@ -165,7 +165,11 @@ class _VenuesPageState extends State<VenuesPage> {
     final bool isSuspended =
         suspendedValue == true ||
         (suspendedValue is String && suspendedValue.toLowerCase() == 'true');
-    return isApproved && !isSuspended;
+    final listingValue = data['listingPaused'];
+    final bool isListingPaused =
+        listingValue == true ||
+        (listingValue is String && listingValue.toLowerCase() == 'true');
+    return isApproved && !isSuspended && !isListingPaused;
   }
 
   @override

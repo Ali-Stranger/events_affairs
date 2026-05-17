@@ -1522,8 +1522,8 @@ String getInitials(String? name, String? email) {
               _settingsTile(
                 icon: Icons.security,
                 iconBg: primaryColor.withOpacity(0.13),
-                title: 'Two-Factor Auth',
-                subtitle: 'Protect your account',
+                title:  AppLocalizations.of(context).translate('TwoFactorAuth'),
+                subtitle: AppLocalizations.of(context).translate('protectYourAccount'),
                 trailing: Switch(
                   value: twoFactorEnabled,
                   activeThumbColor: primaryColor,
@@ -1602,7 +1602,7 @@ String getInitials(String? name, String? email) {
               _settingsTile(
                 icon: Icons.article_outlined,
                 iconBg: Colors.purple.withOpacity(0.13),
-                title: 'Terms & Privacy Policy',
+                title: AppLocalizations.of(context).translate('TermsConditions'),
                 showDivider: false,
                 onTap: () {},
               ),

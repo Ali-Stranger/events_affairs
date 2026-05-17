@@ -1,5 +1,4 @@
 import 'vendor_availability.dart';
-import 'vendor_documents.dart';
 // // ═══════════════════════════════════════════════════════════════
 // // vendor_gallery.dart
 // // ═══════════════════════════════════════════════════════════════
@@ -5169,6 +5168,9 @@ class _VendorSettingsPageState extends State<VendorSettingsPage> {
       final data = doc.data()!;
       final notifs = (data['notifications'] as Map<String, dynamic>?) ?? {};
       final city = (data['city'] ?? '').toString();
+      final pausedValue = data['listingPaused'];
+      final bool isPaused = pausedValue == true ||
+          (pausedValue is String && pausedValue.toLowerCase() == 'true');
       setState(() {
         _vendorPersonName = (data['name'] ?? 'Vendor').toString();
         _businessName = (data['businessName'] ?? 'My Business').toString();
@@ -5178,6 +5180,7 @@ class _VendorSettingsPageState extends State<VendorSettingsPage> {
         _newInquiryAlerts = notifs['inquiryAlerts'] ?? true;
         _weeklyReport = notifs['weeklyReports'] ?? true;
         _bookingReminders = notifs['bookingReminders'] ?? false;
+        _isListingPaused = isPaused;
       });
     } catch (_) {
       if (!mounted) return;
@@ -5194,6 +5197,35 @@ class _VendorSettingsPageState extends State<VendorSettingsPage> {
     await FirebaseFirestore.instance.collection('users').doc(uid).update({
       'notifications.$key': value,
     });
+  }
+
+  Future<void> _toggleListingPaused() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+    final newVal = !_isListingPaused;
+    setState(() => _isListingPaused = newVal);
+    try {
+      await FirebaseFirestore.instance.collection('users').doc(uid).update({
+        'listingPaused': newVal,
+      });
+      if (!mounted) return;
+      final msg = newVal ? 'Listing paused' : 'Listing activated';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(msg),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isListingPaused = !newVal);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Failed to update listing status'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   void _showCityPicker() {
@@ -5701,8 +5733,7 @@ class _VendorSettingsPageState extends State<VendorSettingsPage> {
                     .withOpacity(0.13),
                 title: _isListingPaused ? 'Activate Listing' : 'Pause Listing',
                 titleColor: _isListingPaused ? Colors.green : Colors.orange,
-                onTap: () =>
-                    setState(() => _isListingPaused = !_isListingPaused),
+                onTap: _toggleListingPaused,
               ),
               _SettingsTile(
                 icon: Icons.delete_outline,
